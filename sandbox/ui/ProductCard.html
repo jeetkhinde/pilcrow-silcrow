@@ -1,0 +1,16 @@
+---
+pub struct Props {
+    pub image: String,
+    pub title: String,
+    pub category: String,
+    pub price_display: String,
+}
+---
+<div class="product-card">
+    <img src="{{ image }}" alt="{{ title }}" loading="lazy" />
+    <div class="product-info">
+        <span class="product-category">{{ category }}</span>
+        <h3 class="product-title">{{ title }}</h3>
+        <p class="product-price">{{ price_display }}</p>
+    </div>
+</div>

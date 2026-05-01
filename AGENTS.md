@@ -2,6 +2,29 @@
 - Never leave silcrow.js out of sync
 - Prefer build.rs automation over manual copy
 
+## Workspace layout
+
+This workspace is the integration shell:
+
+```text
+pilcrow-silcrow/
+  pilcrow -> ../../pilcrow      # framework repo
+  silcrow -> ../../silcrow      # client runtime repo
+  sandbox/                     # external production-style Pilcrow app
+```
+
+The sandbox is intentionally outside the Pilcrow repo. Treat it like a real
+consumer app that depends on Pilcrow by path from `sandbox/Cargo.toml`.
+
+Use these commands from the `pilcrow-silcrow/` workspace root:
+
+```bash
+cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
+cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
+cargo build --manifest-path sandbox/Cargo.toml
+cargo run --manifest-path sandbox/Cargo.toml
+```
+
 ## Syncing silcrow.js
 
 Edit source files under `silcrow/src/`, then run `node build.js` (or `npm run build`)

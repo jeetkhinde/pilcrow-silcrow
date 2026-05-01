@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ status }} Error — Pilcrow</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 6rem auto;
+            padding: 0 1.5rem;
+            color: #1a1a1a;
+            background: #fff;
+            text-align: center;
+        }
+        .status { font-size: 6rem; font-weight: 700; color: #dc2626; margin: 0; line-height: 1; }
+        .message { font-size: 1.1rem; color: #555; margin: 1rem 0 2rem; line-height: 1.6; }
+        a { color: #0066cc; text-decoration: none; font-size: 0.95rem; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <p class="status">{{ status }}</p>
+    <p class="message">{{ message }}</p>
+    <a href="/">← Back to home</a>
+</body>
+</html>

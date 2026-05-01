@@ -1,0 +1,15 @@
+[package]
+name = "sandbox-web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pilcrow-web = { path = "../../../pilcrow/crates/web" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+askama = "0.14"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+urlencoding = "2"
+
+[build-dependencies]
+pilcrow-routekit = { path = "../../../pilcrow/crates/routekit" }

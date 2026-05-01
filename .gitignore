@@ -1,0 +1,30 @@
+# Compiled output
+sandbox/target
+sandbox/target/
+sandbox/node_modules
+sandbox/node_modules/
+target/
+public/
+
+
+
+# Cargo lock file (for libraries)
+/Cargo.lock
+# IDE / Editor files
+.idea/
+.vscode/
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup / OS files
+*.swp
+*.bak
+*.tmp
+*.DS_Store
