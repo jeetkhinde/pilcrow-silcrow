@@ -18,7 +18,7 @@ port = 3000
 dir = "widgets"
 
 [routing]
-ignore_directories = ["react"]
+ignore_directories = ["react", "solid"]
 
 [imports]
 ui = "ui"
@@ -28,6 +28,15 @@ enabled = true
 dirs = ["react"]
 max_island_kb = 80
 max_page_react_kb = 220
+warn = true
+fail_on_budget = false
+ssr = true
+
+[client.solid]
+enabled = true
+dirs = ["solid"]
+max_island_kb = 30
+max_page_solid_kb = 80
 warn = true
 fail_on_budget = false
 

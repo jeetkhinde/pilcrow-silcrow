@@ -14,7 +14,7 @@
 
 ## Build Rule
 - NEVER manually edit pilcrow's silcrow.js
-- Always generated from silcrow build
+- Always generated from silcrow npm run build
 - Build sandbox from this workspace root with:
   `cargo build --manifest-path sandbox/Cargo.toml`
 

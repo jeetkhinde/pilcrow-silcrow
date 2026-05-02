@@ -1,6 +1,5 @@
 - Always update both pilcrow and silcrow if APIs change
 - Never leave silcrow.js out of sync
-- Prefer build.rs automation over manual copy
 
 ## Workspace layout
 
