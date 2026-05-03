@@ -1,4 +1,4 @@
-import { usePilcrowAction } from "pilcrow/react";
+import { usePilcrowNamedAction } from "pilcrow/react";
 
 type Row = {
   id: number;
@@ -12,7 +12,7 @@ type RefreshState = {
 };
 
 export default function FragmentGrid({ rows = [] }: { rows?: Row[] }) {
-  const [state, refresh] = usePilcrowAction<RefreshState>("refresh");
+  const [state, refresh] = usePilcrowNamedAction<RefreshState>("refresh");
 
   return (
     <div>

@@ -2,7 +2,7 @@
 
 ## Workspace topology
 
-```
+```text
 pilcrow-silcrow/
   pilcrow -> ../../pilcrow      # Pilcrow framework repo (Rust SSR engine)
   silcrow -> ../../silcrow      # Silcrow client runtime repo (JS)
@@ -24,6 +24,19 @@ Pilcrow is a Rust SSR engine that generates HTML and routes via build-time codeg
 (`pilcrow-routekit`). Silcrow is a client-side JS runtime that handles DOM patching,
 reactive state, and custom directives. They communicate through embedded assets: Pilcrow
 bundles silcrow.js at Cargo build time via `build.rs`.
+
+## Pilcrow crate map
+
+| Crate | What it owns | Key files |
+| ----- | ----------- | --------- |
+| `pilcrow-core` | Domain primitives, config, envelope, error types | `src/config/config.rs`, `src/envelope/envelope.rs` |
+| `pilcrow-macros` | Proc-macros: `#[handler]`, SSE helpers | `src/lib.rs`, `src/handler.rs` |
+| `pilcrow-routekit` | File-based routing, codegen, templating (React/Solid/i18n) | `src/routing/`, `src/templating/`, `src/codegen/` |
+| `pilcrow-runtime` | Axum integration, middleware, SSE/WS, assets embed, ISR, CSRF | `src/context.rs`, `src/middleware.rs`, `src/sse/`, `src/assets/` |
+| `pilcrow-web` | Web/SSR integration layer (thin adapter) | `src/lib.rs` |
+| `pilcrow-client` | Client-facing extractors and error types | `src/client.rs`, `src/extractor.rs` |
+
+Touch `pilcrow-routekit` for routing/codegen/template changes. Touch `pilcrow-runtime` for middleware, assets, SSE, or CSRF.
 
 ## Integration contract
 
@@ -125,12 +138,14 @@ Use `/update-docs <feature-name>` to run this interactively.
 2. Update `.claude/react-hook-guide.md` — add/update the hook section and the choosing table
 
 **After ANY Silcrow public API change:**
+
 1. Edit `silcrow/src/` only (never `dist/`)
 2. `npm run build` in `silcrow/`
 3. Update `silcrow/docs/silcrow-api.md` in the same commit
 4. `cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-runtime` to verify embed
 
 **After ANY AGENTS.md-level architecture change:**
+
 - Update `AGENTS.md` and this `CLAUDE.md` to reflect the new topology or contract
 
 ## Active plans
