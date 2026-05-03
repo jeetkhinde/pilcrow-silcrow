@@ -3,7 +3,7 @@ import {
   createElement,
   useActionState,
   useContext,
-  useMemo,
+  useMemo, use,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -62,29 +62,29 @@ export type PilcrowReactContextValue = {
   actionBase?: string;
 };
 
-const PilcrowReactContext = createContext<PilcrowReactContextValue>({});
+const PilcrowReactContext = createContext<PilcrowReactContextValue>( {} );
 
-export function PilcrowReactProvider({
+export function PilcrowReactProvider( {
   value,
   children,
 }: {
   value: PilcrowReactContextValue;
   children: ReactNode;
-}) {
-  return createElement(PilcrowReactContext.Provider, {value}, children);
+} ) {
+  return createElement( PilcrowReactContext.Provider, {value}, children );
 }
 
-function appendActionName(base: string, name: string): string {
-  if (/^https?:\/\//.test(name) || name.startsWith("/") || name.startsWith("?/")) {
+function appendActionName( base: string, name: string ): string {
+  if ( /^https?:\/\//.test( name ) || name.startsWith( "/" ) || name.startsWith( "?/" ) ) {
     return name;
   }
-  const cleanBase = base || (typeof window !== "undefined" ? window.location.pathname : "/");
-  const separator = cleanBase.includes("?") ? "&" : "?";
-  return `${cleanBase}${separator}/${encodeURIComponent(name)}`;
+  const cleanBase = base || ( typeof window !== "undefined" ? window.location.pathname : "/" );
+  const separator = cleanBase.includes( "?" ) ? "&" : "?";
+  return `${cleanBase}${separator}/${encodeURIComponent( name )}`;
 }
 
-export function resolvePilcrowAction(name: string, base?: string): string {
-  return appendActionName(base ?? "", name);
+export function resolvePilcrowAction( name: string, base?: string ): string {
+  return appendActionName( base ?? "", name );
 }
 
 /**
@@ -102,10 +102,10 @@ export function resolvePilcrowAction(name: string, base?: string): string {
 declare global {
   interface Window {
     Silcrow?: {
-      subscribe?: (scope: string, fn: () => void) => () => void;
-      snapshot?: <T = unknown>(scope: string) => T | undefined;
-      publish?: (scope: string, data: unknown) => void;
-      prefetch?: <T = unknown>(path: string) => Promise<T>;
+      subscribe?: ( scope: string, fn: () => void ) => () => void;
+      snapshot?: <T = unknown>( scope: string ) => T | undefined;
+      publish?: ( scope: string, data: unknown ) => void;
+      prefetch?: <T = unknown>( path: string ) => Promise<T>;
       submit?: <T = unknown>(
         url: string,
         body?: BodyInit | object | null,
@@ -123,11 +123,11 @@ declare global {
  * const cart = useSilcrowAtom<Cart>("route:/cart", {count: 0, total: "$0.00"});
  * return <span>{cart.count}</span>;
  */
-export function useSilcrowAtom<T>(scope: string, fallback: T): T {
+export function useSilcrowAtom<T>( scope: string, fallback: T ): T {
   return useSyncExternalStore<T>(
-    (notify) => window.Silcrow?.subscribe?.(scope, notify) ?? (() => {}),
-    () => window.Silcrow?.snapshot?.<T>(scope) ?? fallback,
-    () => window.Silcrow?.snapshot?.<T>(scope) ?? fallback,
+    ( notify ) => window.Silcrow?.subscribe?.( scope, notify ) ?? ( () => {} ),
+    () => window.Silcrow?.snapshot?.<T>( scope ) ?? fallback,
+    () => window.Silcrow?.snapshot?.<T>( scope ) ?? fallback,
   );
 }
 
@@ -139,8 +139,8 @@ export function useSilcrowAtom<T>(scope: string, fallback: T): T {
  * @example
  * publishSilcrowAtom("route:/cart", {count: 3});
  */
-export function publishSilcrowAtom<T>(scope: string, data: T): void {
-  window.Silcrow?.publish?.(scope, data);
+export function publishSilcrowAtom<T>( scope: string, data: T ): void {
+  window.Silcrow?.publish?.( scope, data );
 }
 
 /**
@@ -152,12 +152,12 @@ export function publishSilcrowAtom<T>(scope: string, data: T): void {
  *   return <Suspense fallback={<p>Loading...</p>}><Rows promise={promise} /></Suspense>;
  * }
  */
-export function useSilcrowPrefetch<T>(path: string): Promise<T> {
+export function useSilcrowPrefetch<T>( path: string ): Promise<T> {
   return useMemo(
     () =>
-      window.Silcrow?.prefetch?.<T>(path) ??
-      Promise.reject(new Error("Silcrow is not loaded")),
-    [path],
+      window.Silcrow?.prefetch?.<T>( path ) ??
+      Promise.reject( new Error( "Silcrow is not loaded" ) ),
+    [ path ],
   );
 }
 
@@ -167,8 +167,8 @@ export function useSilcrowPrefetch<T>(path: string): Promise<T> {
  * @example
  * const products = useSilcrowRoute<ProductData>("/products", {items: []});
  */
-export function useSilcrowRoute<T>(path: string, fallback: T): T {
-  return useSilcrowAtom<T>(`route:${path}`, fallback);
+export function useSilcrowRoute<T>( path: string, fallback: T ): T {
+  return useSilcrowAtom<T>( `route:${path}`, fallback );
 }
 
 /**
@@ -187,16 +187,16 @@ export function submitSilcrow<T>(
   url: string,
   options?: SilcrowSubmitOptions,
 ) {
-  return async function action(_prev: T, formData: FormData): Promise<T> {
-    if (!window.Silcrow?.submit) {
-      throw new Error("Silcrow is not loaded");
+  return async function action( _prev: T, formData: FormData ): Promise<T> {
+    if ( !window.Silcrow?.submit ) {
+      throw new Error( "Silcrow is not loaded" );
     }
-    const result = await window.Silcrow.submit<T>(url, formData, {
+    const result = await window.Silcrow.submit<T>( url, formData, {
       method: options?.method ?? "POST",
       scope: options?.scope,
       headers: options?.headers,
-    });
-    return result.data ?? ({ok: result.ok, status: result.status} as T);
+    } );
+    return result.data ?? ( {ok: result.ok, status: result.status} as T );
   };
 }
 
@@ -218,15 +218,15 @@ export function silcrowSubmitHandler<Result = unknown, Values = object>(
   url: string,
   options?: SilcrowSubmitOptions,
 ) {
-  return async function submit(values: Values): Promise<SilcrowSubmitResult<Result>> {
-    if (!window.Silcrow?.submit) {
-      throw new Error("Silcrow is not loaded");
+  return async function submit( values: Values ): Promise<SilcrowSubmitResult<Result>> {
+    if ( !window.Silcrow?.submit ) {
+      throw new Error( "Silcrow is not loaded" );
     }
-    return window.Silcrow.submit<Result>(url, values as object, {
+    return window.Silcrow.submit<Result>( url, values as object, {
       method: options?.method ?? "POST",
       scope: options?.scope,
       headers: options?.headers,
-    });
+    } );
   };
 }
 
@@ -251,7 +251,7 @@ export function useSilcrowAction<State>(
     ? {method: options.method, scope: options.scope, headers: options.headers}
     : undefined;
   return useActionState<State, FormData>(
-    submitSilcrow<State>(url, submitOptions),
+    submitSilcrow<State>( url, submitOptions ),
     initialState,
     options?.permalink,
   );
@@ -261,14 +261,81 @@ export function useSilcrowAction<State>(
  * React 19 action wrapper that resolves a Pilcrow page/fragment named action.
  *
  * @example
- * const [state, action, pending] = usePilcrowAction<CreateState>("add");
+ * const [state, action, pending] = usePilcrowNamedAction<CreateState>("add");
  */
-export function usePilcrowAction<State>(
+export function usePilcrowNamedAction<State>(
   name: string,
   initialState = {ok: true} as State,
-  options?: SilcrowActionOptions & {base?: string},
+  options?: SilcrowActionOptions & {base?: string;},
 ) {
-  const context = useContext(PilcrowReactContext);
-  const url = resolvePilcrowAction(name, options?.base ?? context.actionBase);
-  return useSilcrowAction<State>(url, initialState, options);
+  const context = useContext( PilcrowReactContext );
+  const url = resolvePilcrowAction( name, options?.base ?? context.actionBase );
+  return useSilcrowAction<State>( url, initialState, options );
+}
+
+
+export function useSilcrowResource<T>( path: string, fallback: T ): T {
+  const initial = use( useSilcrowPrefetch<T>( path ) );
+  return useSilcrowRoute<T>( path, initial ?? fallback );
+}
+
+
+/**
+ * Object-style wrapper for simple native forms backed by Silcrow transport.
+ *
+ * Use this when a tuple from `useSilcrowAction` is correct but too noisy in JSX.
+ * This is still just React 19 `useActionState` + `Silcrow.submit`; it is not a
+ * replacement for React Hook Form or Zod in complex client-side form UX.
+ *
+ * @example
+ * type CreateState = {ok: boolean; message?: string; errors?: Record<string, string>};
+ * const form = useSilcrowForm<CreateState>("/cart/add/1");
+ * return (
+ *   <form action={form.action}>
+ *     <button disabled={form.pending}>Add</button>
+ *     {form.message ? <p role="status">{form.message}</p> : null}
+ *     {form.errors?.quantity ? <p role="alert">{form.errors.quantity}</p> : null}
+ *   </form>
+ * );
+ */
+export type SilcrowFormState = {
+  ok: boolean;
+  message?: string;
+  errors?: Record<string, string>;
+};
+
+export type SilcrowFormResult<State extends SilcrowFormState> = {
+  state: State;
+  action: ( formData: FormData ) => void;
+  pending: boolean;
+
+  ok: State[ "ok" ];
+  message: State[ "message" ];
+  errors: State[ "errors" ];
+};
+
+export function useSilcrowForm<
+  State extends SilcrowFormState = SilcrowFormState,
+>(
+  url: string,
+  initialState = {ok: true} as State,
+  options?: SilcrowActionOptions,
+): SilcrowFormResult<State> {
+  const [ state, action, pending ] = useSilcrowAction<State>(
+    url,
+    initialState,
+    options,
+  );
+
+  return useMemo(
+    () => ( {
+      state,
+      action,
+      pending,
+      ok: state.ok,
+      message: state.message,
+      errors: state.errors,
+    } ),
+    [ state, action, pending ],
+  );
 }
