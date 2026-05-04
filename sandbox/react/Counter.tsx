@@ -93,6 +93,7 @@ function ProductListPrefetch() {
   );
 }
 
+
 // ── Pattern 4: useSilcrowResource ─────────────────────────────────────────────
 // Use when: you want prefetch + suspend + live subscription in one call.
 // The component itself suspends — wrap the caller in <Suspense>.

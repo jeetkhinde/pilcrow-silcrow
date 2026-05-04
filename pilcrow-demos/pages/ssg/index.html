@@ -1,0 +1,55 @@
+<pilcrow:head><title>SSG — Pilcrow Rendering Models</title></pilcrow:head>
+
+<div class="demo-header">
+    <h1><span class="badge badge-ssg">SSG</span> Static Site Generation</h1>
+    <p><code>load()</code> runs exactly once — at server startup, before any connections are accepted. The result is cached forever.</p>
+</div>
+
+<div class="observable">
+    <div class="observable-label">Observable — these values are frozen at startup</div>
+    <div class="stat-row">
+        <div class="stat">
+            <span class="stat-label">load() call count (frozen)</span>
+            <span class="stat-value">{{ render_count }}</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">rendered_at (startup time)</span>
+            <span class="stat-value">{{ rendered_at }}</span>
+        </div>
+    </div>
+    <p style="font-size:0.84rem;color:#666;margin:0">
+        Reload as many times as you like — the values never change while the server is running.
+        Restart the server to see them update.
+    </p>
+</div>
+
+<div class="callout">
+    <strong>How it works:</strong> <code>pub const PRERENDER: bool = true;</code> tells routekit to include
+    this page in <code>__pilcrow_prerender_all()</code>, called by <code>pilcrow_start()</code> before the server
+    accepts connections. The result is stored in the ISR cache with a <code>u64::MAX</code> TTL — it never expires.
+    Every subsequent request hits the cache and never calls <code>load()</code> again.
+</div>
+
+<div class="callout warn">
+    <strong>Note:</strong> <code>PRERENDER</code> is a no-op for pages without <code>load()</code>
+    (they're already static) and for pages with <code>Deferred&lt;T&gt;</code> or <code>DeferredHtml</code> fields.
+    Use <a href="/isr-ssg">ISR+SSG</a> if you need the cache to refresh over time.
+</div>
+
+<div class="actions">
+    <a href="/ssg" class="btn">Reload (always cached)</a>
+    <a href="/isr-ssg" class="btn btn-primary">See ISR+SSG →</a>
+</div>
+
+<hr class="section-divider" />
+
+<div class="code-panels">
+    <details class="code-panel">
+        <summary>index.html — template</summary>
+        <pre><code class="language-html">{{ template_src }}</code></pre>
+    </details>
+    <details class="code-panel">
+        <summary>index.rs — code-behind</summary>
+        <pre><code class="language-rust">{{ codebehind_src }}</code></pre>
+    </details>
+</div>

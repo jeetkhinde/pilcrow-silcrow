@@ -1,0 +1,56 @@
+<pilcrow:head><title>ISR+SSG — Pilcrow Rendering Models</title></pilcrow:head>
+
+<div class="demo-header">
+    <h1><span class="badge badge-isr-ssg">ISR+SSG</span> Startup-warm ISR</h1>
+    <p>Pre-rendered at startup like SSG, then revalidated on a TTL like ISR. Best of both: no cold-start miss, fresh data over time.</p>
+</div>
+
+<div class="observable">
+    <div class="observable-label">Observable — updates when load() runs (startup or revalidation)</div>
+    <div class="stat-row">
+        <div class="stat">
+            <span class="stat-label">load() call count</span>
+            <span class="stat-value">{{ render_count }}</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">rendered_at</span>
+            <span class="stat-value">{{ rendered_at }}</span>
+        </div>
+    </div>
+    <p style="font-size:0.84rem;color:#666;margin:0">
+        First load shows startup prerender values. After 30s, next request gets stale HTML while a fresh
+        render fires in the background. Click "Bust Cache" to force an immediate re-render.
+    </p>
+</div>
+
+<div class="callout">
+    <strong>Key difference from pure SSG:</strong> the cache is stored with the ISR TTL (<code>30s</code>),
+    not <code>u64::MAX</code>. After 30 seconds the stale-while-revalidate cycle takes over —
+    <code>load()</code> runs in the background and the cache refreshes automatically.
+</div>
+
+<div class="callout">
+    <strong>Key difference from pure ISR:</strong> there is no cold-start miss.
+    The cache is warm before the first request arrives because <code>PRERENDER = true</code> triggered
+    <code>__pilcrow_prerender_all()</code> at server startup.
+</div>
+
+<div class="actions">
+    <a href="/isr-ssg" class="btn">Reload</a>
+    <form method="POST" action="?/bust">
+        <button class="btn btn-primary" type="submit">Bust Cache</button>
+    </form>
+</div>
+
+<hr class="section-divider" />
+
+<div class="code-panels">
+    <details class="code-panel">
+        <summary>index.html — template</summary>
+        <pre><code class="language-html">{{ template_src }}</code></pre>
+    </details>
+    <details class="code-panel">
+        <summary>index.rs — code-behind</summary>
+        <pre><code class="language-rust">{{ codebehind_src }}</code></pre>
+    </details>
+</div>

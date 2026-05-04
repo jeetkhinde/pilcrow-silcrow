@@ -1,0 +1,135 @@
+<pilcrow:head><title>ISR — Pilcrow Rendering Models</title></pilcrow:head>
+
+<div class="demo-header">
+    <h1><span class="badge badge-isr">ISR</span> Incremental SSR</h1>
+    <p>Stale-while-revalidate page caching. <code>load()</code> only runs on a cache miss or background revalidation — not on every request.</p>
+</div>
+
+<div class="callout-info">
+    <strong>Plain English:</strong> ISR works like a notice board. Someone writes up the board once, and everyone
+    who walks past reads the same notice — until enough time has passed and someone updates it. The board is never
+    blank while the update is happening; visitors keep reading the old notice until the new one is ready.
+    <br/><br/>
+    <strong>Key insight:</strong> <code>REVALIDATE</code> is <em>not</em> a timer that pushes updates to open browser
+    tabs. It is the minimum age at which the <em>next incoming request</em> is allowed to trigger a fresh render.
+    A tab already showing the page will <strong>not</strong> change on its own — users must reload or navigate.
+</div>
+
+<div class="observable">
+    <div class="observable-label">Observable — these values only change when load() runs</div>
+    <div class="stat-row">
+        <div class="stat">
+            <span class="stat-label">load() call count</span>
+            <span class="stat-value">{{ render_count }}</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">rendered_at</span>
+            <span class="stat-value">{{ rendered_at }}</span>
+        </div>
+    </div>
+    <p style="font-size:0.84rem;color:#666;margin:0">
+        Reload within 2 seconds → same values (cached). Reload after 2s → same values served
+        instantly, but <code>load()</code> fires in the background. Next reload shows the fresh values.
+    </p>
+</div>
+
+<div class="callout">
+    <strong>Configuration:</strong> <code>REVALIDATE = 2</code> (2-second TTL for this demo),
+    <code>MAX_STALE = 10</code> (serve stale for up to 10s past TTL),
+    <code>CACHE_TAGS = ["demo-isr"]</code> (for manual invalidation).
+    All three are <code>pub const</code> declarations stripped at codegen time — they never appear in generated Rust.
+</div>
+
+<details class="code-panel guide-panel">
+    <summary>When should I use ISR? (click to expand)</summary>
+    <div class="guide-panel-body">
+        <p><strong>ISR is the right model when all three of these are true:</strong></p>
+        <ul>
+            <li>The page content comes from a database, API, or file — not from request-specific data like session or cookies.</li>
+            <li>The content changes occasionally (minutes to hours), not on every request and not truly in real-time.</li>
+            <li>Many users will request the same URL, so caching one render and sharing it across requests saves real work.</li>
+        </ul>
+
+        <p><strong>Good fits:</strong></p>
+        <table class="cache-states">
+            <thead><tr><th>Page type</th><th>Why ISR works</th><th>Suggested REVALIDATE</th></tr></thead>
+            <tbody>
+                <tr><td>Blog post / article</td><td>Content rarely changes; popular posts get heavy traffic</td><td>300–3600s</td></tr>
+                <tr><td>Product page</td><td>Price/stock change infrequently; bust cache on inventory update</td><td>60–600s + tag bust</td></tr>
+                <tr><td>Marketing / landing page</td><td>Edited once in a while; identical for every visitor</td><td>3600s+</td></tr>
+                <tr><td>Dashboard summary / stats</td><td>Slightly stale is acceptable; live counters not needed</td><td>30–120s</td></tr>
+                <tr><td>Documentation page</td><td>Changes on deploy only; use cache-tag bust on release</td><td>86400s + tag bust</td></tr>
+            </tbody>
+        </table>
+
+        <p><strong>Bad fits — use a different model instead:</strong></p>
+        <table class="cache-states">
+            <thead><tr><th>Situation</th><th>Problem with ISR</th><th>Better model</th></tr></thead>
+            <tbody>
+                <tr><td>User-specific pages (profile, cart, inbox)</td><td>Cache would be shared across users — security risk</td><td>SSR (no cache)</td></tr>
+                <tr><td>Live price ticker, chat, live score</td><td>ISR won't push updates; users must reload to see changes</td><td>SSE / WebSocket</td></tr>
+                <tr><td>Page reads from cookies or auth headers</td><td>Cached response ignores per-request context</td><td>SSR (no cache)</td></tr>
+                <tr><td>Data changes on every request (e.g. a counter)</td><td>Counter increments only on revalidation, not every visit</td><td>SSR (no cache)</td></tr>
+            </tbody>
+        </table>
+
+        <div class="callout warn">
+            <strong>The timestamp / counter trap:</strong> if you render <code>Date.now()</code> or a request counter
+            inside an ISR page, users won't see it update on every reload — only when a background revalidation fires.
+            For live values, fetch them client-side (polling, SSE) instead of baking them into the server-rendered HTML.
+        </div>
+    </div>
+</details>
+
+<table class="cache-states">
+    <thead>
+        <tr><th>Cache state</th><th>Condition</th><th>Response</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Miss</strong></td>
+            <td>No cache entry</td>
+            <td>Blocking render → store → return HTML</td>
+        </tr>
+        <tr>
+            <td><strong>Fresh</strong></td>
+            <td>age ≤ 10s</td>
+            <td>Cached HTML returned immediately</td>
+        </tr>
+        <tr>
+            <td><strong>Stale</strong></td>
+            <td>age 10–70s</td>
+            <td>Cached HTML returned + background revalidation fires</td>
+        </tr>
+        <tr>
+            <td><strong>Expired</strong></td>
+            <td>age > 70s</td>
+            <td>Blocking render (same as Miss)</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="actions">
+    <a href="/isr" class="btn">Reload (may hit cache)</a>
+    <form method="POST" action="?/bust">
+        <button class="btn btn-primary" type="submit">Bust Cache</button>
+    </form>
+</div>
+
+<div class="callout warn">
+    <strong>Bust Cache</strong> calls <code>req.cache.revalidate_tag("demo-isr")</code> from the action handler,
+    then redirects. The next GET is a cache miss → blocking render → fresh values appear immediately.
+</div>
+
+<hr class="section-divider" />
+
+<div class="code-panels">
+    <details class="code-panel">
+        <summary>index.html — template</summary>
+        <pre><code class="language-html">{{ template_src }}</code></pre>
+    </details>
+    <details class="code-panel">
+        <summary>index.rs — code-behind</summary>
+        <pre><code class="language-rust">{{ codebehind_src }}</code></pre>
+    </details>
+</div>

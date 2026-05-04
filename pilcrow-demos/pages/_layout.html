@@ -1,0 +1,305 @@
+---
+import Nav from "ui/Nav.html";
+
+pub struct Props {}
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <slot name="pilcrow_head"><title>Pilcrow Rendering Models</title></slot>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            color: #1a1a1a;
+            background: #f9f9f9;
+            min-height: 100vh;
+        }
+        a { color: inherit; }
+
+        /* ── Nav ── */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            min-height: 52px;
+        }
+        .nav-home {
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            color: #111;
+            white-space: nowrap;
+        }
+        .nav-links {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            color: #555;
+            transition: background 0.1s, color 0.1s;
+        }
+        .nav-links a:hover { background: #f4f4f4; color: #111; }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .badge-ssr         { background: #dbeafe; color: #1d4ed8; }
+        .badge-isr         { background: #dcfce7; color: #15803d; }
+        .badge-ssg         { background: #fef9c3; color: #854d0e; }
+        .badge-isr-ssg     { background: #f3e8ff; color: #7e22ce; }
+        .badge-streaming   { background: #ffedd5; color: #c2410c; }
+        .badge-deferred    { background: #fce7f3; color: #be185d; }
+
+        /* ── Page shell ── */
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem 4rem;
+        }
+
+        /* ── Demo header ── */
+        .demo-header { margin-bottom: 2rem; }
+        .demo-header h1 {
+            font-size: 1.6rem;
+            margin: 0 0 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .demo-header p {
+            margin: 0;
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ── Observable box ── */
+        .observable {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .observable-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #999;
+            margin-bottom: 0.75rem;
+        }
+        .stat-row {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .stat { display: flex; flex-direction: column; gap: 0.2rem; }
+        .stat-label { font-size: 0.75rem; color: #888; }
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #111;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── Callout ── */
+        .callout {
+            background: #f0f9ff;
+            border-left: 3px solid #0ea5e9;
+            border-radius: 0 6px 6px 0;
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+            color: #0c4a6e;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .callout.warn {
+            background: #fff7ed;
+            border-color: #f97316;
+            color: #7c2d12;
+        }
+        .callout code {
+            background: rgba(0,0,0,0.07);
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.85em;
+        }
+
+        /* ── Actions ── */
+        .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1.1rem;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            color: #374151;
+            transition: background 0.1s, border-color 0.1s;
+        }
+        .btn:hover { background: #f9fafb; border-color: #9ca3af; }
+        .btn-primary {
+            background: #111;
+            border-color: #111;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #333; border-color: #333; }
+
+        /* ── Code panels ── */
+        .code-panels { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem; }
+        details.code-panel {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        details.code-panel summary {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #555;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        details.code-panel summary::-webkit-details-marker { display: none; }
+        details.code-panel summary::before {
+            content: "▶";
+            font-size: 0.6rem;
+            color: #aaa;
+            transition: transform 0.15s;
+        }
+        details.code-panel[open] summary::before { transform: rotate(90deg); }
+        details.code-panel pre {
+            margin: 0;
+            padding: 1rem 1.25rem;
+            overflow-x: auto;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            border-top: 1px solid #f0f0f0;
+            background: #fafafa;
+        }
+        details.code-panel pre code {
+            font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+        }
+
+        /* ── Cache state table ── */
+        .cache-states {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+            margin-bottom: 1.5rem;
+        }
+        .cache-states th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            background: #f4f4f4;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .cache-states td {
+            padding: 0.55rem 0.75rem;
+            border-top: 1px solid #f0f0f0;
+            color: #444;
+            line-height: 1.5;
+        }
+        .cache-states tr:first-child td { border-top: none; }
+        .cache-states code {
+            background: #f0f0f0;
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font-size: 0.82em;
+            font-family: ui-monospace, monospace;
+        }
+
+        /* ── Separator ── */
+        .section-divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 2rem 0;
+        }
+
+        /* ── ISR explainer callout ── */
+        .callout-info {
+            background: #f0f4ff;
+            border-left: 3px solid #4a6cf7;
+            border-radius: 0 6px 6px 0;
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: #1e3a8a;
+        }
+        .callout-info code {
+            background: rgba(0,0,0,0.07);
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.85em;
+        }
+
+        /* ── Decision guide panel ── */
+        .guide-panel {
+            margin-bottom: 1.5rem;
+        }
+        .guide-panel > summary {
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: #374151;
+        }
+        .guide-panel-body {
+            padding: 1rem 0 0;
+        }
+        .guide-panel-body > p:first-child {
+            margin-top: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+</head>
+<body>
+    <Nav />
+    <div class="page">
+        <slot />
+    </div>
+    <script src="{{ pilcrow_web::assets::assets::silcrow_js_path() }}" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</body>
+</html>

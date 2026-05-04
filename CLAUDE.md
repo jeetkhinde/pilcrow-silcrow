@@ -12,6 +12,7 @@ pilcrow-silcrow/
   .claude/hooks/               # Stop hook scripts
   .claude/react-island.md      # React island operating rules + decision guide
   .claude/react-hook-guide.md  # Hook reference with examples
+  .claude/rendering-models.md  # All rendering modes: SSR, ISR, SSG, streaming, deferred, islands
 ```
 
 NEVER call `scan_project_context` if this file was loaded at session start — topology,
@@ -87,6 +88,15 @@ These two systems do not overlap. Silcrow never reads `data-pilcrow-*` attribute
 Lives in `pilcrow/crates/runtime/assets/react-islands.js` — a Pilcrow asset, not Silcrow.
 It listens for Silcrow's `silcrow:patched` CustomEvent and re-scans the patched target
 for `[data-pilcrow-react]` elements to mount React islands. Silcrow has no React knowledge.
+
+## Rendering mode questions — read docs, do not scan
+
+For ANY question about rendering modes (SSR, ISR, SSG, streaming, deferred fields, island strategies):
+
+1. Read `.claude/rendering-models.md` — all modes, configuration constants, constraints, and combination rules
+
+Do NOT open `pilcrow/crates/runtime/src/isr.rs`, `codegen/app_module.rs`, or `deferred.rs` unless
+you are actively debugging a mismatch between the docs and real behavior.
 
 ## React island questions — read docs, do not scan
 

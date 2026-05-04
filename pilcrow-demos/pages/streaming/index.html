@@ -1,0 +1,63 @@
+<pilcrow:head><title>Streaming — Pilcrow Rendering Models</title></pilcrow:head>
+
+<div class="demo-header">
+    <h1><span class="badge badge-streaming">Streaming</span> SSR Streaming</h1>
+    <p>The shell arrives immediately with default values. <code>load()</code> runs in the background — when it finishes, a <code>Silcrow.patch()</code> call updates all reactive bindings.</p>
+</div>
+
+<div class="callout warn">
+    <strong>Hard-navigate for full effect.</strong> If you arrived via a nav link, Silcrow fetched
+    this page as an SPA transition and you may not see the shell flash. Paste the URL directly
+    or use Cmd/Ctrl+Shift+R to hard-reload.
+</div>
+
+<div class="observable">
+    <div class="observable-label">Observable — watch these update ~600ms after the shell appears</div>
+    <div class="stat-row">
+        <div class="stat">
+            <span class="stat-label">load() call count</span>
+            <span class="stat-value" :text="render_count">…</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">rendered_at</span>
+            <span class="stat-value" :text="rendered_at">Loading…</span>
+        </div>
+    </div>
+    <p style="font-size:0.84rem;margin:0.75rem 0 0" :text="slow_message">Fetching…</p>
+</div>
+
+<div class="callout">
+    <strong>Template rule:</strong> Use <code>:text="field"</code> (Silcrow binding) for any field
+    that should update after the shell renders. Using <code>{% raw %}{{ field }}{% endraw %}</code>
+    (Askama interpolation) bakes the default value into the HTML and the stream patch cannot update it.
+    The <code>Default</code> impl sets "Loading…" strings that appear in the shell.
+</div>
+
+<div class="callout">
+    <strong>How it works:</strong>
+    <ol style="margin:0.5rem 0 0;padding-left:1.2rem;line-height:1.8">
+        <li>Layout <code>load()</code> runs (none here)</li>
+        <li>Shell rendered with <code>Props::default()</code> — "Loading…" values sent immediately</li>
+        <li>A <code>window.__ps</code> shim is injected before <code>&lt;/head&gt;</code></li>
+        <li><code>load()</code> spawns on <code>tokio::spawn</code> (600ms sleep simulates slow I/O)</li>
+        <li>When <code>load()</code> resolves, <code>Props</code> is serialised and streamed as <code>window.__ps({...})</code></li>
+        <li>Silcrow patches all <code>:text</code> bindings in the DOM</li>
+    </ol>
+</div>
+
+<div class="actions">
+    <a href="/streaming" class="btn btn-primary">Reload</a>
+</div>
+
+<hr class="section-divider" />
+
+<div class="code-panels">
+    <details class="code-panel">
+        <summary>index.html — template</summary>
+        <pre><code class="language-html">{{ template_src }}</code></pre>
+    </details>
+    <details class="code-panel">
+        <summary>index.rs — code-behind</summary>
+        <pre><code class="language-rust">{{ codebehind_src }}</code></pre>
+    </details>
+</div>

@@ -1,0 +1,55 @@
+<pilcrow:head>
+    <title>SSR — Pilcrow Rendering Models</title>
+</pilcrow:head>
+
+<div class="demo-header">
+    <h1><span class="badge badge-ssr">SSR</span> Server-Side Rendering</h1>
+    <p>The default Pilcrow rendering model. <code>load()</code> runs synchronously on every request — no caching, always
+        fresh.</p>
+</div>
+
+<div class="observable">
+    <div class="observable-label">Observable</div>
+    <div class="stat-row">
+        <div class="stat">
+            <span class="stat-label">load() call count</span>
+            <span class="stat-value">{{ render_count }}</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">rendered_at</span>
+            <span class="stat-value">{{ rendered_at }}</span>
+        </div>
+    </div>
+    <p style="font-size:0.84rem;color:#666;margin:0">
+        Reload this page — the counter increments and the timestamp updates on every request.
+        Nothing is cached.
+    </p>
+</div>
+
+<div class="callout">
+    <strong>How it works:</strong> No <code>pub const</code> declarations in the code-behind = SSR.
+    Every GET request calls <code>load()</code>, renders the template with the returned <code>Props</code>,
+    and streams the HTML response. The global counter only increments inside <code>load()</code>,
+    so its value is the exact number of times this page has been server-rendered.
+</div>
+
+<div class="actions">
+    <form method="GET"
+          action="/ssr">
+        <button class="btn btn-primary"
+                type="submit">Reload (new render)</button>
+    </form>
+</div>
+
+<hr class="section-divider" />
+
+<div class="code-panels">
+    <details class="code-panel">
+        <summary>index.html — template</summary>
+        <pre><code class="language-html">{{ template_src }}</code></pre>
+    </details>
+    <details class="code-panel">
+        <summary>index.rs — code-behind</summary>
+        <pre><code class="language-rust">{{ codebehind_src }}</code></pre>
+    </details>
+</div>
