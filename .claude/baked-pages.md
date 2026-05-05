@@ -1,285 +1,172 @@
-# Baked Pages With Patchable Slots
+# Baked Pages POC: Patchable Ticket Status Slot
 
-This is a design note, not implemented behavior.
+This is a proof-of-concept design note, not implemented behavior.
 
-## Thesis
+## Goal
 
-Pilcrow can plausibly unify SSG, ISR, static export, lazy cache fill, and event-driven revalidation under a "Baked Page" model:
+Prove one small vertical slice of the Baked Page model:
 
-1. Render a page into durable HTML once.
-2. Mark selected dynamic regions with Pilcrow-owned slot markers.
-3. Record a manifest from dependency keys to `(page_key, slot_id)` targets.
-4. On data change, recompute only affected slot fragments.
-5. Patch the durable baked HTML atomically.
-6. Serve future requests by reading the already-updated baked HTML.
+- One lazy baked route: `/tickets/:id`
+- One explicit text slot: `ticket_status`
+- One explicit dependency key: `TicketStatus:ticket_id=123`
+- One manual or generated slot recompute function: `recompute_ticket_status_slot(ticket_id) -> String`
+- Filesystem baked HTML
+- Marker-boundary patching with temp-file write and atomic rename
+- Next `GET /tickets/123` serves patched baked HTML without full SSR/load
 
-This model should not replace SSR or streaming. It is a durable-page cache with optional fine-grained invalidation. The central difference from today's ISR is that invalidation can target a named slot instead of deleting or re-rendering the whole page.
+The proof should establish the serving-path shift:
 
-## Current Fit
+- Request path: read baked HTML.
+- Update path: recompute and patch baked HTML outside the request.
 
-Current SSG is already implemented as "pre-render into the ISR cache." `pilcrow_start()` calls `start_with_prerender()`, which creates one shared `IsrCache`, runs generated `__pilcrow_prerender_all(&cache)`, and then attaches the cache handle to requests. Static export also runs the same prerender path, then writes every cache entry as `<dir>/<key>/index.html`.
+Baked Page is the main model for this POC. ISR and SSG are not the conceptual center; they are future compatibility policies that can later map into Baked timing and freshness behavior.
 
-Current ISR stores whole HTML strings keyed by request path/query/vary. The runtime cache has memory and filesystem backends. Filesystem persistence writes JSON entries through a temp file and `rename`, which is already the right atomic-write shape for durable baked HTML.
+## POC Scope
 
-Current LiveProp and Deferred support prove Pilcrow can own target markers safely:
+Included:
 
-- `LiveProp<T>` fields are detected in `instrument.rs`; `compiler.rs` rewrites `{{ field }}` to `<span data-pilcrow-live-field="field">{{ field }}</span>`.
-- `AsyncValue<T>` fields are detected the same way; template interpolations become `data-pilcrow-async-value` targets.
-- `AsyncHtml` shell rendering emits a text marker like `__pilcrow_html_slot_field__`, then generated handler code replaces that marker with `<span data-pilcrow-async-html="field">...</span>`.
+- Route: `/tickets/:id`, demonstrated with `/tickets/123`.
+- Slot: `ticket_status`, text only.
+- Dependency key: `TicketStatus:ticket_id=123`.
+- Recompute function: `recompute_ticket_status_slot(ticket_id) -> String`.
+- Storage: baked HTML on filesystem.
+- Manifest: per-page JSON.
+- Reverse index: JSON or memory-only for the POC.
+- Patching: only inside explicit Pilcrow-owned slot boundaries.
+- Write safety: write temp file, then atomic rename over the old baked HTML file.
 
-So the slot-marker side is aligned with existing patterns. The missing pieces are:
+Explicitly deferred:
 
-- a public way for developers to declare dependency keys,
-- codegen metadata that records which page slots depend on which keys,
-- generated per-slot recompute functions,
-- a durable baked-page store/index,
-- an atomic patcher that updates only Pilcrow-owned slots.
+- Broad cache redesign.
+- ISR/SSG redesign.
+- Browser/SSE live patching.
+- SQL dependency inference.
+- Final public API design.
+- Typed `Dep`, `BakedSlot<T>`, or `BakedHtml`.
+- Closure serialization from `load()`.
+- Generic cache providers.
+- Arbitrary HTML regex patching.
+- Multi-process storage and coordination.
 
-## Relevant Files
+## Request Flow
 
-- `pilcrow/crates/runtime/src/isr.rs` — current whole-page cache, filesystem persistence, path/tag invalidation, export entries.
-- `pilcrow/crates/runtime/src/start.rs` — startup prerender and export flow.
-- `pilcrow/crates/web/src/lib.rs` — `pilcrow_start()` and `pilcrow_export()` generated public helpers.
-- `pilcrow/crates/routekit/src/templating/page_options.rs` — parsed page constants such as `REVALIDATE`, `PRERENDER`, `STREAMING`.
-- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses page constants, detects `LiveProp`, `AsyncValue`, `AsyncHtml`, rewrites templates.
-- `pilcrow/crates/routekit/src/templating/compiler.rs` — current safe target injection for live and deferred scalar fields.
-- `pilcrow/crates/routekit/src/templating/codegen/templates.rs` — emits Askama modules and render functions.
-- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — emits SSR, ISR, SSG, streaming, deferred, and live handlers.
-- `pilcrow/crates/runtime/src/deferred.rs` — `AsyncValue`, `AsyncHtml`, `LiveProp`, streaming patch helpers.
-- `silcrow/src/silcrow.js` — browser-side SSE and DOM patch infrastructure if slot updates are mirrored to open documents.
-
-## Proposed Developer API
-
-Start explicit and narrow. Avoid trying to infer dependencies from arbitrary Rust.
-
-```rust
-use pilcrow_web::{BakedSlot, Dep};
-
-pub const BAKE: pilcrow_web::Bake = pilcrow_web::Bake::lazy();
-
-pub struct Props {
-    pub ticket_status: BakedSlot<String>,
-    pub total_tickets: BakedSlot<u64>,
-}
-
-pub async fn load(page: Page) -> AppResult<Props> {
-    let ticket_id = page.params.id;
-    Ok(Props {
-        ticket_status: BakedSlot::value(load_status(ticket_id).await?)
-            .slot("ticket_status")
-            .depends_on(Dep::new("TicketStatus").param("ticket_id", ticket_id)),
-        total_tickets: BakedSlot::value(load_count(9).await?)
-            .slot("total_tickets")
-            .depends_on(Dep::new("TicketCount").param("org_id", 9)),
-    })
-}
-```
-
-Template authors would write normal interpolation:
-
-```html
-<span>{{ ticket_status }}</span>
-```
-
-Codegen would rewrite it to a Pilcrow-owned slot:
-
-```html
-<span data-pilcrow-slot="ticket_status">Open</span>
-```
-
-For HTML fragments:
-
-```rust
-pub struct Props {
-    pub ticket_summary: BakedHtml,
-}
-```
-
-`BakedHtml` should use a container marker and replace children, following `AsyncHtml`, not regex over arbitrary HTML.
-
-## Dependency Keys
-
-Dependency keys need to be stable strings, but the API should avoid hand-concatenation. Internally they can normalize to:
+First request:
 
 ```text
-TicketStatus:ticket_id=123
-TicketCount:org_id=9
+GET /tickets/123
+-> baked HTML missing
+-> run normal SSR/load once
+-> render HTML containing the owned ticket_status slot boundary
+-> write baked HTML to filesystem
+-> write page manifest for /tickets/123
+-> add reverse-index entry for TicketStatus:ticket_id=123
+-> serve the rendered response
 ```
 
-Public invalidation could live beside today's ISR handle:
-
-```rust
-req.cache.emit("TicketStatus:ticket_id=123").await;
-req.cache.emit_dep(Dep::new("TicketStatus").param("ticket_id", 123)).await;
-```
-
-Naming note: `emit` implies event-driven patching. `revalidate_dep` may fit better if it can fall back to whole-page revalidation.
-
-## Manifest Shape
-
-At bake time Pilcrow should persist two linked records:
+Second and later requests:
 
 ```text
-page_key: /tickets/123
-route_module: page_tickets_id
-bake_policy: lazy
-html_path/cache_key: ...
-slots:
-  ticket_status:
-    kind: text
-    depends_on:
-      - TicketStatus:ticket_id=123
-    selector:
-      attr: data-pilcrow-slot
-      value: ticket_status
+GET /tickets/123
+-> baked HTML exists
+-> read baked HTML from filesystem
+-> serve it directly
+-> do not run normal SSR/load
 ```
 
-And an inverted index:
+The proof must log or otherwise prove when SSR/load runs so the first request and baked-file hit are distinguishable.
+
+## Update Flow
+
+When ticket `123` changes status:
 
 ```text
-TicketStatus:ticket_id=123 -> [(/tickets/123, ticket_status)]
-TicketCount:org_id=9 -> [(/dashboard, total_tickets)]
+ticket 123 status changes
+-> app emits dependency key: TicketStatus:ticket_id=123
+-> Pilcrow finds all page/slot targets depending on that key
+-> call recompute_ticket_status_slot("123")
+-> validate exactly one ticket_status start/end marker pair in each baked HTML file
+-> patch only the content inside the owned boundary
+-> write a temp HTML file
+-> atomic rename over the old baked HTML file
+-> next GET /tickets/123 serves the patched HTML
+-> normal SSR/load does not run for that GET
 ```
 
-For a first version, this can live in memory plus filesystem JSON next to baked HTML. Later, SQLite is likely a better default for multi-process-safe lookup and transactional updates.
+If another baked page also depends on `TicketStatus:ticket_id=123`, the same dependency event must patch both baked files.
 
-## Slot Recompute
+## Marker And Manifest Contract
 
-The hard part is recomputing only a slot without re-running the full page render. There are three possible tiers:
-
-1. **Minimum tier: field-value slots.** `BakedSlot<T>` stores a recompute closure/factory from `load()` output. On dependency invalidation, generated code re-runs `load()` for the affected page key but extracts only the slot value before patching the HTML. This still pays data-load cost, but proves durable slot patching and manifest/indexing.
-2. **Fragment tier: explicit slot loaders.** Developers define a slot function:
-   ```rust
-   pub async fn ticket_status_slot(page: Page) -> AppResult<BakedSlot<String>> { ... }
-   ```
-   Codegen can call this directly on invalidation. This is the cleanest route to true partial recompute.
-3. **Template fragment tier: typed fragments.** Reuse configured `[[fragments]]` or co-located fragment modules as slot renderers. A page slot points to a fragment render function, and dependency invalidation re-renders that fragment only.
-
-The minimum proof should use tier 2 for at least one text slot. It avoids pretending Rust closures captured during `load()` can be serialized across process restarts.
-
-## Safe HTML Patching
-
-This should not use generic regex. Use one of:
-
-- `lol_html` streaming HTML rewriter for server-side mutation,
-- `kuchiki` / `html5ever` DOM parse and serialize,
-- a custom marker-pair format that makes replacement byte-range safe.
-
-Recommended marker format for durable patching:
+The POC must use this explicit Pilcrow-owned marker boundary:
 
 ```html
-<!--pilcrow-slot:start ticket_status kind=text hash=...-->
+<!--pilcrow-slot:start ticket_status kind=text-->
 <span data-pilcrow-slot="ticket_status">Open</span>
 <!--pilcrow-slot:end ticket_status-->
 ```
 
-The public visible marker remains `data-pilcrow-slot`; the comments give the disk patcher unambiguous boundaries. For text slots, set escaped text content. For HTML slots, replace children inside the owned container, not the container itself, so attributes remain stable.
+Only the content inside this owned boundary may be patched. The outer start/end comments are the durable filesystem patch boundary. The visible `data-pilcrow-slot` attribute is the stable slot identity that future browser-side patching can reuse, but browser patching is out of scope for this POC.
 
-Atomic write path:
+Minimum per-page manifest JSON:
 
-1. Read baked HTML.
-2. Parse or locate Pilcrow-owned marker boundaries.
-3. Validate exactly one matching slot boundary.
-4. Patch into a new string.
-5. Write `page.tmp.<nonce>`.
-6. `fsync` file if needed for production durability.
-7. `rename` over the old file.
-8. Update in-memory cache entry after the durable write succeeds.
-
-Concurrency needs per-page locking, not only per-slot locking, because multiple slot patches rewrite the same file. Coalesce dependency events into one page update when possible.
-
-## Bake Timing As Policy
-
-The Baked Page model can make timing a policy instead of a separate rendering concept:
-
-| Timing | Use case | Source of page keys |
-|--------|----------|---------------------|
-| Build-time bake/export | marketing, docs, known public routes | static routes, `entries()`, configured routes |
-| Startup bake | app-hosted public pages needing warm cache | `BAKE = Bake::startup()` or `PRERENDER` compatibility |
-| Background warm bake | expensive but predictable routes | generated warmer task from `entries()` or app-provided warmer |
-| Lazy first-request bake | huge ID spaces, tenant dashboards, entity detail pages | actual request path/query/vary |
-| Event-driven patch | data changes after a page is baked | dependency index lookup |
-
-This suggests replacing or supplementing `PRERENDER` / `REVALIDATE` with a single page option over time:
-
-```rust
-pub const BAKE: Bake = Bake::build();
-pub const BAKE: Bake = Bake::startup();
-pub const BAKE: Bake = Bake::lazy();
-pub const BAKE: Bake = Bake::warm();
+```json
+{
+  "page_key": "/tickets/123",
+  "route": "/tickets/:id",
+  "params": { "id": "123" },
+  "slots": {
+    "ticket_status": {
+      "kind": "text",
+      "depends_on": ["TicketStatus:ticket_id=123"]
+    }
+  }
+}
 ```
 
-For compatibility, current constants can map into the model:
+Minimum reverse index, as JSON or memory-only:
 
-- `PRERENDER = true` -> startup bake with infinite freshness.
-- `REVALIDATE = n` -> lazy bake with TTL-based whole-page revalidation.
-- `PRERENDER + REVALIDATE` -> startup bake with TTL-based whole-page revalidation.
-- new slot dependencies -> event-driven slot patching when possible, whole-page fallback otherwise.
+```json
+{
+  "TicketStatus:ticket_id=123": [
+    { "page_key": "/tickets/123", "slot": "ticket_status" }
+  ]
+}
+```
 
-## Architecture Sketch
+## Validation And Fallback
 
-Runtime:
+Patch validation rules:
 
-- Add `BakedPageStore` next to or inside `IsrCache`.
-- Store page HTML and metadata separately from ISR `CacheEntry`, or evolve `CacheEntry` to include optional `manifest`.
-- Add `DependencyIndex` mapping dep keys to page slots.
-- Add `BakedHandle` / extend `IsrHandle` with dependency invalidation.
-- Add per-page locks for patch operations.
+- The baked HTML must contain exactly one matching start marker for `ticket_status`.
+- The baked HTML must contain exactly one matching end marker for `ticket_status`.
+- The start marker must appear before the end marker.
+- The slot kind must be `text`.
+- Patching must not search or mutate arbitrary HTML outside the owned boundary.
 
-Routekit:
+Default POC fallback:
 
-- Parse new page constants or types in `instrument.rs`.
-- Detect `BakedSlot<T>` / `BakedHtml` fields.
-- Rewrite template interpolations to `data-pilcrow-slot`.
-- Emit generated slot recompute functions in `templates.rs` or `app_module.rs`.
-- Extend `__pilcrow_prerender_all` so proactive bake policies use the same durable store.
-- Extend handlers so lazy bake checks durable page first, otherwise renders and records manifest.
+- If validation fails, perform a full-page rebake for that page and rewrite the baked HTML, manifest, and reverse-index data.
+- If full-page rebake also fails, return or log an internal error for the dependency update.
 
-Silcrow:
+This keeps the proof robust without introducing broad cache invalidation semantics.
 
-- Optional only. If the server patches baked HTML, future requests are solved without browser code.
-- For open tabs, dependency patch events can reuse the same slot identity:
-  ```js
-  document.querySelectorAll('[data-pilcrow-slot="ticket_status"]')
-  ```
-  and replace text/children from SSE.
-- This can be a later layer; do not block server-side baked-page proof on browser live patching.
+## Success Criteria
 
-## Minimum Proof Of Concept
+1. First `GET /tickets/123` logs or proves SSR/load ran.
+2. Baked HTML file is written to disk.
+3. Second `GET /tickets/123` serves the baked file without SSR/load.
+4. A test action or function changes ticket status and emits `TicketStatus:ticket_id=123`.
+5. Pilcrow patches only the `ticket_status` slot in the baked file.
+6. Next `GET /tickets/123` returns the new status without full SSR/load.
+7. If another page also depends on `TicketStatus:ticket_id=123`, both baked files are patched from the same dependency event.
 
-1. Add a runtime-only `BakedPageStore` with filesystem HTML write/read and atomic full-page store.
-2. Add a manual/generated page with one explicit text slot marker:
-   ```html
-   <!--pilcrow-slot:start ticket_status kind=text-->
-   <span data-pilcrow-slot="ticket_status">Open</span>
-   <!--pilcrow-slot:end ticket_status-->
-   ```
-3. Persist a JSON manifest:
-   ```json
-   { "page": "/tickets/123", "slots": { "ticket_status": ["TicketStatus:ticket_id=123"] } }
-   ```
-4. Add `emit_dep()` that finds matching slots and calls a hard-coded generated slot recompute function.
-5. Patch the HTML file atomically and update the memory copy.
-6. Serve the baked file on the next GET.
-7. Add one sandbox route that demonstrates:
-   - startup/proactive bake for an `entries()` route,
-   - lazy bake for `/tickets/[id]`,
-   - action handler changes the ticket status and emits the dependency key,
-   - next request reads the patched baked HTML without full-page SSR.
+## Deferred Generalization
 
-This proves the model without solving every cache provider, browser SSE mirroring, or automatic dependency inference.
+After this vertical slice works, generalize in this order:
 
-## Main Risks
-
-- **Request-specific data leakage.** Baked pages must require stable cache keys and explicit vary rules. Do not allow auth/session-derived pages unless `CACHE_VARY` or a tenant/user scope is explicit.
-- **Slot recompute context.** Recomputing a slot needs route params, query, locale, maybe tenant context. The manifest must store enough safe context to reconstruct a synthetic `Req` or `Page`.
-- **Layout dependencies.** A page slot may depend on layout props or shared chrome. Minimum version should only patch page-owned slots, then later support layout-owned slots.
-- **HTML parser cost.** Full parse/serialize for every slot event may be expensive. Marker-boundary patching is faster but needs strict validation.
-- **Multi-process deployment.** Filesystem JSON plus process memory is enough for single-node proof. SQLite or Redis-like coordination is needed for many workers.
-- **Deferred and streaming interactions.** `AsyncHtml` already owns slots, but it is request-streaming, not durable. Initial implementation should reject or whole-page fallback for deferred/streaming pages.
-
-## Recommendation
-
-Build the first version as an extension of the existing ISR/SSG pipeline rather than a parallel system. Current SSG already warms `IsrCache`; current ISR already has path/tag invalidation, filesystem persistence, synthetic requests, and atomic JSON writes. Add baked-page manifests and slot patching there first.
-
-The most convincing proof is: `entries()` pages bake proactively, large dynamic pages bake lazily, and both can be updated by the same dependency-key event. Whole-page re-render remains the fallback, but text/HTML slots with explicit slot loaders can take the fast path.
+1. Replace hard-coded dependency strings with typed `Dep`.
+2. Replace manual slot markers with generated `BakedSlot<T>` text slots.
+3. Add `BakedHtml` for owned HTML fragment slots.
+4. Add build-time, startup, background warm, and lazy bake policies.
+5. Map existing ISR/SSG behavior into Baked timing and freshness policies.
+6. Add browser-side slot patching through SSE using the same slot identity.
+7. Add durable multi-process storage and coordination.
