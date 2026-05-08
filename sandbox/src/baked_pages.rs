@@ -113,6 +113,8 @@ struct BakedRouteDeclaration {
     route_pattern: String,
     concrete_path: String,
     eligibility: BakeEligibility,
+    artifact_mode: BakedArtifactMode,
+    layout_key: Option<String>,
     slots: Vec<BakedSlot>,
 }
 
@@ -126,6 +128,8 @@ impl BakedRouteDeclaration {
             route_pattern: route_pattern.into(),
             concrete_path: concrete_path.into(),
             eligibility,
+            artifact_mode: BakedArtifactMode::FullPage,
+            layout_key: None,
             slots: Vec::new(),
         }
     }
@@ -149,6 +153,18 @@ impl BakedRouteDeclaration {
         Self::new(route_pattern, concrete_path, BakeEligibility::NeverBake)
     }
 
+    fn full_page(mut self) -> Self {
+        self.artifact_mode = BakedArtifactMode::FullPage;
+        self.layout_key = None;
+        self
+    }
+
+    fn fragment_composed(mut self, layout_key: impl Into<String>) -> Self {
+        self.artifact_mode = BakedArtifactMode::FragmentComposed;
+        self.layout_key = Some(layout_key.into());
+        self
+    }
+
     fn text_slot(mut self, name: impl Into<String>, dependency_keys: Vec<DependencyKey>) -> Self {
         self.slots.push(BakedSlot::text(name, dependency_keys));
         self
@@ -165,12 +181,21 @@ impl BakedRouteDeclaration {
     }
 
     fn to_page(&self, store: &BakedPageStore) -> BakedPage {
-        BakedPage::new(
-            self.route_pattern.clone(),
-            self.concrete_path.clone(),
-            self.slots.clone(),
-            store,
-        )
+        match self.artifact_mode {
+            BakedArtifactMode::FullPage => BakedPage::new(
+                self.route_pattern.clone(),
+                self.concrete_path.clone(),
+                self.slots.clone(),
+                store,
+            ),
+            BakedArtifactMode::FragmentComposed => BakedPage::fragment_composed(
+                self.route_pattern.clone(),
+                self.concrete_path.clone(),
+                self.layout_key.clone().unwrap_or_default(),
+                self.slots.clone(),
+                store,
+            ),
+        }
     }
 
     fn slot(&self, name: &str) -> Option<&BakedSlot> {
@@ -388,8 +413,11 @@ impl BakedPageStore {
         }
 
         let rendered = render_fn(self)?;
-        let html = rendered.html.clone();
         self.write_artifact(&rendered.page, &rendered.html)?;
+        let page = self
+            .read_page(&rendered.page.concrete_path)?
+            .unwrap_or(rendered.page);
+        let html = self.read_serving_artifact(&page)?;
         let state = if was_stale {
             ServeState::StaleRebaked
         } else {
@@ -407,10 +435,13 @@ impl BakedPageStore {
         F: FnOnce(&Self, &BakedRouteDeclaration) -> io::Result<RenderedBakedPage>,
     {
         match declaration.eligibility {
-            BakeEligibility::LazyOnFirstHit | BakeEligibility::BuildTime => self
-                .get_or_render(&declaration.concrete_path, |store| {
-                    render_fn(store, declaration)
-                }),
+            BakeEligibility::LazyOnFirstHit | BakeEligibility::BuildTime => {
+                self.get_or_render(&declaration.concrete_path, |store| {
+                    let mut rendered = render_fn(store, declaration)?;
+                    rendered.page = declaration.to_page(store);
+                    Ok(rendered)
+                })
+            }
             BakeEligibility::NeverBake => {
                 let rendered = render_fn(self, declaration)?;
                 Ok((rendered.html, ServeState::RenderedUnbaked))
@@ -429,7 +460,8 @@ impl BakedPageStore {
         match declaration.eligibility {
             BakeEligibility::BuildTime => {
                 self.ensure_reverse_index()?;
-                let rendered = render_fn(self, declaration)?;
+                let mut rendered = render_fn(self, declaration)?;
+                rendered.page = declaration.to_page(self);
                 let html = rendered.html.clone();
                 self.write_artifact(&rendered.page, &rendered.html)?;
                 Ok(html)
@@ -1724,6 +1756,118 @@ mod tests {
     }
 
     #[test]
+    fn declaration_defaults_to_full_page_and_can_make_mode_explicit() {
+        let default = BakedRouteDeclaration::lazy_on_first_hit("/default/:id", "/default/1");
+        let explicit =
+            BakedRouteDeclaration::lazy_on_first_hit("/explicit/:id", "/explicit/1").full_page();
+
+        assert_eq!(default.artifact_mode, BakedArtifactMode::FullPage);
+        assert_eq!(default.layout_key, None);
+        assert_eq!(explicit.artifact_mode, BakedArtifactMode::FullPage);
+        assert_eq!(explicit.layout_key, None);
+    }
+
+    #[test]
+    fn declaration_can_select_fragment_composed_layout() {
+        let declaration = BakedRouteDeclaration::lazy_on_first_hit("/composed/:id", "/composed/1")
+            .fragment_composed("app")
+            .text_slot("status", vec![DependencyKey::new("ComposedStatus:id=1")]);
+
+        assert_eq!(
+            declaration.artifact_mode,
+            BakedArtifactMode::FragmentComposed
+        );
+        assert_eq!(declaration.layout_key.as_deref(), Some("app"));
+    }
+
+    #[test]
+    fn declared_fragment_composed_route_uses_layout_and_body_strategy() {
+        let root = TestRoot::new("declared-composed");
+        let store = root.store();
+        let dep = DependencyKey::new("DeclaredComposedStatus:id=1");
+        let declaration = BakedRouteDeclaration::lazy_on_first_hit(
+            "/declared-composed/:id",
+            "/declared-composed/1",
+        )
+        .fragment_composed("app")
+        .text_slot("status", vec![dep.clone()]);
+        let layout = BakedLayout::new(
+            "app",
+            vec![BakedSlot::trusted_html("page_body", Vec::new())],
+            &store,
+        );
+        let layout_v1 = "<!doctype html><html><body><header>Declared layout v1</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        let layout_v2 = "<!doctype html><html><body><header>Declared layout v2</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        store
+            .write_layout(&layout, layout_v1)
+            .expect("write declared layout");
+
+        let (html_v1, first_state) = store
+            .get_or_render_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: BakedPage::new(
+                        declaration.route_pattern.clone(),
+                        declaration.concrete_path.clone(),
+                        declaration.slots.clone(),
+                        store,
+                    ),
+                    html: format!(
+                        "<main><h1>Declared composed</h1>{}</main>",
+                        text_slot("status", "Open")
+                    ),
+                })
+            })
+            .expect("render declared composed page");
+        let metadata = store
+            .read_page("/declared-composed/1")
+            .expect("read metadata")
+            .expect("metadata exists");
+        let body_before =
+            fs::read_to_string(store.body_path("/declared-composed/1")).expect("read body");
+
+        store
+            .write_layout(&layout, layout_v2)
+            .expect("rebake declared layout");
+        let (html_v2, second_state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("declared composed hit must not rerun SSR/load")
+            })
+            .expect("serve declared composed hit");
+        let body_after =
+            fs::read_to_string(store.body_path("/declared-composed/1")).expect("read body");
+
+        let mut registry = BakedPatchRegistry::new(store.clone());
+        registry
+            .register_declared_slot_recompute(&declaration, "status", |_key, _path| {
+                Ok(SlotValue::Text("Patched".to_string()))
+            })
+            .expect("register declared composed recompute");
+        let outcome = registry.patch_dependency(dep).expect("patch composed dep");
+        let (patched_html, patched_state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("patched declared composed page should still be baked")
+            })
+            .expect("serve patched declared composed page");
+
+        assert_eq!(first_state, ServeState::MissRendered);
+        assert_eq!(second_state, ServeState::Hit);
+        assert_eq!(patched_state, ServeState::Hit);
+        assert_eq!(metadata.artifact_mode, BakedArtifactMode::FragmentComposed);
+        assert_eq!(metadata.layout_key.as_deref(), Some("app"));
+        assert!(store.body_path("/declared-composed/1").exists());
+        assert!(store.metadata_path("/declared-composed/1").exists());
+        assert!(html_v1.contains("Declared layout v1"));
+        assert!(html_v1.contains(">Open<"));
+        assert!(html_v2.contains("Declared layout v2"));
+        assert!(!html_v2.contains("Declared layout v1"));
+        assert_eq!(body_before, body_after);
+        assert_eq!(outcome.patched_pages, vec!["/declared-composed/1"]);
+        assert!(outcome.stale_pages.is_empty());
+        assert!(patched_html.contains("Declared layout v2"));
+        assert!(patched_html.contains(">Patched<"));
+    }
+
+    #[test]
     fn build_time_declaration_prebakes_before_request() {
         let root = TestRoot::new("build-time-prebake");
         let store = root.store();
@@ -1939,13 +2083,18 @@ mod tests {
     #[test]
     fn declaration_layer_supports_policy_and_trusted_html_declarations() {
         let build = BakedRouteDeclaration::build_time("/build/:id", "/build/1")
+            .full_page()
             .text_slot("status", vec![DependencyKey::new("Build:1")]);
         let never = BakedRouteDeclaration::never_bake("/preview/:id", "/preview/1");
         let html = BakedRouteDeclaration::lazy_on_first_hit("/html/:id", "/html/1")
+            .fragment_composed("app")
             .trusted_html_slot("body", vec![DependencyKey::new("Html:1")]);
 
         assert_eq!(build.eligibility, BakeEligibility::BuildTime);
+        assert_eq!(build.artifact_mode, BakedArtifactMode::FullPage);
         assert_eq!(never.eligibility, BakeEligibility::NeverBake);
+        assert_eq!(never.artifact_mode, BakedArtifactMode::FullPage);
+        assert_eq!(html.layout_key.as_deref(), Some("app"));
         assert_eq!(html.slots[0].kind, BakedSlotKind::TrustedHtml);
     }
 
