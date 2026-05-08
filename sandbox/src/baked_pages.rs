@@ -331,6 +331,33 @@ impl BakedPageStore {
         }
     }
 
+    fn prebake_declared<F>(
+        &self,
+        declaration: &BakedRouteDeclaration,
+        render_fn: F,
+    ) -> io::Result<String>
+    where
+        F: FnOnce(&Self, &BakedRouteDeclaration) -> io::Result<RenderedBakedPage>,
+    {
+        match declaration.eligibility {
+            BakeEligibility::BuildTime => {
+                self.ensure_reverse_index()?;
+                let rendered = render_fn(self, declaration)?;
+                let html = rendered.html.clone();
+                self.write_artifact(&rendered.page, &rendered.html)?;
+                Ok(html)
+            }
+            BakeEligibility::LazyOnFirstHit => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "lazy declarations are baked on first request, not during prebake",
+            )),
+            BakeEligibility::NeverBake => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "never_bake declarations cannot be prebaked",
+            )),
+        }
+    }
+
     fn serve_if_fresh(&self, concrete_path: &str) -> io::Result<Option<String>> {
         if self
             .read_page(concrete_path)?
@@ -1465,6 +1492,140 @@ mod tests {
         assert_eq!(html, cached);
         assert_eq!(outcome.patched_pages, vec!["/declared/1"]);
         assert!(patched.contains(">Closed<"));
+    }
+
+    #[test]
+    fn build_time_declaration_prebakes_before_request() {
+        let root = TestRoot::new("build-time-prebake");
+        let store = root.store();
+        let dep = DependencyKey::new("BuildStatus:id=1");
+        let declaration = BakedRouteDeclaration::build_time("/build/:id", "/build/1")
+            .text_slot("status", vec![dep.clone()]);
+
+        let html = store
+            .prebake_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: declaration.to_page(store),
+                    html: text_slot("status", "Prebaked"),
+                })
+            })
+            .expect("prebake build-time page");
+        let metadata = store
+            .read_page("/build/1")
+            .expect("read build-time metadata")
+            .expect("metadata exists");
+        let index = store
+            .reverse_index()
+            .expect("read reverse index")
+            .expect("reverse index exists");
+
+        assert_eq!(html, text_slot("status", "Prebaked"));
+        assert!(store.html_path("/build/1").exists());
+        assert_eq!(metadata.route_pattern, "/build/:id");
+        assert_eq!(metadata.concrete_path, "/build/1");
+        assert_eq!(metadata.slots[0].name, "status");
+        assert_eq!(metadata.dependency_keys, vec![dep.clone()]);
+        assert_eq!(
+            index
+                .get(dep.as_str())
+                .and_then(|pages| pages.get("/build/1")),
+            Some(&vec!["status".to_string()])
+        );
+    }
+
+    #[test]
+    fn build_time_prebaked_first_get_is_hit_and_skips_ssr_load() {
+        let root = TestRoot::new("build-time-hit");
+        let store = root.store();
+        let declaration = BakedRouteDeclaration::build_time("/build/:id", "/build/1")
+            .text_slot("status", vec![DependencyKey::new("BuildStatus:id=1")]);
+
+        store
+            .prebake_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: declaration.to_page(store),
+                    html: text_slot("status", "Prebaked"),
+                })
+            })
+            .expect("prebake build-time page");
+
+        let (html, state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("prebaked hit must not run SSR/load")
+            })
+            .expect("serve prebaked page");
+
+        assert_eq!(state, ServeState::Hit);
+        assert_eq!(state.ssr_load_header(), "skipped");
+        assert!(html.contains(">Prebaked<"));
+    }
+
+    #[test]
+    fn dependency_patching_updates_build_time_baked_page() {
+        let root = TestRoot::new("build-time-patch");
+        let store = root.store();
+        let dep = DependencyKey::new("BuildStatus:id=1");
+        let declaration = BakedRouteDeclaration::build_time("/build/:id", "/build/1")
+            .text_slot("status", vec![dep.clone()]);
+
+        store
+            .prebake_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: declaration.to_page(store),
+                    html: text_slot("status", "Prebaked"),
+                })
+            })
+            .expect("prebake build-time page");
+
+        let mut registry = BakedPatchRegistry::new(store.clone());
+        registry
+            .register_declared_slot_recompute(&declaration, "status", |_key, _path| {
+                Ok(SlotValue::Text("Patched".to_string()))
+            })
+            .expect("register build-time recompute");
+        let outcome = registry
+            .patch_dependency(dep)
+            .expect("patch build-time dep");
+        let patched = fs::read_to_string(store.html_path("/build/1")).expect("read patched");
+
+        assert_eq!(outcome.patched_pages, vec!["/build/1"]);
+        assert!(outcome.stale_pages.is_empty());
+        assert!(patched.contains(">Patched<"));
+    }
+
+    #[test]
+    fn never_bake_refuses_prebake_and_baked_serving() {
+        let root = TestRoot::new("never-bake-refuses");
+        let store = root.store();
+        let declaration = BakedRouteDeclaration::never_bake("/preview/:id", "/preview/1")
+            .text_slot("status", vec![DependencyKey::new("PreviewStatus:id=1")]);
+
+        let err = store
+            .prebake_declared(&declaration, |_store, _declaration| {
+                panic!("never_bake prebake must not render")
+            })
+            .expect_err("never_bake must refuse prebake");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(!store.html_path("/preview/1").exists());
+        assert!(!store.metadata_path("/preview/1").exists());
+
+        let stale_page = declaration.to_page(&store);
+        store
+            .write_artifact(&stale_page, text_slot("status", "Cached").as_str())
+            .expect("seed cached artifact");
+        let (html, state) = store
+            .get_or_render_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: declaration.to_page(store),
+                    html: text_slot("status", "Rendered"),
+                })
+            })
+            .expect("serve never_bake declaration");
+
+        assert_eq!(state, ServeState::RenderedUnbaked);
+        assert_eq!(state.ssr_load_header(), "ran");
+        assert!(html.contains(">Rendered<"));
+        assert!(!html.contains(">Cached<"));
     }
 
     #[test]

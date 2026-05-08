@@ -1,0 +1,14 @@
+# .graphifyignore
+
+# Ignore build artifacts and target files
+target/
+Cargo.lock
+
+# Standard ignores
+node_modules/
+.git/
+dist/
+
+silcrow/node_modules
+sandbox/node_modules
+pilcrow/node_modules

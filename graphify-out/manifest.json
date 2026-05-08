@@ -1,0 +1,242 @@
+{
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/build.rs": {
+    "mtime": 1777777089.3336003,
+    "hash": "bbbc1bdedf2d2550a9b593de96438de8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/hooks.rs": {
+    "mtime": 1777777105.417653,
+    "hash": "5da81b9f05680b5f0f4dd3d3467f5482"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/index.rs": {
+    "mtime": 1777777271.1629705,
+    "hash": "cbb004539fc367a0c17b974ce10d0fe0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/isr-ssg/index.rs": {
+    "mtime": 1777813266.1813385,
+    "hash": "6ef0d25476b30d3360b87f12392935f0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/isr/index.rs": {
+    "mtime": 1777832117.7169359,
+    "hash": "e3b5468b1989e44a661725c4571f2da7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/deferred/index.rs": {
+    "mtime": 1777915198.53449,
+    "hash": "d7391c826f812eeedd16a12bb1d7028c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/streaming/index.rs": {
+    "mtime": 1777813275.1040623,
+    "hash": "98f2bf125ba9317a27ecb8546a080cd7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/ssg/index.rs": {
+    "mtime": 1777813222.471313,
+    "hash": "efd5a0977390e49cda7306f8b072d22c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/ssr/index.rs": {
+    "mtime": 1777813209.055864,
+    "hash": "73da2e234348eb2c597db730ab0d2620"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/src/main.rs": {
+    "mtime": 1777777099.1599944,
+    "hash": "7ab6a95897fc905371fac9e18bf413d8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/src/data/counter.rs": {
+    "mtime": 1777777120.3781335,
+    "hash": "fe0d7e401515d9dc5f652e1e39c7655d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/src/data/mod.rs": {
+    "mtime": 1777777115.1975095,
+    "hash": "ccca2047f43c8a90dd2b1424f4c651ee"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/build.rs": {
+    "mtime": 1775501853.960966,
+    "hash": "bbbc1bdedf2d2550a9b593de96438de8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/hooks.rs": {
+    "mtime": 1777403074.0857668,
+    "hash": "eb78fb0b06635d4db524b362bf592ff9"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/solid/silcrow-solid.ts": {
+    "mtime": 1777598300.7589357,
+    "hash": "aa5e1832dd966d5c46e17c0d0b914302"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/solid/Counter.tsx": {
+    "mtime": 1777598305.5333326,
+    "hash": "1dd9e96b10bd5bb7b00ecede461aa23d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/params/integer.rs": {
+    "mtime": 1776713217.2016828,
+    "hash": "c2bb5c1781dbcef561fad62535274e43"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/api/products.rs": {
+    "mtime": 1775850070.2235646,
+    "hash": "95ebdda59957ac9baf7aa26eb29603e3"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/index.rs": {
+    "mtime": 1776510590.9900055,
+    "hash": "1f3d420d2f36605a1166f378dda2477f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/products/index.rs": {
+    "mtime": 1777056276.8565223,
+    "hash": "4995e5cf1bd2f5df35b3bc0c640fdb4d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/about/index.rs": {
+    "mtime": 1776510582.254777,
+    "hash": "9001049e851ff52f126cdca01463a32d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/live/index.rs": {
+    "mtime": 1777922096.464445,
+    "hash": "3c1c38efecac77f463723c2c27b19fef"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/react/silcrow-react.ts": {
+    "mtime": 1777767894.959855,
+    "hash": "ed1538c0bb3419241cd991a4765f9175"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/react/FragmentGrid.tsx": {
+    "mtime": 1777770025.3172996,
+    "hash": "4cb04d90a8b83836ab208507ff749bcb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/react/Counter.tsx": {
+    "mtime": 1777858497.5380127,
+    "hash": "50dfa93016fd3e98023e6fe314443dcd"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/react/Greeting.tsx": {
+    "mtime": 1777666739.4343631,
+    "hash": "2e5bcbb19a1664dc89a4e49db4a16262"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/widgets/product-grid.rs": {
+    "mtime": 1777688995.5052598,
+    "hash": "ea575df8f29bff3b4e790dea918d41d8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/widgets/user-card.rs": {
+    "mtime": 1776722976.180102,
+    "hash": "f55a7956069968bf8ebfabda828ffdd0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/src/main.rs": {
+    "mtime": 1777931838.0427768,
+    "hash": "1847f93f730ce912b7bb1d59ba3efb1e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/src/baked_pages.rs": {
+    "mtime": 1778187758.5181167,
+    "hash": "21fc633cceeb408e7e2d5cec5f11094a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
+    "mtime": 1777673037.6269417,
+    "hash": "0735d5e964c7b43c2f2419e8c54d465b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/GEMINI.md": {
+    "mtime": 1778222191.3375974,
+    "hash": "da79aa9343cd2b362206f03762160abc"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/AGENTS.md": {
+    "mtime": 1778222264.6546113,
+    "hash": "bfb47866061d98c6a7de672187a52da3"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CLAUDE.md": {
+    "mtime": 1778222084.723579,
+    "hash": "ef069a7a7b55ec3fa4498abe3154246b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/ui/Nav.html": {
+    "mtime": 1777833987.4308167,
+    "hash": "a340295e2c01134f534a413e0b4636cf"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/index.html": {
+    "mtime": 1777777264.3807218,
+    "hash": "80ee316a21dc22190a868fa0819c0a8b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/_layout.html": {
+    "mtime": 1777833439.9336765,
+    "hash": "e1148af2a74745c53632b287ff04fe6a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/isr-ssg/index.html": {
+    "mtime": 1777812951.5482445,
+    "hash": "52d6e0d386f810c98daafad178d45f73"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/isr/index.html": {
+    "mtime": 1777833477.4303026,
+    "hash": "17625ff059933eb839c05556b02e5dd7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/deferred/index.html": {
+    "mtime": 1777916579.127266,
+    "hash": "8f4d7c44f5aa40298b67c482cab2922f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/streaming/index.html": {
+    "mtime": 1777812990.7675664,
+    "hash": "0a04b3f01d83613a366f023f13838e55"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/ssg/index.html": {
+    "mtime": 1777812916.3116033,
+    "hash": "21170abc80718178ff4670da7bbedf54"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow-demos/pages/ssr/index.html": {
+    "mtime": 1777831628.0630815,
+    "hash": "6a103988da6ff009788a99b7aa76767e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/ui/Card.html": {
+    "mtime": 1777594215.7942483,
+    "hash": "d13b549d497bfe3415d5bc0f8119fd1f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/ui/ProductCard.html": {
+    "mtime": 1777594211.7002227,
+    "hash": "0a06d880f0a14965604341497822be68"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/ui/Nav.html": {
+    "mtime": 1777692086.8588321,
+    "hash": "ceae79a7f4a93f3c7119732e96376fb0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/examples/react-islands/README.md": {
+    "mtime": 1777588084.4607337,
+    "hash": "e9885b95de080f56d800c7ee27b785fd"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/index.html": {
+    "mtime": 1777858497.5372663,
+    "hash": "00c88b383bdd7b90278d0483f5672563"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/_layout.html": {
+    "mtime": 1777399642.6517632,
+    "hash": "195b56452adc8dd196bf79e9e1e294ba"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/_not_found.html": {
+    "mtime": 1776364661.9664493,
+    "hash": "b9b87417e948ac519f7517d631248cb2"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/_loading.html": {
+    "mtime": 1776381500.1852243,
+    "hash": "4d259f0ffd605f2f941ae39bd4a30bd4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/_error.html": {
+    "mtime": 1776364656.916935,
+    "hash": "877b58ac553350eec4a865b2dfcb2436"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/products/index.html": {
+    "mtime": 1777399653.0670269,
+    "hash": "4aad083863b464c56b7ae4c7e980cb4f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/about/index.html": {
+    "mtime": 1777399649.2241113,
+    "hash": "a81918bbdf72edbf5610bcf8c9d597c7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/live/index.html": {
+    "mtime": 1777858291.5588822,
+    "hash": "a0e427aaa074c37b2947c264640e0865"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/(admin)/stats.html": {
+    "mtime": 1776799637.9078937,
+    "hash": "d0f5cc5266aed7eb8b622615788cdbc5"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/(admin)/_layout.html": {
+    "mtime": 1776799878.860231,
+    "hash": "95811de4f6536b66d0147fc8d7810628"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/pages/(admin)/dashboard.html": {
+    "mtime": 1776800187.387255,
+    "hash": "f4d4b82255a3c1f33c334dd65d465cbb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/widgets/product-grid.html": {
+    "mtime": 1777688930.3532078,
+    "hash": "84674c6318604ba90fa0fa95f288cee4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/widgets/user-card.html": {
+    "mtime": 1776723000.4884152,
+    "hash": "ef70f3299222efa6ee559c3d5ed41958"
+  }
+}
