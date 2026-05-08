@@ -4,22 +4,6 @@
   "graph": {
     "hyperedges": [
       {
-        "id": "demo_rendering_modes_showcase",
-        "label": "pilcrow-demos pages demonstrate all Pilcrow rendering modes (SSR, SSG, ISR, ISR+SSG, deferred, streaming)",
-        "nodes": [
-          "pilcrow_demos_pages_ssr",
-          "pilcrow_demos_pages_ssg",
-          "pilcrow_demos_pages_isr",
-          "pilcrow_demos_pages_isr_ssg",
-          "pilcrow_demos_pages_deferred",
-          "pilcrow_demos_pages_streaming"
-        ],
-        "relation": "implement",
-        "confidence": "INFERRED",
-        "confidence_score": 0.95,
-        "source_file": "pilcrow-demos/pages"
-      },
-      {
         "id": "build_time_codegen_chain",
         "label": "Both apps trigger routekit codegen at build time via build.rs",
         "nodes": [
@@ -46,19 +30,6 @@
         "source_file": "sandbox/solid/silcrow-solid.ts"
       },
       {
-        "id": "baked_page_poc_flow",
-        "label": "Baked Page POC: store + patch registry + slot patching form atomic cache-update pattern",
-        "nodes": [
-          "baked_page_store",
-          "baked_patch_registry",
-          "slot_patching_pattern"
-        ],
-        "relation": "implement",
-        "confidence": "INFERRED",
-        "confidence_score": 0.9,
-        "source_file": "sandbox/src/baked_pages.rs"
-      },
-      {
         "id": "silcrow_react_island_pattern",
         "label": "Silcrow-React island pattern: silcrow-react.ts + Counter.tsx + FragmentGrid.tsx demonstrate React islands over Silcrow transport",
         "nodes": [
@@ -70,6 +41,19 @@
         "confidence": "EXTRACTED",
         "confidence_score": 0.95,
         "source_file": "sandbox/react/Counter.tsx"
+      },
+      {
+        "id": "baked_page_poc_flow",
+        "label": "Baked Page POC: store + patch registry + slot patching form atomic cache-update pattern",
+        "nodes": [
+          "baked_page_store",
+          "baked_patch_registry",
+          "slot_patching_pattern"
+        ],
+        "relation": "implement",
+        "confidence": "INFERRED",
+        "confidence_score": 0.9,
+        "source_file": "sandbox/src/baked_pages.rs"
       },
       {
         "id": "demos_rendering_models",
@@ -100,19 +84,6 @@
         "source_file": "pilcrow-demos/pages/ssr/index.html"
       },
       {
-        "id": "hyperedge_admin_route_group",
-        "label": "Admin route group: dashboard, stats, and layout form a nested route group with shared URL-stripped layout",
-        "nodes": [
-          "sandbox_admin_layout",
-          "sandbox_admin_dashboard",
-          "sandbox_admin_stats"
-        ],
-        "relation": "participate_in",
-        "confidence": "EXTRACTED",
-        "confidence_score": 1.0,
-        "source_file": "sandbox/pages/(admin)/_layout.html"
-      },
-      {
         "id": "hyperedge_sandbox_special_pages",
         "label": "Special route pages (_layout, _not_found, _loading, _error) form the sandbox's global page shell and fallback system",
         "nodes": [
@@ -125,6 +96,19 @@
         "confidence": "INFERRED",
         "confidence_score": 0.95,
         "source_file": "sandbox/pages/_layout.html"
+      },
+      {
+        "id": "hyperedge_admin_route_group",
+        "label": "Admin route group: dashboard, stats, and layout form a nested route group with shared URL-stripped layout",
+        "nodes": [
+          "sandbox_admin_layout",
+          "sandbox_admin_dashboard",
+          "sandbox_admin_stats"
+        ],
+        "relation": "participate_in",
+        "confidence": "EXTRACTED",
+        "confidence_score": 1.0,
+        "source_file": "sandbox/pages/(admin)/_layout.html"
       }
     ]
   },
@@ -135,7 +119,7 @@
       "source_file": "pilcrow-demos/build.rs",
       "source_location": "L1",
       "id": "pilcrow_demos_build_rs",
-      "community": 27,
+      "community": 28,
       "norm_label": "build.rs"
     },
     {
@@ -144,7 +128,7 @@
       "source_file": "pilcrow-demos/build.rs",
       "source_location": "L1",
       "id": "pilcrow_demos_build_main",
-      "community": 27,
+      "community": 28,
       "norm_label": "main()"
     },
     {
@@ -468,7 +452,7 @@
       "source_file": "pilcrow-demos/src/main.rs",
       "source_location": "L1",
       "id": "pilcrow_demos_src_main_rs",
-      "community": 19,
+      "community": 20,
       "norm_label": "main.rs"
     },
     {
@@ -477,7 +461,7 @@
       "source_file": "sandbox/src/main.rs",
       "source_location": "L6",
       "id": "src_main_main",
-      "community": 19,
+      "community": 20,
       "norm_label": "main()"
     },
     {
@@ -513,7 +497,7 @@
       "source_file": "pilcrow-demos/src/data/mod.rs",
       "source_location": "L1",
       "id": "pilcrow_demos_src_data_mod_rs",
-      "community": 34,
+      "community": 35,
       "norm_label": "mod.rs"
     },
     {
@@ -522,7 +506,7 @@
       "source_file": "sandbox/build.rs",
       "source_location": "L1",
       "id": "sandbox_build_rs",
-      "community": 28,
+      "community": 29,
       "norm_label": "build.rs"
     },
     {
@@ -531,7 +515,7 @@
       "source_file": "sandbox/build.rs",
       "source_location": "L1",
       "id": "sandbox_build_main",
-      "community": 28,
+      "community": 29,
       "norm_label": "main()"
     },
     {
@@ -576,7 +560,7 @@
       "source_file": "sandbox/solid/silcrow-solid.ts",
       "source_location": "L1",
       "id": "sandbox_solid_silcrow_solid_ts",
-      "community": 29,
+      "community": 30,
       "norm_label": "silcrow-solid.ts"
     },
     {
@@ -585,7 +569,7 @@
       "source_file": "sandbox/solid/silcrow-solid.ts",
       "source_location": "L31",
       "id": "solid_silcrow_solid_createsilcrowstore",
-      "community": 29,
+      "community": 30,
       "norm_label": "createsilcrowstore()"
     },
     {
@@ -594,7 +578,7 @@
       "source_file": "sandbox/solid/Counter.tsx",
       "source_location": "L1",
       "id": "sandbox_solid_counter_tsx",
-      "community": 20,
+      "community": 21,
       "norm_label": "counter.tsx"
     },
     {
@@ -603,7 +587,7 @@
       "source_file": "sandbox/solid/Counter.tsx",
       "source_location": "L3",
       "id": "solid_counter_props",
-      "community": 20,
+      "community": 21,
       "norm_label": "props"
     },
     {
@@ -612,7 +596,7 @@
       "source_file": "sandbox/solid/Counter.tsx",
       "source_location": "L7",
       "id": "solid_counter_counter",
-      "community": 20,
+      "community": 21,
       "norm_label": "counter()"
     },
     {
@@ -621,7 +605,7 @@
       "source_file": "sandbox/params/integer.rs",
       "source_location": "L1",
       "id": "sandbox_params_integer_rs",
-      "community": 30,
+      "community": 31,
       "norm_label": "integer.rs"
     },
     {
@@ -630,7 +614,7 @@
       "source_file": "sandbox/params/integer.rs",
       "source_location": "L2",
       "id": "params_integer_match_param",
-      "community": 30,
+      "community": 31,
       "norm_label": "match_param()"
     },
     {
@@ -639,7 +623,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L1",
       "id": "sandbox_api_products_rs",
-      "community": 6,
+      "community": 5,
       "norm_label": "products.rs"
     },
     {
@@ -648,7 +632,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L4",
       "id": "api_products_product",
-      "community": 6,
+      "community": 5,
       "norm_label": "product"
     },
     {
@@ -657,7 +641,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L12",
       "id": "api_products_apiresponse",
-      "community": 6,
+      "community": 5,
       "norm_label": "apiresponse"
     },
     {
@@ -666,7 +650,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L17",
       "id": "api_products_params",
-      "community": 6,
+      "community": 5,
       "norm_label": "params"
     },
     {
@@ -675,7 +659,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L21",
       "id": "api_products_get",
-      "community": 6,
+      "community": 5,
       "norm_label": "get()"
     },
     {
@@ -684,7 +668,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L38",
       "id": "api_products_render_cards",
-      "community": 6,
+      "community": 5,
       "norm_label": "render_cards()"
     },
     {
@@ -693,7 +677,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L64",
       "id": "api_products_escape",
-      "community": 6,
+      "community": 5,
       "norm_label": "escape()"
     },
     {
@@ -702,7 +686,7 @@
       "source_file": "sandbox/api/products.rs",
       "source_location": "L71",
       "id": "api_products_router",
-      "community": 6,
+      "community": 5,
       "norm_label": "router()"
     },
     {
@@ -720,7 +704,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L1",
       "id": "sandbox_pages_products_index_rs",
-      "community": 6,
+      "community": 5,
       "norm_label": "index.rs"
     },
     {
@@ -729,7 +713,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L7",
       "id": "products_index_apiresponse",
-      "community": 6,
+      "community": 5,
       "norm_label": "apiresponse"
     },
     {
@@ -738,7 +722,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L12",
       "id": "products_index_product",
-      "community": 6,
+      "community": 5,
       "norm_label": "product"
     },
     {
@@ -747,7 +731,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L19",
       "id": "products_index_productview",
-      "community": 6,
+      "community": 5,
       "norm_label": "productview"
     },
     {
@@ -756,7 +740,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L27",
       "id": "products_index_categoryinfo",
-      "community": 6,
+      "community": 5,
       "norm_label": "categoryinfo"
     },
     {
@@ -765,7 +749,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L32",
       "id": "products_index_category",
-      "community": 6,
+      "community": 5,
       "norm_label": "category"
     },
     {
@@ -774,7 +758,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L37",
       "id": "products_index_props",
-      "community": 6,
+      "community": 5,
       "norm_label": "props"
     },
     {
@@ -783,7 +767,7 @@
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L43",
       "id": "products_index_load",
-      "community": 6,
+      "community": 5,
       "norm_label": "load()"
     },
     {
@@ -792,7 +776,7 @@
       "source_file": "sandbox/pages/about/index.rs",
       "source_location": "L1",
       "id": "sandbox_pages_about_index_rs",
-      "community": 21,
+      "community": 22,
       "norm_label": "index.rs"
     },
     {
@@ -801,7 +785,7 @@
       "source_file": "sandbox/pages/about/index.rs",
       "source_location": "L1",
       "id": "about_index_props",
-      "community": 21,
+      "community": 22,
       "norm_label": "props"
     },
     {
@@ -810,7 +794,7 @@
       "source_file": "sandbox/pages/about/index.rs",
       "source_location": "L6",
       "id": "about_index_load",
-      "community": 21,
+      "community": 22,
       "norm_label": "load()"
     },
     {
@@ -1287,7 +1271,7 @@
       "source_file": "sandbox/react/Greeting.tsx",
       "source_location": "L1",
       "id": "sandbox_react_greeting_tsx",
-      "community": 22,
+      "community": 23,
       "norm_label": "greeting.tsx"
     },
     {
@@ -1296,7 +1280,7 @@
       "source_file": "sandbox/react/Greeting.tsx",
       "source_location": "L1",
       "id": "react_greeting_props",
-      "community": 22,
+      "community": 23,
       "norm_label": "props"
     },
     {
@@ -1305,7 +1289,7 @@
       "source_file": "sandbox/react/Greeting.tsx",
       "source_location": "L6",
       "id": "react_greeting_greeting",
-      "community": 22,
+      "community": 23,
       "norm_label": "greeting()"
     },
     {
@@ -1359,7 +1343,7 @@
       "source_file": "sandbox/widgets/user-card.rs",
       "source_location": "L1",
       "id": "sandbox_widgets_user_card_rs",
-      "community": 23,
+      "community": 24,
       "norm_label": "user-card.rs"
     },
     {
@@ -1368,7 +1352,7 @@
       "source_file": "sandbox/widgets/user-card.rs",
       "source_location": "L1",
       "id": "widgets_user_card_props",
-      "community": 23,
+      "community": 24,
       "norm_label": "props"
     },
     {
@@ -1377,7 +1361,7 @@
       "source_file": "sandbox/widgets/user-card.rs",
       "source_location": "L6",
       "id": "widgets_user_card_load",
-      "community": 23,
+      "community": 24,
       "norm_label": "load()"
     },
     {
@@ -1386,7 +1370,7 @@
       "source_file": "sandbox/src/main.rs",
       "source_location": "L1",
       "id": "sandbox_src_main_rs",
-      "community": 19,
+      "community": 20,
       "norm_label": "main.rs"
     },
     {
@@ -1989,7 +1973,7 @@
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L761",
       "id": "src_baked_pages_router",
-      "community": 6,
+      "community": 5,
       "norm_label": "router()"
     },
     {
@@ -2349,7 +2333,7 @@
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L1132",
       "id": "src_baked_pages_pageshape",
-      "community": 6,
+      "community": 5,
       "norm_label": "pageshape"
     },
     {
@@ -2358,7 +2342,7 @@
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L1138",
       "id": "src_baked_pages_pageshape_page_key",
-      "community": 6,
+      "community": 5,
       "norm_label": ".page_key()"
     },
     {
@@ -2367,7 +2351,7 @@
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L1145",
       "id": "src_baked_pages_pageshape_route",
-      "community": 6,
+      "community": 5,
       "norm_label": ".route()"
     },
     {
@@ -2376,7 +2360,7 @@
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L1152",
       "id": "src_baked_pages_pageshape_from_page_key",
-      "community": 6,
+      "community": 5,
       "norm_label": ".from_page_key()"
     },
     {
@@ -2623,8 +2607,21 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_build",
-      "community": 24,
+      "community": 25,
       "norm_label": "pilcrow-demos build.rs"
+    },
+    {
+      "label": "routekit::compile_current_crate_sources",
+      "file_type": "code",
+      "source_file": "pilcrow-demos/build.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "routekit_compile_current_crate",
+      "community": 25,
+      "norm_label": "routekit::compile_current_crate_sources"
     },
     {
       "label": "pilcrow-demos hooks.rs",
@@ -2636,7 +2633,7 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_hooks",
-      "community": 33,
+      "community": 34,
       "norm_label": "pilcrow-demos hooks.rs"
     },
     {
@@ -2649,7 +2646,7 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_index",
-      "community": 35,
+      "community": 36,
       "norm_label": "pilcrow-demos pages/index.rs"
     },
     {
@@ -2662,7 +2659,7 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_isr_ssg",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/isr-ssg/index.rs"
     },
     {
@@ -2675,8 +2672,22 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_isr",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/isr/index.rs"
+    },
+    {
+      "label": "ISR REVALIDATE constant pattern",
+      "file_type": "rationale",
+      "source_file": "pilcrow-demos/pages/isr/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Pages declare REVALIDATE (and optionally MAX_STALE, CACHE_TAGS) as pub const to signal stale-while-revalidate caching semantics to the Pilcrow runtime codegen.",
+      "id": "isr_revalidate_pattern",
+      "community": 6,
+      "norm_label": "isr revalidate constant pattern"
     },
     {
       "label": "pilcrow-demos pages/deferred/index.rs",
@@ -2688,8 +2699,22 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_deferred",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/deferred/index.rs"
+    },
+    {
+      "label": "AsyncValue/AsyncHtml deferred field pattern",
+      "file_type": "rationale",
+      "source_file": "pilcrow-demos/pages/deferred/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Props fields typed as AsyncValue<T> or AsyncHtml allow slow data to be spawned as background tasks and streamed into the HTML after initial response flush, enabling loading skeleton placeholders.",
+      "id": "deferred_asyncvalue_pattern",
+      "community": 6,
+      "norm_label": "asyncvalue/asynchtml deferred field pattern"
     },
     {
       "label": "pilcrow-demos pages/streaming/index.rs",
@@ -2701,8 +2726,22 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_streaming",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/streaming/index.rs"
+    },
+    {
+      "label": "STREAMING const pattern",
+      "file_type": "rationale",
+      "source_file": "pilcrow-demos/pages/streaming/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Pages set pub const STREAMING: bool = true to opt into incremental HTML streaming via the Pilcrow runtime.",
+      "id": "streaming_const_pattern",
+      "community": 6,
+      "norm_label": "streaming const pattern"
     },
     {
       "label": "pilcrow-demos pages/ssg/index.rs",
@@ -2714,8 +2753,22 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_ssg",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/ssg/index.rs"
+    },
+    {
+      "label": "SSG PRERENDER constant pattern",
+      "file_type": "rationale",
+      "source_file": "pilcrow-demos/pages/ssg/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Pages set pub const PRERENDER: bool = true to opt into static site generation at build time.",
+      "id": "ssg_prerender_pattern",
+      "community": 6,
+      "norm_label": "ssg prerender constant pattern"
     },
     {
       "label": "pilcrow-demos pages/ssr/index.rs",
@@ -2727,7 +2780,7 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_pages_ssr",
-      "community": 5,
+      "community": 6,
       "norm_label": "pilcrow-demos pages/ssr/index.rs"
     },
     {
@@ -2740,8 +2793,21 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_main",
-      "community": 31,
+      "community": 32,
       "norm_label": "pilcrow-demos src/main.rs"
+    },
+    {
+      "label": "pilcrow_web::pilcrow_app! macro",
+      "file_type": "code",
+      "source_file": "pilcrow-demos/src/main.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "pilcrow_web_pilcrow_app_macro",
+      "community": 32,
+      "norm_label": "pilcrow_web::pilcrow_app! macro"
     },
     {
       "label": "pilcrow-demos src/data/counter.rs",
@@ -2753,8 +2819,21 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_data_counter",
-      "community": 32,
+      "community": 33,
       "norm_label": "pilcrow-demos src/data/counter.rs"
+    },
+    {
+      "label": "data::counter::increment (atomic render counter)",
+      "file_type": "code",
+      "source_file": "pilcrow-demos/src/data/counter.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "pilcrow_demos_counter_increment",
+      "community": 6,
+      "norm_label": "data::counter::increment (atomic render counter)"
     },
     {
       "label": "pilcrow-demos src/data/mod.rs",
@@ -2766,7 +2845,7 @@
       "author": null,
       "contributor": null,
       "id": "pilcrow_demos_data_mod",
-      "community": 32,
+      "community": 33,
       "norm_label": "pilcrow-demos src/data/mod.rs"
     },
     {
@@ -2779,7 +2858,7 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_build",
-      "community": 24,
+      "community": 25,
       "norm_label": "sandbox build.rs"
     },
     {
@@ -2792,7 +2871,7 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_hooks",
-      "community": 33,
+      "community": 34,
       "norm_label": "sandbox hooks.rs"
     },
     {
@@ -2807,110 +2886,6 @@
       "id": "sandbox_solid_silcrow_solid",
       "community": 10,
       "norm_label": "sandbox solid/silcrow-solid.ts"
-    },
-    {
-      "label": "sandbox solid/Counter.tsx",
-      "file_type": "code",
-      "source_file": "sandbox/solid/Counter.tsx",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_solid_counter",
-      "community": 10,
-      "norm_label": "sandbox solid/counter.tsx"
-    },
-    {
-      "label": "sandbox params/integer.rs",
-      "file_type": "code",
-      "source_file": "sandbox/params/integer.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_params_integer",
-      "community": 36,
-      "norm_label": "sandbox params/integer.rs"
-    },
-    {
-      "label": "sandbox api/products.rs",
-      "file_type": "code",
-      "source_file": "sandbox/api/products.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_api_products",
-      "community": 5,
-      "norm_label": "sandbox api/products.rs"
-    },
-    {
-      "label": "sandbox pages/index.rs",
-      "file_type": "code",
-      "source_file": "sandbox/pages/index.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_index",
-      "community": 12,
-      "norm_label": "sandbox pages/index.rs"
-    },
-    {
-      "label": "sandbox pages/products/index.rs",
-      "file_type": "code",
-      "source_file": "sandbox/pages/products/index.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_products",
-      "community": 5,
-      "norm_label": "sandbox pages/products/index.rs"
-    },
-    {
-      "label": "routekit::compile_current_crate_sources",
-      "file_type": "code",
-      "source_file": "pilcrow-demos/build.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "routekit_compile_current_crate",
-      "community": 24,
-      "norm_label": "routekit::compile_current_crate_sources"
-    },
-    {
-      "label": "pilcrow_web::pilcrow_app! macro",
-      "file_type": "code",
-      "source_file": "pilcrow-demos/src/main.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "pilcrow_web_pilcrow_app_macro",
-      "community": 31,
-      "norm_label": "pilcrow_web::pilcrow_app! macro"
-    },
-    {
-      "label": "data::counter::increment (atomic render counter)",
-      "file_type": "code",
-      "source_file": "pilcrow-demos/src/data/counter.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "pilcrow_demos_counter_increment",
-      "community": 5,
-      "norm_label": "data::counter::increment (atomic render counter)"
     },
     {
       "label": "Silcrow.subscribe API",
@@ -2953,60 +2928,69 @@
       "norm_label": "createsilcrowstore \u2014 solidjs store bound to silcrow atom scope"
     },
     {
-      "label": "ISR REVALIDATE constant pattern",
-      "file_type": "rationale",
-      "source_file": "pilcrow-demos/pages/isr/index.rs",
+      "label": "sandbox solid/Counter.tsx",
+      "file_type": "code",
+      "source_file": "sandbox/solid/Counter.tsx",
       "source_location": null,
       "source_url": null,
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "rationale": "Pages declare REVALIDATE (and optionally MAX_STALE, CACHE_TAGS) as pub const to signal stale-while-revalidate caching semantics to the Pilcrow runtime codegen.",
-      "id": "isr_revalidate_pattern",
-      "community": 5,
-      "norm_label": "isr revalidate constant pattern"
+      "id": "sandbox_solid_counter",
+      "community": 10,
+      "norm_label": "sandbox solid/counter.tsx"
     },
     {
-      "label": "SSG PRERENDER constant pattern",
-      "file_type": "rationale",
-      "source_file": "pilcrow-demos/pages/ssg/index.rs",
+      "label": "sandbox params/integer.rs",
+      "file_type": "code",
+      "source_file": "sandbox/params/integer.rs",
       "source_location": null,
       "source_url": null,
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "rationale": "Pages set pub const PRERENDER: bool = true to opt into static site generation at build time.",
-      "id": "ssg_prerender_pattern",
-      "community": 5,
-      "norm_label": "ssg prerender constant pattern"
+      "id": "sandbox_params_integer",
+      "community": 37,
+      "norm_label": "sandbox params/integer.rs"
     },
     {
-      "label": "AsyncValue/AsyncHtml deferred field pattern",
-      "file_type": "rationale",
-      "source_file": "pilcrow-demos/pages/deferred/index.rs",
+      "label": "sandbox api/products.rs",
+      "file_type": "code",
+      "source_file": "sandbox/api/products.rs",
       "source_location": null,
       "source_url": null,
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "rationale": "Props fields typed as AsyncValue<T> or AsyncHtml allow slow data to be spawned as background tasks and streamed into the HTML after initial response flush, enabling loading skeleton placeholders.",
-      "id": "deferred_asyncvalue_pattern",
-      "community": 5,
-      "norm_label": "asyncvalue/asynchtml deferred field pattern"
+      "id": "sandbox_api_products",
+      "community": 6,
+      "norm_label": "sandbox api/products.rs"
     },
     {
-      "label": "STREAMING const pattern",
-      "file_type": "rationale",
-      "source_file": "pilcrow-demos/pages/streaming/index.rs",
+      "label": "sandbox pages/index.rs",
+      "file_type": "code",
+      "source_file": "sandbox/pages/index.rs",
       "source_location": null,
       "source_url": null,
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "rationale": "Pages set pub const STREAMING: bool = true to opt into incremental HTML streaming via the Pilcrow runtime.",
-      "id": "streaming_const_pattern",
-      "community": 5,
-      "norm_label": "streaming const pattern"
+      "id": "sandbox_pages_index",
+      "community": 11,
+      "norm_label": "sandbox pages/index.rs"
+    },
+    {
+      "label": "sandbox pages/products/index.rs",
+      "file_type": "code",
+      "source_file": "sandbox/pages/products/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_products",
+      "community": 6,
+      "norm_label": "sandbox pages/products/index.rs"
     },
     {
       "label": "About Page Handler",
@@ -3018,7 +3002,7 @@
       "author": null,
       "contributor": null,
       "id": "about_page_rs",
-      "community": 37,
+      "community": 38,
       "norm_label": "about page handler"
     },
     {
@@ -3035,6 +3019,19 @@
       "norm_label": "live page handler (sse counter)"
     },
     {
+      "label": "LiveProp Pattern \u2014 tokio watch channel for live SSE props",
+      "file_type": "rationale",
+      "source_file": "sandbox/pages/live/index.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "liveprop_pattern",
+      "community": 7,
+      "norm_label": "liveprop pattern \u2014 tokio watch channel for live sse props"
+    },
+    {
       "label": "silcrow-react TypeScript bindings",
       "file_type": "code",
       "source_file": "sandbox/react/silcrow-react.ts",
@@ -3046,6 +3043,19 @@
       "id": "silcrow_react_ts",
       "community": 7,
       "norm_label": "silcrow-react typescript bindings"
+    },
+    {
+      "label": "Silcrow-React Bridge \u2014 useSyncExternalStore + window.Silcrow",
+      "file_type": "rationale",
+      "source_file": "sandbox/react/silcrow-react.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "silcrow_react_bridge",
+      "community": 7,
+      "norm_label": "silcrow-react bridge \u2014 usesyncexternalstore + window.silcrow"
     },
     {
       "label": "FragmentGrid React Component",
@@ -3083,7 +3093,7 @@
       "author": null,
       "contributor": null,
       "id": "greeting_tsx",
-      "community": 38,
+      "community": 39,
       "norm_label": "greeting react component (ssr island)"
     },
     {
@@ -3109,7 +3119,7 @@
       "author": null,
       "contributor": null,
       "id": "user_card_widget_rs",
-      "community": 39,
+      "community": 40,
       "norm_label": "user card widget handler"
     },
     {
@@ -3122,7 +3132,7 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_main_rs",
-      "community": 11,
+      "community": 12,
       "norm_label": "sandbox app entry point"
     },
     {
@@ -3135,8 +3145,47 @@
       "author": null,
       "contributor": null,
       "id": "baked_pages_rs",
-      "community": 11,
+      "community": 12,
       "norm_label": "baked pages poc (slot patching, atomic fs)"
+    },
+    {
+      "label": "BakedPageStore \u2014 filesystem abstraction for baked HTML",
+      "file_type": "rationale",
+      "source_file": "sandbox/src/baked_pages.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "baked_page_store",
+      "community": 12,
+      "norm_label": "bakedpagestore \u2014 filesystem abstraction for baked html"
+    },
+    {
+      "label": "BakedPatchRegistry \u2014 dependency-keyed slot recompute registry",
+      "file_type": "rationale",
+      "source_file": "sandbox/src/baked_pages.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "baked_patch_registry",
+      "community": 12,
+      "norm_label": "bakedpatchregistry \u2014 dependency-keyed slot recompute registry"
+    },
+    {
+      "label": "Slot Patching Pattern \u2014 HTML comment markers + atomic writes",
+      "file_type": "rationale",
+      "source_file": "sandbox/src/baked_pages.rs",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "slot_patching_pattern",
+      "community": 12,
+      "norm_label": "slot patching pattern \u2014 html comment markers + atomic writes"
     },
     {
       "label": "Pilcrow+Silcrow Integration Context Doc",
@@ -3152,19 +3201,6 @@
       "norm_label": "pilcrow+silcrow integration context doc"
     },
     {
-      "label": "AGENTS.md \u2014 Agent Instructions",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "agents_md",
-      "community": 18,
-      "norm_label": "agents.md \u2014 agent instructions"
-    },
-    {
       "label": "GEMINI.md \u2014 Gemini Agent Instructions",
       "file_type": "document",
       "source_file": "GEMINI.md",
@@ -3176,6 +3212,19 @@
       "id": "gemini_md",
       "community": 18,
       "norm_label": "gemini.md \u2014 gemini agent instructions"
+    },
+    {
+      "label": "AGENTS.md \u2014 Agent Instructions",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "agents_md",
+      "community": 18,
+      "norm_label": "agents.md \u2014 agent instructions"
     },
     {
       "label": "CLAUDE.md \u2014 Claude Code Project Instructions",
@@ -3269,71 +3318,6 @@
       "norm_label": "deferred fields demo page template"
     },
     {
-      "label": "BakedPageStore \u2014 filesystem abstraction for baked HTML",
-      "file_type": "rationale",
-      "source_file": "sandbox/src/baked_pages.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "baked_page_store",
-      "community": 11,
-      "norm_label": "bakedpagestore \u2014 filesystem abstraction for baked html"
-    },
-    {
-      "label": "BakedPatchRegistry \u2014 dependency-keyed slot recompute registry",
-      "file_type": "rationale",
-      "source_file": "sandbox/src/baked_pages.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "baked_patch_registry",
-      "community": 11,
-      "norm_label": "bakedpatchregistry \u2014 dependency-keyed slot recompute registry"
-    },
-    {
-      "label": "Slot Patching Pattern \u2014 HTML comment markers + atomic writes",
-      "file_type": "rationale",
-      "source_file": "sandbox/src/baked_pages.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "slot_patching_pattern",
-      "community": 11,
-      "norm_label": "slot patching pattern \u2014 html comment markers + atomic writes"
-    },
-    {
-      "label": "Silcrow-React Bridge \u2014 useSyncExternalStore + window.Silcrow",
-      "file_type": "rationale",
-      "source_file": "sandbox/react/silcrow-react.ts",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "silcrow_react_bridge",
-      "community": 7,
-      "norm_label": "silcrow-react bridge \u2014 usesyncexternalstore + window.silcrow"
-    },
-    {
-      "label": "LiveProp Pattern \u2014 tokio watch channel for live SSE props",
-      "file_type": "rationale",
-      "source_file": "sandbox/pages/live/index.rs",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "liveprop_pattern",
-      "community": 7,
-      "norm_label": "liveprop pattern \u2014 tokio watch channel for live sse props"
-    },
-    {
       "label": "Streaming SSR Demo Page",
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.html",
@@ -3343,8 +3327,21 @@
       "author": null,
       "contributor": null,
       "id": "demos_streaming_page",
-      "community": 5,
+      "community": 6,
       "norm_label": "streaming ssr demo page"
+    },
+    {
+      "label": "SSR Streaming: shell-first with deferred patch via window.__ps",
+      "file_type": "rationale",
+      "source_file": "pilcrow-demos/pages/streaming/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "streaming_ssr_pattern",
+      "community": 6,
+      "norm_label": "ssr streaming: shell-first with deferred patch via window.__ps"
     },
     {
       "label": "SSG Demo Page",
@@ -3356,7 +3353,7 @@
       "author": null,
       "contributor": null,
       "id": "demos_ssg_page",
-      "community": 5,
+      "community": 6,
       "norm_label": "ssg demo page"
     },
     {
@@ -3369,7 +3366,7 @@
       "author": null,
       "contributor": null,
       "id": "demos_ssr_page",
-      "community": 5,
+      "community": 6,
       "norm_label": "ssr demo page"
     },
     {
@@ -3382,7 +3379,7 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_ui_card",
-      "community": 40,
+      "community": 41,
       "norm_label": "card ui component"
     },
     {
@@ -3395,7 +3392,7 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_ui_productcard",
-      "community": 5,
+      "community": 6,
       "norm_label": "productcard ui component"
     },
     {
@@ -3408,190 +3405,8 @@
       "author": null,
       "contributor": null,
       "id": "sandbox_ui_nav",
-      "community": 25,
+      "community": 26,
       "norm_label": "nav ui component"
-    },
-    {
-      "label": "React Islands Example README",
-      "file_type": "document",
-      "source_file": "sandbox/examples/react-islands/README.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "react_islands_readme",
-      "community": 12,
-      "norm_label": "react islands example readme"
-    },
-    {
-      "label": "Sandbox Root Layout",
-      "file_type": "code",
-      "source_file": "sandbox/pages/_layout.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_layout",
-      "community": 25,
-      "norm_label": "sandbox root layout"
-    },
-    {
-      "label": "404 Not Found Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/_not_found.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_not_found",
-      "community": 26,
-      "norm_label": "404 not found page"
-    },
-    {
-      "label": "Loading Skeleton Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/_loading.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_loading",
-      "community": 26,
-      "norm_label": "loading skeleton page"
-    },
-    {
-      "label": "Error Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/_error.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_error",
-      "community": 26,
-      "norm_label": "error page"
-    },
-    {
-      "label": "About Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/about/index.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_about",
-      "community": 41,
-      "norm_label": "about page"
-    },
-    {
-      "label": "Live Props Demo Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/live/index.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_pages_live",
-      "community": 42,
-      "norm_label": "live props demo page"
-    },
-    {
-      "label": "Admin Stats Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/(admin)/stats.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_admin_stats",
-      "community": 5,
-      "norm_label": "admin stats page"
-    },
-    {
-      "label": "Admin Route Group Layout",
-      "file_type": "code",
-      "source_file": "sandbox/pages/(admin)/_layout.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_admin_layout",
-      "community": 5,
-      "norm_label": "admin route group layout"
-    },
-    {
-      "label": "Admin Dashboard Page",
-      "file_type": "code",
-      "source_file": "sandbox/pages/(admin)/dashboard.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_admin_dashboard",
-      "community": 5,
-      "norm_label": "admin dashboard page"
-    },
-    {
-      "label": "Product Grid Widget",
-      "file_type": "code",
-      "source_file": "sandbox/widgets/product-grid.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_widgets_product_grid",
-      "community": 12,
-      "norm_label": "product grid widget"
-    },
-    {
-      "label": "User Card Widget",
-      "file_type": "code",
-      "source_file": "sandbox/widgets/user-card.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "sandbox_widgets_user_card",
-      "community": 43,
-      "norm_label": "user card widget"
-    },
-    {
-      "label": "SSR Streaming: shell-first with deferred patch via window.__ps",
-      "file_type": "rationale",
-      "source_file": "pilcrow-demos/pages/streaming/index.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "streaming_ssr_pattern",
-      "community": 5,
-      "norm_label": "ssr streaming: shell-first with deferred patch via window.__ps"
-    },
-    {
-      "label": "Route groups with parentheses strip URL prefix but apply nested layout",
-      "file_type": "rationale",
-      "source_file": "sandbox/pages/(admin)/_layout.html",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "route_group_pattern",
-      "community": 5,
-      "norm_label": "route groups with parentheses strip url prefix but apply nested layout"
     },
     {
       "label": "s-boost Silcrow directive for SPA navigation",
@@ -3603,8 +3418,21 @@
       "author": null,
       "contributor": null,
       "id": "silcrow_boost_directive",
-      "community": 25,
+      "community": 26,
       "norm_label": "s-boost silcrow directive for spa navigation"
+    },
+    {
+      "label": "React Islands Example README",
+      "file_type": "document",
+      "source_file": "sandbox/examples/react-islands/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "react_islands_readme",
+      "community": 11,
+      "norm_label": "react islands example readme"
     },
     {
       "label": "<react> custom element for mounting React islands with strategy attribute",
@@ -3616,7 +3444,7 @@
       "author": null,
       "contributor": null,
       "id": "react_island_tag",
-      "community": 12,
+      "community": 11,
       "norm_label": "<react> custom element for mounting react islands with strategy attribute"
     },
     {
@@ -3629,8 +3457,164 @@
       "author": null,
       "contributor": null,
       "id": "solid_island_tag",
-      "community": 12,
+      "community": 11,
       "norm_label": "<solid> custom element for mounting solid islands"
+    },
+    {
+      "label": "Sandbox Root Layout",
+      "file_type": "code",
+      "source_file": "sandbox/pages/_layout.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_layout",
+      "community": 26,
+      "norm_label": "sandbox root layout"
+    },
+    {
+      "label": "404 Not Found Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/_not_found.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_not_found",
+      "community": 27,
+      "norm_label": "404 not found page"
+    },
+    {
+      "label": "Loading Skeleton Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/_loading.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_loading",
+      "community": 27,
+      "norm_label": "loading skeleton page"
+    },
+    {
+      "label": "Error Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/_error.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_error",
+      "community": 27,
+      "norm_label": "error page"
+    },
+    {
+      "label": "About Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/about/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_about",
+      "community": 42,
+      "norm_label": "about page"
+    },
+    {
+      "label": "Live Props Demo Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/live/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_pages_live",
+      "community": 43,
+      "norm_label": "live props demo page"
+    },
+    {
+      "label": "Admin Stats Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/(admin)/stats.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_admin_stats",
+      "community": 19,
+      "norm_label": "admin stats page"
+    },
+    {
+      "label": "Admin Route Group Layout",
+      "file_type": "code",
+      "source_file": "sandbox/pages/(admin)/_layout.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_admin_layout",
+      "community": 19,
+      "norm_label": "admin route group layout"
+    },
+    {
+      "label": "Route groups with parentheses strip URL prefix but apply nested layout",
+      "file_type": "rationale",
+      "source_file": "sandbox/pages/(admin)/_layout.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "route_group_pattern",
+      "community": 19,
+      "norm_label": "route groups with parentheses strip url prefix but apply nested layout"
+    },
+    {
+      "label": "Admin Dashboard Page",
+      "file_type": "code",
+      "source_file": "sandbox/pages/(admin)/dashboard.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_admin_dashboard",
+      "community": 19,
+      "norm_label": "admin dashboard page"
+    },
+    {
+      "label": "Product Grid Widget",
+      "file_type": "code",
+      "source_file": "sandbox/widgets/product-grid.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_widgets_product_grid",
+      "community": 11,
+      "norm_label": "product grid widget"
+    },
+    {
+      "label": "User Card Widget",
+      "file_type": "code",
+      "source_file": "sandbox/widgets/user-card.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "sandbox_widgets_user_card",
+      "community": 44,
+      "norm_label": "user card widget"
     }
   ],
   "links": [
@@ -9522,6 +9506,16 @@
       "target": "sandbox_build"
     },
     {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/build.rs",
+      "source_location": "line 2",
+      "weight": 1.0,
+      "source": "sandbox_build",
+      "target": "routekit_compile_current_crate"
+    },
+    {
       "relation": "semantically_similar_to",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
@@ -9582,6 +9576,26 @@
       "target": "isr_revalidate_pattern"
     },
     {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
+      "source_location": null,
+      "weight": 0.8,
+      "source": "isr_revalidate_pattern",
+      "target": "ssg_prerender_pattern"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/pages/products/index.rs",
+      "source_location": "line 3",
+      "weight": 1.0,
+      "source": "sandbox_pages_products",
+      "target": "isr_revalidate_pattern"
+    },
+    {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -9600,6 +9614,16 @@
       "weight": 1.0,
       "source": "pilcrow_demos_pages_deferred",
       "target": "deferred_asyncvalue_pattern"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "pilcrow-demos/pages/deferred/index.rs",
+      "source_location": null,
+      "weight": 0.8,
+      "source": "deferred_asyncvalue_pattern",
+      "target": "streaming_const_pattern"
     },
     {
       "relation": "calls",
@@ -9642,6 +9666,36 @@
       "target": "ssg_prerender_pattern"
     },
     {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "pilcrow-demos/pages/streaming/index.html",
+      "source_location": null,
+      "weight": 0.65,
+      "source": "streaming_ssr_pattern",
+      "target": "ssg_prerender_pattern"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "pilcrow-demos/pages/ssg/index.html",
+      "source_location": null,
+      "weight": 1.0,
+      "source": "demos_ssg_page",
+      "target": "ssg_prerender_pattern"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.2,
+      "source_file": "pilcrow-demos/pages/ssg/index.html",
+      "source_location": null,
+      "weight": 0.2,
+      "source": "ssg_prerender_pattern",
+      "target": "route_group_pattern"
+    },
+    {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -9670,16 +9724,6 @@
       "weight": 1.0,
       "source": "pilcrow_demos_data_mod",
       "target": "pilcrow_demos_data_counter"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/build.rs",
-      "source_location": "line 2",
-      "weight": 1.0,
-      "source": "sandbox_build",
-      "target": "routekit_compile_current_crate"
     },
     {
       "relation": "calls",
@@ -9752,16 +9796,6 @@
       "target": "solid_island_tag"
     },
     {
-      "relation": "implements",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/pages/products/index.rs",
-      "source_location": "line 3",
-      "weight": 1.0,
-      "source": "sandbox_pages_products",
-      "target": "isr_revalidate_pattern"
-    },
-    {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -9772,56 +9806,6 @@
       "target": "sandbox_ui_productcard"
     },
     {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
-      "source_location": null,
-      "weight": 0.8,
-      "source": "isr_revalidate_pattern",
-      "target": "ssg_prerender_pattern"
-    },
-    {
-      "relation": "conceptually_related_to",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "pilcrow-demos/pages/ssg/index.html",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "demos_ssg_page",
-      "target": "ssg_prerender_pattern"
-    },
-    {
-      "relation": "semantically_similar_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.65,
-      "source_file": "pilcrow-demos/pages/streaming/index.html",
-      "source_location": null,
-      "weight": 0.65,
-      "source": "streaming_ssr_pattern",
-      "target": "ssg_prerender_pattern"
-    },
-    {
-      "relation": "conceptually_related_to",
-      "confidence": "AMBIGUOUS",
-      "confidence_score": 0.2,
-      "source_file": "pilcrow-demos/pages/ssg/index.html",
-      "source_location": null,
-      "weight": 0.2,
-      "source": "ssg_prerender_pattern",
-      "target": "route_group_pattern"
-    },
-    {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "pilcrow-demos/pages/deferred/index.rs",
-      "source_location": null,
-      "weight": 0.8,
-      "source": "deferred_asyncvalue_pattern",
-      "target": "streaming_const_pattern"
-    },
-    {
       "relation": "implements",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
@@ -9830,6 +9814,26 @@
       "weight": 1.0,
       "source": "live_page_rs",
       "target": "liveprop_pattern"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "sandbox/pages/live/index.rs",
+      "source_location": null,
+      "weight": 0.6,
+      "source": "liveprop_pattern",
+      "target": "silcrow_react_bridge"
+    },
+    {
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "sandbox/react/silcrow-react.ts",
+      "source_location": "126-132",
+      "weight": 1.0,
+      "source": "silcrow_react_ts",
+      "target": "silcrow_react_bridge"
     },
     {
       "relation": "calls",
@@ -9850,16 +9854,6 @@
       "weight": 0.7,
       "source": "silcrow_react_ts",
       "target": "counter_tsx"
-    },
-    {
-      "relation": "implements",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "sandbox/react/silcrow-react.ts",
-      "source_location": "126-132",
-      "weight": 1.0,
-      "source": "silcrow_react_ts",
-      "target": "silcrow_react_bridge"
     },
     {
       "relation": "shares_data_with",
@@ -9915,21 +9909,31 @@
       "relation": "conceptually_related_to",
       "confidence": "INFERRED",
       "confidence_score": 0.85,
+      "source_file": "sandbox/src/baked_pages.rs",
+      "source_location": null,
+      "weight": 0.8,
+      "source": "baked_page_store",
+      "target": "slot_patching_pattern"
+    },
+    {
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/src/baked_pages.rs",
+      "source_location": "644-740",
+      "weight": 1.0,
+      "source": "baked_patch_registry",
+      "target": "baked_page_store"
+    },
+    {
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
       "source_file": "AGENTS.md",
       "source_location": null,
       "weight": 0.7,
       "source": "context_md",
       "target": "agents_md"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "AGENTS.md",
-      "source_location": "3",
-      "weight": 1.0,
-      "source": "agents_md",
-      "target": "claude_md"
     },
     {
       "relation": "semantically_similar_to",
@@ -9939,6 +9943,16 @@
       "source_location": null,
       "weight": 0.7,
       "source": "gemini_md",
+      "target": "claude_md"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AGENTS.md",
+      "source_location": "3",
+      "weight": 1.0,
+      "source": "agents_md",
       "target": "claude_md"
     },
     {
@@ -9993,36 +10007,6 @@
     },
     {
       "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "sandbox/src/baked_pages.rs",
-      "source_location": null,
-      "weight": 0.8,
-      "source": "baked_page_store",
-      "target": "slot_patching_pattern"
-    },
-    {
-      "relation": "shares_data_with",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/src/baked_pages.rs",
-      "source_location": "644-740",
-      "weight": 1.0,
-      "source": "baked_patch_registry",
-      "target": "baked_page_store"
-    },
-    {
-      "relation": "semantically_similar_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.75,
-      "source_file": "sandbox/pages/live/index.rs",
-      "source_location": null,
-      "weight": 0.6,
-      "source": "liveprop_pattern",
-      "target": "silcrow_react_bridge"
-    },
-    {
-      "relation": "conceptually_related_to",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "pilcrow-demos/pages/streaming/index.html",
@@ -10052,16 +10036,6 @@
       "target": "demos_ssg_page"
     },
     {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/pages/_layout.html",
-      "source_location": "line 107",
-      "weight": 1.0,
-      "source": "sandbox_pages_layout",
-      "target": "sandbox_ui_nav"
-    },
-    {
       "relation": "conceptually_related_to",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -10072,6 +10046,16 @@
       "target": "silcrow_boost_directive"
     },
     {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/pages/_layout.html",
+      "source_location": "line 107",
+      "weight": 1.0,
+      "source": "sandbox_pages_layout",
+      "target": "sandbox_ui_nav"
+    },
+    {
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
@@ -10079,6 +10063,26 @@
       "source_location": null,
       "weight": 1.0,
       "source": "react_islands_readme",
+      "target": "react_island_tag"
+    },
+    {
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "sandbox/pages/index.html",
+      "source_location": null,
+      "weight": 0.85,
+      "source": "react_island_tag",
+      "target": "solid_island_tag"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/widgets/product-grid.html",
+      "source_location": "line 3",
+      "weight": 1.0,
+      "source": "sandbox_widgets_product_grid",
       "target": "react_island_tag"
     },
     {
@@ -10150,45 +10154,9 @@
       "weight": 1.0,
       "source": "sandbox_admin_dashboard",
       "target": "route_group_pattern"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/widgets/product-grid.html",
-      "source_location": "line 3",
-      "weight": 1.0,
-      "source": "sandbox_widgets_product_grid",
-      "target": "react_island_tag"
-    },
-    {
-      "relation": "semantically_similar_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "source_file": "sandbox/pages/index.html",
-      "source_location": null,
-      "weight": 0.85,
-      "source": "react_island_tag",
-      "target": "solid_island_tag"
     }
   ],
   "hyperedges": [
-    {
-      "id": "demo_rendering_modes_showcase",
-      "label": "pilcrow-demos pages demonstrate all Pilcrow rendering modes (SSR, SSG, ISR, ISR+SSG, deferred, streaming)",
-      "nodes": [
-        "pilcrow_demos_pages_ssr",
-        "pilcrow_demos_pages_ssg",
-        "pilcrow_demos_pages_isr",
-        "pilcrow_demos_pages_isr_ssg",
-        "pilcrow_demos_pages_deferred",
-        "pilcrow_demos_pages_streaming"
-      ],
-      "relation": "implement",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "pilcrow-demos/pages"
-    },
     {
       "id": "build_time_codegen_chain",
       "label": "Both apps trigger routekit codegen at build time via build.rs",
@@ -10216,19 +10184,6 @@
       "source_file": "sandbox/solid/silcrow-solid.ts"
     },
     {
-      "id": "baked_page_poc_flow",
-      "label": "Baked Page POC: store + patch registry + slot patching form atomic cache-update pattern",
-      "nodes": [
-        "baked_page_store",
-        "baked_patch_registry",
-        "slot_patching_pattern"
-      ],
-      "relation": "implement",
-      "confidence": "INFERRED",
-      "confidence_score": 0.9,
-      "source_file": "sandbox/src/baked_pages.rs"
-    },
-    {
       "id": "silcrow_react_island_pattern",
       "label": "Silcrow-React island pattern: silcrow-react.ts + Counter.tsx + FragmentGrid.tsx demonstrate React islands over Silcrow transport",
       "nodes": [
@@ -10240,6 +10195,19 @@
       "confidence": "EXTRACTED",
       "confidence_score": 0.95,
       "source_file": "sandbox/react/Counter.tsx"
+    },
+    {
+      "id": "baked_page_poc_flow",
+      "label": "Baked Page POC: store + patch registry + slot patching form atomic cache-update pattern",
+      "nodes": [
+        "baked_page_store",
+        "baked_patch_registry",
+        "slot_patching_pattern"
+      ],
+      "relation": "implement",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "sandbox/src/baked_pages.rs"
     },
     {
       "id": "demos_rendering_models",
@@ -10270,19 +10238,6 @@
       "source_file": "pilcrow-demos/pages/ssr/index.html"
     },
     {
-      "id": "hyperedge_admin_route_group",
-      "label": "Admin route group: dashboard, stats, and layout form a nested route group with shared URL-stripped layout",
-      "nodes": [
-        "sandbox_admin_layout",
-        "sandbox_admin_dashboard",
-        "sandbox_admin_stats"
-      ],
-      "relation": "participate_in",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "sandbox/pages/(admin)/_layout.html"
-    },
-    {
       "id": "hyperedge_sandbox_special_pages",
       "label": "Special route pages (_layout, _not_found, _loading, _error) form the sandbox's global page shell and fallback system",
       "nodes": [
@@ -10295,7 +10250,20 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "sandbox/pages/_layout.html"
+    },
+    {
+      "id": "hyperedge_admin_route_group",
+      "label": "Admin route group: dashboard, stats, and layout form a nested route group with shared URL-stripped layout",
+      "nodes": [
+        "sandbox_admin_layout",
+        "sandbox_admin_dashboard",
+        "sandbox_admin_stats"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "sandbox/pages/(admin)/_layout.html"
     }
   ],
-  "built_at_commit": "f3eff2b6dcfef719a92f1a7ac44f60337690ff93"
+  "built_at_commit": "c6aed5fedc84032e4a62087e765ead16b94010e3"
 }
