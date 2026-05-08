@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use pilcrow_web::axum::{
     extract::{Path, Query},
     response::{Html, IntoResponse, Response},
@@ -91,6 +93,19 @@ enum BakeEligibility {
     BuildTime,
     LazyOnFirstHit,
     NeverBake,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum BakedArtifactMode {
+    FullPage,
+    FragmentComposed,
+}
+
+impl Default for BakedArtifactMode {
+    fn default() -> Self {
+        Self::FullPage
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -189,8 +204,14 @@ impl StaleState {
 struct BakedPage {
     route_pattern: String,
     concrete_path: String,
+    #[serde(default)]
+    artifact_mode: BakedArtifactMode,
     html_path: String,
+    #[serde(default)]
+    body_path: String,
     metadata_path: String,
+    #[serde(default)]
+    layout_key: Option<String>,
     slots: Vec<BakedSlot>,
     dependency_keys: Vec<DependencyKey>,
     baked_at: u64,
@@ -216,23 +237,89 @@ impl BakedPage {
             }
         }
         let now = unix_timestamp();
+        let body_path = store
+            .html_path(&concrete_path)
+            .to_string_lossy()
+            .to_string();
         Self {
             route_pattern: route_pattern.into(),
-            html_path: store
-                .html_path(&concrete_path)
-                .to_string_lossy()
-                .to_string(),
+            artifact_mode: BakedArtifactMode::FullPage,
+            html_path: body_path.clone(),
+            body_path,
             metadata_path: store
                 .metadata_path(&concrete_path)
                 .to_string_lossy()
                 .to_string(),
             concrete_path,
+            layout_key: None,
             slots,
             dependency_keys,
             baked_at: now,
             last_accessed_at: now,
             render_load_version: RENDER_LOAD_VERSION.to_string(),
             stale_state: StaleState::fresh(),
+        }
+    }
+
+    fn fragment_composed(
+        route_pattern: impl Into<String>,
+        concrete_path: impl Into<String>,
+        layout_key: impl Into<String>,
+        slots: Vec<BakedSlot>,
+        store: &BakedPageStore,
+    ) -> Self {
+        let mut page = Self::new(route_pattern, concrete_path, slots, store);
+        page.artifact_mode = BakedArtifactMode::FragmentComposed;
+        page.layout_key = Some(layout_key.into());
+        page.body_path = store
+            .body_path(&page.concrete_path)
+            .to_string_lossy()
+            .to_string();
+        page.html_path = page.body_path.clone();
+        page
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BakedLayout {
+    key: String,
+    artifact_path: String,
+    slots: Vec<BakedSlot>,
+    version_hash: String,
+    baked_at: u64,
+}
+
+impl BakedLayout {
+    fn new(key: impl Into<String>, slots: Vec<BakedSlot>, store: &BakedPageStore) -> Self {
+        let key = key.into();
+        Self {
+            artifact_path: store.layout_path(&key).to_string_lossy().to_string(),
+            key,
+            slots,
+            version_hash: RENDER_LOAD_VERSION.to_string(),
+            baked_at: unix_timestamp(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct BakedFragment {
+    key: String,
+    artifact_path: String,
+    slots: Vec<BakedSlot>,
+    version_hash: String,
+    baked_at: u64,
+}
+
+impl BakedFragment {
+    fn new(key: impl Into<String>, slots: Vec<BakedSlot>, store: &BakedPageStore) -> Self {
+        let key = key.into();
+        Self {
+            artifact_path: store.fragment_path(&key).to_string_lossy().to_string(),
+            key,
+            slots,
+            version_hash: RENDER_LOAD_VERSION.to_string(),
+            baked_at: unix_timestamp(),
         }
     }
 }
@@ -359,15 +446,14 @@ impl BakedPageStore {
     }
 
     fn serve_if_fresh(&self, concrete_path: &str) -> io::Result<Option<String>> {
-        if self
-            .read_page(concrete_path)?
-            .map(|page| page.stale_state.stale)
-            .unwrap_or(false)
-        {
+        let Some(page) = self.read_page(concrete_path)? else {
+            return Ok(None);
+        };
+        if page.stale_state.stale {
             return Ok(None);
         }
 
-        match fs::read_to_string(self.html_path(concrete_path)) {
+        match self.read_serving_artifact(&page) {
             Ok(html) => {
                 self.touch(concrete_path)?;
                 Ok(Some(html))
@@ -378,17 +464,20 @@ impl BakedPageStore {
     }
 
     fn write_artifact(&self, page: &BakedPage, html: &str) -> io::Result<()> {
-        self.write_atomic(&self.html_path(&page.concrete_path), html.as_bytes())?;
         let mut page = page.clone();
-        page.html_path = self
-            .html_path(&page.concrete_path)
-            .to_string_lossy()
-            .to_string();
+        page.body_path = match page.artifact_mode {
+            BakedArtifactMode::FullPage => self.html_path(&page.concrete_path),
+            BakedArtifactMode::FragmentComposed => self.body_path(&page.concrete_path),
+        }
+        .to_string_lossy()
+        .to_string();
+        page.html_path = page.body_path.clone();
         page.metadata_path = self
             .metadata_path(&page.concrete_path)
             .to_string_lossy()
             .to_string();
         page.stale_state = StaleState::fresh();
+        self.write_atomic(FsPath::new(&page.body_path), html.as_bytes())?;
         self.write_page(&page)?;
         for slot in &page.slots {
             for dep in &slot.dependency_keys {
@@ -398,15 +487,45 @@ impl BakedPageStore {
         Ok(())
     }
 
+    fn write_layout(&self, layout: &BakedLayout, html: &str) -> io::Result<()> {
+        self.write_atomic(FsPath::new(&layout.artifact_path), html.as_bytes())
+    }
+
+    fn write_fragment(&self, fragment: &BakedFragment, html: &str) -> io::Result<()> {
+        self.write_atomic(FsPath::new(&fragment.artifact_path), html.as_bytes())
+    }
+
+    fn read_serving_artifact(&self, page: &BakedPage) -> io::Result<String> {
+        match page.artifact_mode {
+            BakedArtifactMode::FullPage => fs::read_to_string(&page.body_path),
+            BakedArtifactMode::FragmentComposed => self.compose_page(page),
+        }
+    }
+
+    fn compose_page(&self, page: &BakedPage) -> io::Result<String> {
+        let layout_key = page.layout_key.as_deref().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "fragment-composed page is missing layout key",
+            )
+        })?;
+        let layout = fs::read_to_string(self.layout_path(layout_key))?;
+        let body = fs::read_to_string(&page.body_path)?;
+        replace_slot_content(&layout, "page_body", &BakedSlotKind::TrustedHtml, &body)
+    }
+
     fn mark_stale(&self, concrete_path: &str, reason: &str) -> io::Result<()> {
         let mut page = self.read_page(concrete_path)?.unwrap_or_else(|| BakedPage {
             route_pattern: PageShape::from_page_key(concrete_path).route().to_string(),
             concrete_path: concrete_path.to_string(),
+            artifact_mode: BakedArtifactMode::FullPage,
             html_path: self.html_path(concrete_path).to_string_lossy().to_string(),
+            body_path: self.html_path(concrete_path).to_string_lossy().to_string(),
             metadata_path: self
                 .metadata_path(concrete_path)
                 .to_string_lossy()
                 .to_string(),
+            layout_key: None,
             slots: Vec::new(),
             dependency_keys: Vec::new(),
             baked_at: 0,
@@ -433,14 +552,12 @@ impl BakedPageStore {
         replacement: &str,
     ) -> io::Result<()> {
         validate_replacement(&slot.kind, replacement)?;
-        let html_path = self.html_path(concrete_path);
+        let html_path = self
+            .read_page(concrete_path)?
+            .map(|page| PathBuf::from(page.body_path))
+            .unwrap_or_else(|| self.html_path(concrete_path));
         let html = fs::read_to_string(&html_path)?;
-        let boundary = find_slot_boundary(&html, &slot.name, &slot.kind)?;
-
-        let mut patched = String::with_capacity(html.len() + replacement.len());
-        patched.push_str(&html[..boundary.content_start]);
-        patched.push_str(replacement);
-        patched.push_str(&html[boundary.content_end..]);
+        let patched = replace_slot_content(&html, &slot.name, &slot.kind, replacement)?;
         self.write_atomic(&html_path, patched.as_bytes())?;
         self.clear_stale(concrete_path)?;
         Ok(())
@@ -448,19 +565,11 @@ impl BakedPageStore {
 
     fn rebuild_reverse_index_from_metadata(&self) -> io::Result<ReverseIndex> {
         let mut index: ReverseIndex = BTreeMap::new();
-        let dir = self.metadata_dir();
-        if !dir.exists() {
-            return Ok(index);
-        }
-
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            if entry.path().extension().and_then(|ext| ext.to_str()) != Some("json") {
-                continue;
-            }
-            let raw = fs::read_to_string(entry.path())?;
+        for path in self.metadata_files()? {
+            let raw = fs::read_to_string(path)?;
             let page: BakedPage = serde_json::from_str(&raw)
                 .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
+            let page = self.normalize_page(page);
             for slot in &page.slots {
                 for dep in &slot.dependency_keys {
                     add_index_slot(&mut index, dep, &page.concrete_path, &slot.name);
@@ -469,6 +578,38 @@ impl BakedPageStore {
         }
 
         Ok(index)
+    }
+
+    fn metadata_files(&self) -> io::Result<Vec<PathBuf>> {
+        let mut files = Vec::new();
+        self.collect_metadata_files(&self.root.join("pages"), &mut files)?;
+        self.collect_metadata_files(&self.metadata_dir(), &mut files)?;
+        files.sort();
+        files.dedup();
+        Ok(files)
+    }
+
+    fn collect_metadata_files(&self, dir: &FsPath, files: &mut Vec<PathBuf>) -> io::Result<()> {
+        if !dir.exists() {
+            return Ok(());
+        }
+
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                self.collect_metadata_files(&path, files)?;
+            } else if path.file_name().and_then(|name| name.to_str()) == Some("metadata.json")
+                || (path
+                    .parent()
+                    .map(|parent| parent == self.metadata_dir())
+                    .unwrap_or(false)
+                    && path.extension().and_then(|ext| ext.to_str()) == Some("json"))
+            {
+                files.push(path);
+            }
+        }
+        Ok(())
     }
 
     fn ensure_reverse_index(&self) -> io::Result<ReverseIndex> {
@@ -534,13 +675,20 @@ impl BakedPageStore {
     }
 
     fn read_page(&self, concrete_path: &str) -> io::Result<Option<BakedPage>> {
-        match fs::read_to_string(self.metadata_path(concrete_path)) {
-            Ok(raw) => serde_json::from_str(&raw)
-                .map(Some)
-                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err)),
-            Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(None),
-            Err(err) => Err(err),
-        }
+        let raw = match fs::read_to_string(self.metadata_path(concrete_path)) {
+            Ok(raw) => raw,
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                match fs::read_to_string(self.legacy_metadata_path(concrete_path)) {
+                    Ok(raw) => raw,
+                    Err(err) if err.kind() == io::ErrorKind::NotFound => return Ok(None),
+                    Err(err) => return Err(err),
+                }
+            }
+            Err(err) => return Err(err),
+        };
+        serde_json::from_str(&raw)
+            .map(|page| Some(self.normalize_page(page)))
+            .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))
     }
 
     fn write_page(&self, page: &BakedPage) -> io::Result<()> {
@@ -554,6 +702,29 @@ impl BakedPageStore {
             self.write_page(&page)?;
         }
         Ok(())
+    }
+
+    fn normalize_page(&self, mut page: BakedPage) -> BakedPage {
+        if page.body_path.is_empty() {
+            page.body_path = if page.html_path.is_empty() {
+                match page.artifact_mode {
+                    BakedArtifactMode::FullPage => self.html_path(&page.concrete_path),
+                    BakedArtifactMode::FragmentComposed => self.body_path(&page.concrete_path),
+                }
+                .to_string_lossy()
+                .to_string()
+            } else {
+                page.html_path.clone()
+            };
+        }
+        if page.html_path.is_empty() {
+            page.html_path = page.body_path.clone();
+        }
+        page.metadata_path = self
+            .metadata_path(&page.concrete_path)
+            .to_string_lossy()
+            .to_string();
+        page
     }
 
     fn write_atomic(&self, path: &FsPath, bytes: &[u8]) -> io::Result<()> {
@@ -580,13 +751,44 @@ impl BakedPageStore {
         self.root.join("pages").join(storage_name(concrete_path))
     }
 
+    fn body_path(&self, concrete_path: &str) -> PathBuf {
+        self.route_dir(concrete_path).join("body.html")
+    }
+
     fn metadata_path(&self, concrete_path: &str) -> PathBuf {
+        self.route_dir(concrete_path).join("metadata.json")
+    }
+
+    fn legacy_metadata_path(&self, concrete_path: &str) -> PathBuf {
         self.metadata_dir()
             .join(storage_name(concrete_path).replace(".html", ".json"))
     }
 
     fn metadata_dir(&self) -> PathBuf {
         self.root.join("metadata")
+    }
+
+    fn layout_path(&self, key: &str) -> PathBuf {
+        self.root
+            .join("layouts")
+            .join(format!("{}.html", safe_key(key)))
+    }
+
+    fn fragment_path(&self, key: &str) -> PathBuf {
+        self.root
+            .join("fragments")
+            .join(format!("{}.html", safe_key(key)))
+    }
+
+    fn route_dir(&self, concrete_path: &str) -> PathBuf {
+        let trimmed = concrete_path.trim_start_matches('/');
+        if trimmed.is_empty() {
+            self.root.join("pages").join("index")
+        } else {
+            trimmed
+                .split('/')
+                .fold(self.root.join("pages"), |path, segment| path.join(segment))
+        }
     }
 
     fn reverse_index_path(&self) -> PathBuf {
@@ -1016,6 +1218,20 @@ fn single_marker_pos(html: &str, marker: &str) -> io::Result<usize> {
     Ok(pos)
 }
 
+fn replace_slot_content(
+    html: &str,
+    slot: &str,
+    kind: &BakedSlotKind,
+    replacement: &str,
+) -> io::Result<String> {
+    let boundary = find_slot_boundary(html, slot, kind)?;
+    let mut patched = String::with_capacity(html.len() + replacement.len());
+    patched.push_str(&html[..boundary.content_start]);
+    patched.push_str(replacement);
+    patched.push_str(&html[boundary.content_end..]);
+    Ok(patched)
+}
+
 fn read_metadata(page_key: &str) -> io::Result<Option<BakedPage>> {
     BakedPageStore::default().read_page(page_key)
 }
@@ -1098,6 +1314,19 @@ fn storage_name(page_key: &str) -> String {
         "index.html".to_string()
     } else {
         format!("{}.html", trimmed.replace('/', "__"))
+    }
+}
+
+fn safe_key(key: &str) -> String {
+    let key = key
+        .trim_matches('/')
+        .replace(['/', '\\', ':'], "__")
+        .trim()
+        .to_string();
+    if key.is_empty() {
+        "default".to_string()
+    } else {
+        key
     }
 }
 
@@ -1591,6 +1820,85 @@ mod tests {
         assert_eq!(outcome.patched_pages, vec!["/build/1"]);
         assert!(outcome.stale_pages.is_empty());
         assert!(patched.contains(">Patched<"));
+    }
+
+    #[test]
+    fn fragment_composed_page_uses_shared_layout_without_rebaking_body() {
+        let root = TestRoot::new("fragment-composed");
+        let store = root.store();
+        let dep = DependencyKey::new("ComposedStatus:id=1");
+        let page = BakedPage::fragment_composed(
+            "/composed/:id",
+            "/composed/1",
+            "app",
+            vec![BakedSlot::text("status", vec![dep.clone()])],
+            &store,
+        );
+        let layout = BakedLayout::new(
+            "app",
+            vec![BakedSlot::trusted_html("page_body", Vec::new())],
+            &store,
+        );
+        let header = BakedFragment::new("header", Vec::new(), &store);
+        let layout_v1 = "<!doctype html><html><body><header>Layout v1</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        let layout_v2 = "<!doctype html><html><body><header>Layout v2</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        let body = format!(
+            "<main><h1>Composed</h1>{}</main>",
+            text_slot("status", "Open")
+        );
+
+        store
+            .write_layout(&layout, layout_v1)
+            .expect("write layout");
+        store
+            .write_fragment(&header, "<header>Shared header</header>")
+            .expect("write shared fragment");
+        store.write_artifact(&page, &body).expect("write body");
+
+        let (html_v1, state_v1) = store
+            .get_or_render("/composed/1", |_store| {
+                panic!("composed hit must not rerun body renderer")
+            })
+            .expect("compose first response");
+        let body_before = fs::read_to_string(store.body_path("/composed/1")).expect("read body");
+
+        store
+            .write_layout(&layout, layout_v2)
+            .expect("rebake shared layout");
+        let (html_v2, state_v2) = store
+            .get_or_render("/composed/1", |_store| {
+                panic!("layout-only change must not rebake page body")
+            })
+            .expect("compose changed layout");
+        let body_after = fs::read_to_string(store.body_path("/composed/1")).expect("read body");
+
+        let mut registry = BakedPatchRegistry::new(store.clone());
+        registry.register_slot_recompute("status", |_key, _path| {
+            Ok(SlotValue::Text("Patched".to_string()))
+        });
+        let outcome = registry.patch_dependency(dep).expect("patch body slot");
+        let (patched_html, patched_state) = store
+            .get_or_render("/composed/1", |_store| {
+                panic!("patched composed page should still serve baked body")
+            })
+            .expect("compose patched body");
+
+        assert_eq!(page.artifact_mode, BakedArtifactMode::FragmentComposed);
+        assert_eq!(state_v1, ServeState::Hit);
+        assert_eq!(state_v2, ServeState::Hit);
+        assert_eq!(patched_state, ServeState::Hit);
+        assert!(store.body_path("/composed/1").exists());
+        assert!(store.fragment_path("header").exists());
+        assert!(store.metadata_path("/composed/1").exists());
+        assert!(html_v1.contains("Layout v1"));
+        assert!(html_v1.contains(">Open<"));
+        assert!(html_v2.contains("Layout v2"));
+        assert!(!html_v2.contains("Layout v1"));
+        assert_eq!(body_before, body_after);
+        assert_eq!(outcome.patched_pages, vec!["/composed/1"]);
+        assert!(outcome.stale_pages.is_empty());
+        assert!(patched_html.contains("Layout v2"));
+        assert!(patched_html.contains(">Patched<"));
     }
 
     #[test]
