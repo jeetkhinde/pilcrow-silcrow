@@ -1967,6 +1967,108 @@ mod tests {
     }
 
     #[test]
+    fn build_time_fragment_composed_prebakes_body_and_serves_composed_hit() {
+        let root = TestRoot::new("build-time-composed");
+        let store = root.store();
+        let dep = DependencyKey::new("BuildComposedStatus:id=1");
+        let declaration =
+            BakedRouteDeclaration::build_time("/build-composed/:id", "/build-composed/1")
+                .fragment_composed("app")
+                .text_slot("status", vec![dep.clone()]);
+        let layout = BakedLayout::new(
+            "app",
+            vec![BakedSlot::trusted_html("page_body", Vec::new())],
+            &store,
+        );
+        let layout_v1 = "<!doctype html><html><body><header>Build layout v1</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        let layout_v2 = "<!doctype html><html><body><header>Build layout v2</header><!--pilcrow-slot:start page_body kind=html--><!--pilcrow-slot:end page_body--></body></html>";
+        store
+            .write_layout(&layout, layout_v1)
+            .expect("write build layout");
+
+        let prebaked_body = store
+            .prebake_declared(&declaration, |store, declaration| {
+                Ok(RenderedBakedPage {
+                    page: declaration.to_page(store),
+                    html: format!(
+                        "<main><h1>Build composed</h1>{}</main>",
+                        text_slot("status", "Open")
+                    ),
+                })
+            })
+            .expect("prebake build-time composed page");
+        let metadata = store
+            .read_page("/build-composed/1")
+            .expect("read metadata")
+            .expect("metadata exists");
+        let index = store
+            .reverse_index()
+            .expect("read reverse index")
+            .expect("reverse index exists");
+        let body_before =
+            fs::read_to_string(store.body_path("/build-composed/1")).expect("read body");
+
+        let (html_v1, first_state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("prebaked composed hit must not run SSR/load")
+            })
+            .expect("serve prebaked composed page");
+
+        store
+            .write_layout(&layout, layout_v2)
+            .expect("rebake build layout");
+        let (html_v2, second_state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("layout-only change must not rebake composed body")
+            })
+            .expect("serve layout-updated composed page");
+        let body_after =
+            fs::read_to_string(store.body_path("/build-composed/1")).expect("read body");
+
+        let mut registry = BakedPatchRegistry::new(store.clone());
+        registry
+            .register_declared_slot_recompute(&declaration, "status", |_key, _path| {
+                Ok(SlotValue::Text("Patched".to_string()))
+            })
+            .expect("register build composed recompute");
+        let outcome = registry
+            .patch_dependency(dep.clone())
+            .expect("patch composed dep");
+        let (patched_html, patched_state) = store
+            .get_or_render_declared(&declaration, |_store, _declaration| {
+                panic!("patched prebaked composed page should still be baked")
+            })
+            .expect("serve patched prebaked composed page");
+
+        assert!(prebaked_body.contains("Build composed"));
+        assert!(!prebaked_body.contains("Build layout"));
+        assert_eq!(first_state, ServeState::Hit);
+        assert_eq!(first_state.ssr_load_header(), "skipped");
+        assert_eq!(second_state, ServeState::Hit);
+        assert_eq!(patched_state, ServeState::Hit);
+        assert_eq!(metadata.artifact_mode, BakedArtifactMode::FragmentComposed);
+        assert_eq!(metadata.layout_key.as_deref(), Some("app"));
+        assert_eq!(metadata.dependency_keys, vec![dep.clone()]);
+        assert_eq!(
+            index
+                .get(dep.as_str())
+                .and_then(|pages| pages.get("/build-composed/1")),
+            Some(&vec!["status".to_string()])
+        );
+        assert!(store.body_path("/build-composed/1").exists());
+        assert!(store.metadata_path("/build-composed/1").exists());
+        assert!(html_v1.contains("Build layout v1"));
+        assert!(html_v1.contains(">Open<"));
+        assert!(html_v2.contains("Build layout v2"));
+        assert!(!html_v2.contains("Build layout v1"));
+        assert_eq!(body_before, body_after);
+        assert_eq!(outcome.patched_pages, vec!["/build-composed/1"]);
+        assert!(outcome.stale_pages.is_empty());
+        assert!(patched_html.contains("Build layout v2"));
+        assert!(patched_html.contains(">Patched<"));
+    }
+
+    #[test]
     fn fragment_composed_page_uses_shared_layout_without_rebaking_body() {
         let root = TestRoot::new("fragment-composed");
         let store = root.store();
