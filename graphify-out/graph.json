@@ -12482,9 +12482,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L10",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_read_claude_md_at_workspace_root",
-      "target": "pilcrow_silcrow_agents_graphify",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_graphify"
     },
     {
       "relation": "contains",
@@ -12642,9 +12642,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "claude_md",
-      "target": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace"
     },
     {
       "relation": "contains",
@@ -12652,9 +12652,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_workspace_topology",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_workspace_topology"
     },
     {
       "relation": "contains",
@@ -12662,9 +12662,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L22",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_what_pilcrow_and_silcrow_are",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_what_pilcrow_and_silcrow_are"
     },
     {
       "relation": "contains",
@@ -12672,9 +12672,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L29",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_pilcrow_crate_map",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_pilcrow_crate_map"
     },
     {
       "relation": "contains",
@@ -12682,9 +12682,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_integration_contract",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_integration_contract"
     },
     {
       "relation": "contains",
@@ -12692,9 +12692,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_build_commands_from_workspace_root",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_build_commands_from_workspace_root"
     },
     {
       "relation": "contains",
@@ -12702,9 +12702,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L77",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_attribute_namespace_table",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_attribute_namespace_table"
     },
     {
       "relation": "contains",
@@ -12712,9 +12712,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L86",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_react_islands_js",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_react_islands_js"
     },
     {
       "relation": "contains",
@@ -12722,9 +12722,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L92",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_rendering_mode_questions_read_docs_do_not_scan",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_rendering_mode_questions_read_docs_do_not_scan"
     },
     {
       "relation": "contains",
@@ -12732,9 +12732,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L101",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_react_island_questions_read_docs_do_not_scan",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_react_island_questions_read_docs_do_not_scan"
     },
     {
       "relation": "contains",
@@ -12742,9 +12742,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L115",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_mcp_tools_when_to_call_vs_skip",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_mcp_tools_when_to_call_vs_skip"
     },
     {
       "relation": "contains",
@@ -12752,9 +12752,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L135",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_mandatory_update_checklist_enforce_on_every_feature_change",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_mandatory_update_checklist_enforce_on_every_feature_change"
     },
     {
       "relation": "contains",
@@ -12762,9 +12762,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L161",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_active_plans",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_active_plans"
     },
     {
       "relation": "contains",
@@ -12772,9 +12772,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L165",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_known_issues_do_not_work_around_without_fixing_root_cause",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_known_issues_do_not_work_around_without_fixing_root_cause"
     },
     {
       "relation": "contains",
@@ -12782,9 +12782,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L169",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_hard_rules_never_violate",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_hard_rules_never_violate"
     },
     {
       "relation": "contains",
@@ -12792,9 +12792,9 @@
       "source_file": "CLAUDE.md",
       "source_location": "L174",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_claude_claude_md_pilcrow_silcrow_workspace",
-      "target": "pilcrow_silcrow_claude_graphify",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_claude_graphify"
     },
     {
       "relation": "contains",
@@ -12832,9 +12832,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_docs_baked_pages_md",
-      "target": "docs_baked_pages_baked_pages_sandbox_model",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_baked_pages_sandbox_model"
     },
     {
       "relation": "contains",
@@ -12842,9 +12842,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L7",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_baked_pages_baked_pages_sandbox_model",
-      "target": "docs_baked_pages_core_model",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_core_model"
     },
     {
       "relation": "contains",
@@ -12852,9 +12852,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L19",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_baked_pages_baked_pages_sandbox_model",
-      "target": "docs_baked_pages_artifact_layout",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_artifact_layout"
     },
     {
       "relation": "contains",
@@ -12862,9 +12862,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_baked_pages_baked_pages_sandbox_model",
-      "target": "docs_baked_pages_request_lifecycle",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_request_lifecycle"
     },
     {
       "relation": "contains",
@@ -12872,9 +12872,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L46",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_baked_pages_baked_pages_sandbox_model",
-      "target": "docs_baked_pages_mutation_lifecycle",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_mutation_lifecycle"
     },
     {
       "relation": "contains",
@@ -12882,9 +12882,9 @@
       "source_file": "sandbox/docs/baked-pages.md",
       "source_location": "L57",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "docs_baked_pages_baked_pages_sandbox_model",
-      "target": "docs_baked_pages_safety_rules",
-      "confidence_score": 1.0
+      "target": "docs_baked_pages_safety_rules"
     },
     {
       "relation": "contains",
@@ -12892,9 +12892,9 @@
       "source_file": "sandbox/examples/react-islands/README.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_examples_react_islands_readme_md",
-      "target": "react_islands_readme_react_islands_example",
-      "confidence_score": 1.0
+      "target": "react_islands_readme_react_islands_example"
     },
     {
       "relation": "contains",
@@ -12912,9 +12912,9 @@
       "source_file": "sandbox/examples/react-islands/README.md",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "react_islands_readme_react_islands_example",
-      "target": "react_islands_readme_codeblock_1",
-      "confidence_score": 1.0
+      "target": "react_islands_readme_codeblock_1"
     },
     {
       "relation": "contains",
@@ -12922,9 +12922,9 @@
       "source_file": "sandbox/examples/react-islands/README.md",
       "source_location": "L15",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "react_islands_readme_react_islands_example",
-      "target": "react_islands_readme_codeblock_2",
-      "confidence_score": 1.0
+      "target": "react_islands_readme_codeblock_2"
     },
     {
       "relation": "contains",
@@ -12932,9 +12932,9 @@
       "source_file": "sandbox/examples/react-islands/README.md",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "react_islands_readme_react_islands_example",
-      "target": "react_islands_readme_codeblock_3",
-      "confidence_score": 1.0
+      "target": "react_islands_readme_codeblock_3"
     },
     {
       "relation": "contains",
@@ -13663,5 +13663,5 @@
       "source_file": "sandbox/pages/(admin)/_layout.html"
     }
   ],
-  "built_at_commit": "96de701a0777d37141804b24fe51475bc408b63b"
+  "built_at_commit": "3a0b96d947235234920c856be0d037d820d639d9"
 }
