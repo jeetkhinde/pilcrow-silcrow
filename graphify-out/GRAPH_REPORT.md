@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-05-10)
 
 ## Corpus Check
-- Corpus is ~15,106 words - fits in a single context window. You may not need a graph.
+- Corpus is ~15,509 words - fits in a single context window. You may not need a graph.
 
 ## Summary
-- 411 nodes · 756 edges · 44 communities (24 shown, 20 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 42 edges (avg confidence: 0.83)
+- 407 nodes · 871 edges · 38 communities (23 shown, 15 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -23,47 +23,42 @@
 - [[_COMMUNITY_Island Mounting Docs|Island Mounting Docs]]
 - [[_COMMUNITY_Sandbox Hooks|Sandbox Hooks]]
 - [[_COMMUNITY_Index Loaders|Index Loaders]]
-- [[_COMMUNITY_Admin Route Group|Admin Route Group]]
+- [[_COMMUNITY_Live Counter Page|Live Counter Page]]
 - [[_COMMUNITY_Workspace Instructions|Workspace Instructions]]
 - [[_COMMUNITY_App Entrypoints|App Entrypoints]]
 - [[_COMMUNITY_Counter Component|Counter Component]]
 - [[_COMMUNITY_Route Props Loader|Route Props Loader]]
-- [[_COMMUNITY_Greeting Component|Greeting Component]]
-- [[_COMMUNITY_User Card Loader|User Card Loader]]
 - [[_COMMUNITY_Routekit Build Scripts|Routekit Build Scripts]]
 - [[_COMMUNITY_Sandbox Navigation Layout|Sandbox Navigation Layout]]
 - [[_COMMUNITY_Error Pages|Error Pages]]
+- [[_COMMUNITY_Solid Store Helper|Solid Store Helper]]
+- [[_COMMUNITY_Integer Params|Integer Params]]
 - [[_COMMUNITY_Demo App Macro|Demo App Macro]]
 - [[_COMMUNITY_Demo Counter Data|Demo Counter Data]]
 - [[_COMMUNITY_Hook Modules|Hook Modules]]
+- [[_COMMUNITY_Module Index|Module Index]]
 - [[_COMMUNITY_Demo Home Page|Demo Home Page]]
 - [[_COMMUNITY_Sandbox Integer Params|Sandbox Integer Params]]
 - [[_COMMUNITY_About Handler|About Handler]]
 - [[_COMMUNITY_Greeting Island|Greeting Island]]
-- [[_COMMUNITY_User Card Widget|User Card Widget]]
-- [[_COMMUNITY_Sandbox App Entry|Sandbox App Entry]]
-- [[_COMMUNITY_Card UI|Card UI]]
-- [[_COMMUNITY_About Page|About Page]]
-- [[_COMMUNITY_Live Props Demo|Live Props Demo]]
-- [[_COMMUNITY_User Card Template|User Card Template]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `BakedPageStore` - 37 edges
-2. `html_path()` - 16 edges
-3. `CLAUDE.md — pilcrow-silcrow workspace` - 16 edges
-4. `build_time_fragment_composed_prebakes_body_and_serves_composed_hit()` - 16 edges
-5. `rebake_page()` - 15 edges
-6. `text_slot()` - 15 edges
-7. `declared_fragment_composed_route_uses_layout_and_body_strategy()` - 13 edges
-8. `fragment_composed_page_uses_shared_layout_without_rebaking_body()` - 12 edges
-9. `BakedRouteDeclaration` - 11 edges
-10. `declaration_layer_declares_lazy_text_slot_dep_and_recompute()` - 11 edges
+1. `BakedPageStore` - 46 edges
+2. `html_path()` - 21 edges
+3. `CLAUDE.md — pilcrow-silcrow workspace` - 17 edges
+4. `rebake_page()` - 16 edges
+5. `text_slot()` - 16 edges
+6. `build_time_fragment_composed_prebakes_body_and_serves_composed_hit()` - 16 edges
+7. `BakedRouteDeclaration` - 14 edges
+8. `patch_slot()` - 14 edges
+9. `reverse_index()` - 13 edges
+10. `declared_fragment_composed_route_uses_layout_and_body_strategy()` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `SSR Streaming: shell-first with deferred patch via window.__ps` --semantically_similar_to--> `SSG PRERENDER constant pattern`  [INFERRED] [semantically similar]
-  pilcrow-demos/pages/streaming/index.html → pilcrow-demos/pages/ssg/index.rs
 - `SSG PRERENDER constant pattern` --conceptually_related_to--> `Route groups with parentheses strip URL prefix but apply nested layout`  [AMBIGUOUS]
   pilcrow-demos/pages/ssg/index.rs → sandbox/pages/(admin)/_layout.html
+- `SSR Streaming: shell-first with deferred patch via window.__ps` --semantically_similar_to--> `SSG PRERENDER constant pattern`  [INFERRED] [semantically similar]
+  pilcrow-demos/pages/streaming/index.html → pilcrow-demos/pages/ssg/index.rs
 - `GEMINI.md — Gemini Agent Instructions` --semantically_similar_to--> `CLAUDE.md — Claude Code Project Instructions`  [INFERRED] [semantically similar]
   GEMINI.md → CLAUDE.md
 - `pilcrow-demos build.rs` --semantically_similar_to--> `sandbox build.rs`  [INFERRED] [semantically similar]
@@ -80,73 +75,73 @@
 - **Special route pages (_layout, _not_found, _loading, _error) form the sandbox's global page shell and fallback system** — sandbox_pages_layout, sandbox_pages_not_found, sandbox_pages_loading, sandbox_pages_error [INFERRED 0.95]
 - **Admin route group: dashboard, stats, and layout form a nested route group with shared URL-stripped layout** — sandbox_admin_layout, sandbox_admin_dashboard, sandbox_admin_stats [EXTRACTED 1.00]
 
-## Communities (44 total, 20 thin omitted)
+## Communities (38 total, 15 thin omitted)
 
 ### Community 0 - "Baked Store API"
-Cohesion: 0.06
-Nodes (55): add_reverse_index_entry(), atomic_temp_file_is_not_served(), baked_html_response(), baked_root(), BakedArtifactMode, BakedLayout, BakedPage, BakedSlotKind (+47 more)
+Cohesion: 0.07
+Nodes (50): add_index_slot(), add_reverse_index_entry(), atomic_temp_file_is_not_served(), baked_html_response(), baked_root(), BakedArtifactMode, BakedLayout, BakeEligibility (+42 more)
 
 ### Community 1 - "Baked Route Declarations"
-Cohesion: 0.05
-Nodes (37): CartAtom, CartBadge(), cartFormSchema, CartFormValues, CreateState, DirectAddToCartForm(), NotifState, NotifyMeForm() (+29 more)
+Cohesion: 0.06
+Nodes (34): ApiResponse, get(), Params, Product, render_cards(), router(), load(), now_utc() (+26 more)
 
 ### Community 2 - "Cart React Components"
-Cohesion: 0.13
-Nodes (22): BakedPatchRegistry, BakedRouteDeclaration, BakedSlot, build_time_declaration_prebakes_before_request(), build_time_fragment_composed_prebakes_body_and_serves_composed_hit(), build_time_prebaked_first_get_is_hit_and_skips_ssr_load(), declaration_can_select_fragment_composed_layout(), declaration_defaults_to_full_page_and_can_make_mode_explicit() (+14 more)
+Cohesion: 0.07
+Nodes (41): CartAtom, CartBadge(), CartClearButton(), cartFormSchema, CartFormValues, CreateState, DirectAddToCartForm(), HookFormAddToCartForm() (+33 more)
 
 ### Community 3 - "Baked Artifact Model"
-Cohesion: 0.1
-Nodes (9): add_index_slot(), BakedFragment, BakedPageStore, html_path(), metadata_path(), replace_slot_content(), StaleState, storage_name() (+1 more)
+Cohesion: 0.16
+Nodes (20): BakedPage, BakedPatchRegistry, BakedRouteDeclaration, build_time_declaration_prebakes_before_request(), build_time_fragment_composed_prebakes_body_and_serves_composed_hit(), build_time_prebaked_first_get_is_hit_and_skips_ssr_load(), declaration_can_select_fragment_composed_layout(), declaration_defaults_to_full_page_and_can_make_mode_explicit() (+12 more)
 
 ### Community 4 - "Time Demo Loaders"
-Cohesion: 0.06
-Nodes (32): AGENTS.md — Agent Instructions, CLAUDE.md — Claude Code Project Instructions, Pilcrow+Silcrow Integration Context Doc, GEMINI.md — Gemini Agent Instructions, CLAUDE.md — pilcrow-silcrow workspace, graphify, Read Claude.md at workspace root., Active plans (+24 more)
+Cohesion: 0.12
+Nodes (9): BakedFragment, BakedPageStore, metadata_path(), patch_slot(), replace_slot_content(), StaleState, storage_name(), unix_timestamp() (+1 more)
 
 ### Community 5 - "Product API Routes"
 Cohesion: 0.08
-Nodes (20): increment(), load(), now_utc(), Props, render_posts(), load(), now_utc(), Props (+12 more)
+Nodes (29): AGENTS.md — Agent Instructions, CLAUDE.md — Claude Code Project Instructions, Pilcrow+Silcrow Integration Context Doc, GEMINI.md — Gemini Agent Instructions, CLAUDE.md — pilcrow-silcrow workspace, Read Claude.md at workspace root., Active plans, Attribute namespace table (+21 more)
 
 ### Community 6 - "Rendering Mode Demos"
-Cohesion: 0.12
-Nodes (22): AsyncValue/AsyncHtml deferred field pattern, SSG Demo Page, SSR Demo Page, Streaming SSR Demo Page, ISR REVALIDATE constant pattern, data::counter::increment (atomic render counter), pilcrow-demos pages/deferred/index.rs, pilcrow-demos pages/isr/index.rs (+14 more)
+Cohesion: 0.15
+Nodes (18): AsyncValue/AsyncHtml deferred field pattern, SSG Demo Page, SSR Demo Page, Streaming SSR Demo Page, ISR REVALIDATE constant pattern, data::counter::increment (atomic render counter), pilcrow-demos pages/deferred/index.rs, pilcrow-demos pages/isr/index.rs (+10 more)
 
 ### Community 7 - "React Live Islands"
-Cohesion: 0.1
-Nodes (15): ApiResponse, get(), Params, Product, render_cards(), router(), ApiResponse, Category (+7 more)
+Cohesion: 0.15
+Nodes (12): current(), increment(), load(), now_utc(), Props, Counter(), load(), now_utc() (+4 more)
 
 ### Community 8 - "Demo Templates"
-Cohesion: 0.29
-Nodes (7): Counter React Component (all hook demos), FragmentGrid React Component, Live Page Handler (SSE counter), LiveProp Pattern — tokio watch channel for live SSE props, Product Grid Widget Handler, Silcrow-React Bridge — useSyncExternalStore + window.Silcrow, silcrow-react TypeScript bindings
+Cohesion: 0.13
+Nodes (15): Counter React Component (all hook demos), FragmentGrid React Component, Live Page Handler (SSE counter), LiveProp Pattern — tokio watch channel for live SSE props, Product Grid Widget Handler, <react> custom element for mounting React islands with strategy attribute, React Islands Example README, code:toml ([routing]) (+7 more)
 
 ### Community 9 - "Product Grid Refresh"
+Cohesion: 0.22
+Nodes (6): BakedSlot, BakedSlotKind, SlotValue, trusted_html_requires_explicit_wrapper(), trusted_html_slot_content(), TrustedHtml
+
+### Community 10 - "Solid Silcrow Store"
+Cohesion: 0.4
+Nodes (3): PageShape, router(), ticket_route_declaration()
+
+### Community 11 - "Island Mounting Docs"
 Cohesion: 0.33
 Nodes (6): Deferred Fields Demo Page Template, Demos Index Page Template, ISR Demo Page Template, ISR+SSG Demo Page Template, Demos Root Layout Template, Demo Nav UI Component
 
-### Community 11 - "Island Mounting Docs"
-Cohesion: 0.4
-Nodes (4): code:toml ([routing]), code:html (<!-- src/pages/dashboard/index.html -->), code:tsx (// src/pages/dashboard/react/Counter.tsx), React Islands Example
-
-### Community 12 - "Sandbox Hooks"
+### Community 13 - "Index Loaders"
 Cohesion: 0.4
 Nodes (5): createSilcrowStore — SolidJS store bound to Silcrow atom scope, sandbox solid/Counter.tsx, sandbox solid/silcrow-solid.ts, Silcrow.snapshot API, Silcrow.subscribe API
 
-### Community 13 - "Index Loaders"
-Cohesion: 0.5
-Nodes (5): <react> custom element for mounting React islands with strategy attribute, React Islands Example README, sandbox pages/index.rs, Product Grid Widget, <solid> custom element for mounting Solid islands
+### Community 15 - "Live Counter Page"
+Cohesion: 0.83
+Nodes (4): Route groups with parentheses strip URL prefix but apply nested layout, Admin Dashboard Page, Admin Route Group Layout, Admin Stats Page
 
 ### Community 17 - "Workspace Instructions"
-Cohesion: 0.67
-Nodes (3): counter_tx(), load(), Props
-
-### Community 23 - "Routekit Build Scripts"
 Cohesion: 1.0
 Nodes (3): pilcrow-demos build.rs, routekit::compile_current_crate_sources, sandbox build.rs
 
-### Community 24 - "Sandbox Navigation Layout"
+### Community 18 - "App Entrypoints"
 Cohesion: 0.67
 Nodes (3): Sandbox Root Layout, Nav UI Component, s-boost Silcrow directive for SPA navigation
 
-### Community 25 - "Error Pages"
+### Community 19 - "Counter Component"
 Cohesion: 0.67
 Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 
@@ -155,24 +150,24 @@ Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
   pilcrow-demos/pages/ssg/index.html · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **107 isolated node(s):** `Props`, `Props`, `Props`, `Props`, `Props` (+102 more)
+- **88 isolated node(s):** `Params`, `SilcrowSubmitResult`, `SilcrowSubmitOptions`, `SilcrowActionOptions`, `PilcrowReactContext` (+83 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `router()` connect `React Live Islands` to `Baked Store API`, `Cart React Components`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **Why does `BakedPageStore` connect `Baked Artifact Model` to `Baked Store API`, `Cart React Components`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
-- **What connects `Props`, `Props`, `Props` to the rest of the system?**
-  _107 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `Props` connect `Baked Route Declarations` to `Baked Store API`, `Cart React Components`?**
+  _High betweenness centrality (0.174) - this node is a cross-community bridge._
+- **Why does `BakedPageStore` connect `Time Demo Loaders` to `Baked Store API`, `Baked Artifact Model`?**
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
+- **Why does `get()` connect `Baked Route Declarations` to `Solid Silcrow Store`?**
+  _High betweenness centrality (0.054) - this node is a cross-community bridge._
+- **What connects `Params`, `SilcrowSubmitResult`, `SilcrowSubmitOptions` to the rest of the system?**
+  _88 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Baked Store API` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
 - **Should `Baked Route Declarations` be split into smaller, more focused modules?**
-  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
-- **Should `Cart React Components` be split into smaller, more focused modules?**
-  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
