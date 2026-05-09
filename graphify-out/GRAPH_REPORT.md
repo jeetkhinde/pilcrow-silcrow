@@ -1,22 +1,16 @@
-# Graph Report - pilcrow-silcrow  (2026-05-08)
+# Graph Report - .  (2026-05-10)
 
 ## Corpus Check
-- 35 files · ~14,510 words
-- Verdict: corpus is large enough that graph structure adds value.
+- Corpus is ~15,106 words - fits in a single context window. You may not need a graph.
 
 ## Summary
-- 405 nodes · 712 edges · 44 communities (24 shown, 20 thin omitted)
+- 411 nodes · 756 edges · 44 communities (24 shown, 20 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 42 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
-## Graph Freshness
-- Built from commit: `dcde4051`
-- Run `git rev-parse HEAD` and compare to check if the graph is stale.
-- Run `graphify update .` after code changes (no API cost).
-
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Ticket Baked Page POC|Ticket Baked Page POC]]
 - [[_COMMUNITY_Baked Store API|Baked Store API]]
+- [[_COMMUNITY_Baked Route Declarations|Baked Route Declarations]]
 - [[_COMMUNITY_Cart React Components|Cart React Components]]
 - [[_COMMUNITY_Baked Artifact Model|Baked Artifact Model]]
 - [[_COMMUNITY_Time Demo Loaders|Time Demo Loaders]]
@@ -57,25 +51,25 @@
 1. `BakedPageStore` - 37 edges
 2. `html_path()` - 16 edges
 3. `CLAUDE.md — pilcrow-silcrow workspace` - 16 edges
-4. `rebake_page()` - 15 edges
-5. `text_slot()` - 12 edges
-6. `fragment_composed_page_uses_shared_layout_without_rebaking_body()` - 12 edges
-7. `declaration_layer_declares_lazy_text_slot_dep_and_recompute()` - 11 edges
-8. `dependency_patching_updates_build_time_baked_page()` - 11 edges
-9. `never_bake_refuses_prebake_and_baked_serving()` - 10 edges
-10. `BakedRouteDeclaration` - 9 edges
+4. `build_time_fragment_composed_prebakes_body_and_serves_composed_hit()` - 16 edges
+5. `rebake_page()` - 15 edges
+6. `text_slot()` - 15 edges
+7. `declared_fragment_composed_route_uses_layout_and_body_strategy()` - 13 edges
+8. `fragment_composed_page_uses_shared_layout_without_rebaking_body()` - 12 edges
+9. `BakedRouteDeclaration` - 11 edges
+10. `declaration_layer_declares_lazy_text_slot_dep_and_recompute()` - 11 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `SSR Streaming: shell-first with deferred patch via window.__ps` --semantically_similar_to--> `SSG PRERENDER constant pattern`  [INFERRED] [semantically similar]
   pilcrow-demos/pages/streaming/index.html → pilcrow-demos/pages/ssg/index.rs
 - `SSG PRERENDER constant pattern` --conceptually_related_to--> `Route groups with parentheses strip URL prefix but apply nested layout`  [AMBIGUOUS]
   pilcrow-demos/pages/ssg/index.rs → sandbox/pages/(admin)/_layout.html
+- `GEMINI.md — Gemini Agent Instructions` --semantically_similar_to--> `CLAUDE.md — Claude Code Project Instructions`  [INFERRED] [semantically similar]
+  GEMINI.md → CLAUDE.md
 - `pilcrow-demos build.rs` --semantically_similar_to--> `sandbox build.rs`  [INFERRED] [semantically similar]
   pilcrow-demos/build.rs → sandbox/build.rs
 - `pilcrow-demos hooks.rs` --semantically_similar_to--> `sandbox hooks.rs`  [INFERRED] [semantically similar]
   pilcrow-demos/hooks.rs → sandbox/hooks.rs
-- `SSG Demo Page` --conceptually_related_to--> `SSG PRERENDER constant pattern`  [EXTRACTED]
-  pilcrow-demos/pages/ssg/index.html → pilcrow-demos/pages/ssg/index.rs
 
 ## Hyperedges (group relationships)
 - **Both apps trigger routekit codegen at build time via build.rs** — pilcrow_demos_build, sandbox_build, routekit_compile_current_crate [EXTRACTED 1.00]
@@ -88,37 +82,37 @@
 
 ## Communities (44 total, 20 thin omitted)
 
-### Community 0 - "Ticket Baked Page POC"
+### Community 0 - "Baked Store API"
 Cohesion: 0.06
-Nodes (54): add_reverse_index_entry(), atomic_temp_file_is_not_served(), baked_html_response(), baked_root(), BakedArtifactMode, BakedLayout, BakedSlotKind, BakeEligibility (+46 more)
+Nodes (55): add_reverse_index_entry(), atomic_temp_file_is_not_served(), baked_html_response(), baked_root(), BakedArtifactMode, BakedLayout, BakedPage, BakedSlotKind (+47 more)
 
-### Community 1 - "Baked Store API"
+### Community 1 - "Baked Route Declarations"
 Cohesion: 0.05
 Nodes (37): CartAtom, CartBadge(), cartFormSchema, CartFormValues, CreateState, DirectAddToCartForm(), NotifState, NotifyMeForm() (+29 more)
 
 ### Community 2 - "Cart React Components"
-Cohesion: 0.09
-Nodes (10): add_index_slot(), BakedFragment, BakedPage, BakedPageStore, fragment_composed_page_uses_shared_layout_without_rebaking_body(), metadata_path(), replace_slot_content(), StaleState (+2 more)
+Cohesion: 0.13
+Nodes (22): BakedPatchRegistry, BakedRouteDeclaration, BakedSlot, build_time_declaration_prebakes_before_request(), build_time_fragment_composed_prebakes_body_and_serves_composed_hit(), build_time_prebaked_first_get_is_hit_and_skips_ssr_load(), declaration_can_select_fragment_composed_layout(), declaration_defaults_to_full_page_and_can_make_mode_explicit() (+14 more)
 
 ### Community 3 - "Baked Artifact Model"
-Cohesion: 0.15
-Nodes (17): BakedPatchRegistry, BakedRouteDeclaration, BakedSlot, build_time_declaration_prebakes_before_request(), build_time_prebaked_first_get_is_hit_and_skips_ssr_load(), declaration_layer_declares_lazy_text_slot_dep_and_recompute(), declaration_layer_supports_policy_and_trusted_html_declarations(), dependency_patching_updates_build_time_baked_page() (+9 more)
+Cohesion: 0.1
+Nodes (9): add_index_slot(), BakedFragment, BakedPageStore, html_path(), metadata_path(), replace_slot_content(), StaleState, storage_name() (+1 more)
 
 ### Community 4 - "Time Demo Loaders"
 Cohesion: 0.06
-Nodes (28): CLAUDE.md — pilcrow-silcrow workspace, graphify, Read Claude.md at workspace root., Active plans, Attribute namespace table, Build commands (from workspace root), CLAUDE.md — pilcrow-silcrow workspace, code:text (pilcrow-silcrow/) (+20 more)
+Nodes (32): AGENTS.md — Agent Instructions, CLAUDE.md — Claude Code Project Instructions, Pilcrow+Silcrow Integration Context Doc, GEMINI.md — Gemini Agent Instructions, CLAUDE.md — pilcrow-silcrow workspace, graphify, Read Claude.md at workspace root., Active plans (+24 more)
 
 ### Community 5 - "Product API Routes"
 Cohesion: 0.08
 Nodes (20): increment(), load(), now_utc(), Props, render_posts(), load(), now_utc(), Props (+12 more)
 
 ### Community 6 - "Rendering Mode Demos"
-Cohesion: 0.1
-Nodes (16): ApiResponse, get(), Params, Product, render_cards(), router(), ApiResponse, Category (+8 more)
-
-### Community 7 - "React Live Islands"
 Cohesion: 0.12
 Nodes (22): AsyncValue/AsyncHtml deferred field pattern, SSG Demo Page, SSR Demo Page, Streaming SSR Demo Page, ISR REVALIDATE constant pattern, data::counter::increment (atomic render counter), pilcrow-demos pages/deferred/index.rs, pilcrow-demos pages/isr/index.rs (+14 more)
+
+### Community 7 - "React Live Islands"
+Cohesion: 0.1
+Nodes (15): ApiResponse, get(), Params, Product, render_cards(), router(), ApiResponse, Category (+7 more)
 
 ### Community 8 - "Demo Templates"
 Cohesion: 0.29
@@ -170,15 +164,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `BakedPageStore` connect `Cart React Components` to `Ticket Baked Page POC`, `Baked Artifact Model`?**
+- **Why does `router()` connect `React Live Islands` to `Baked Store API`, `Cart React Components`?**
   _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **Why does `router()` connect `Rendering Mode Demos` to `Ticket Baked Page POC`, `Baked Artifact Model`?**
+- **Why does `BakedPageStore` connect `Baked Artifact Model` to `Baked Store API`, `Cart React Components`?**
   _High betweenness centrality (0.031) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Props` to the rest of the system?**
   _107 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Ticket Baked Page POC` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Baked Store API` be split into smaller, more focused modules?**
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+- **Should `Baked Route Declarations` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Cart React Components` be split into smaller, more focused modules?**
-  _Cohesion score 0.09 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
