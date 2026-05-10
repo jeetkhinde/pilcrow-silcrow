@@ -1,4 +1,4 @@
-# Graph Report - pilcrow-silcrow  (2026-05-10)
+# Graph Report - pilcrow-silcrow  (2026-05-11)
 
 ## Corpus Check
 - 36 files · ~15,509 words
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `162e4853`
+- Built from commit: `8c5cdfe6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
