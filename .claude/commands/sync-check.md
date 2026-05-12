@@ -17,11 +17,11 @@ cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcro
 ```
 Failure here usually means a silcrow API mismatch or missing node_modules. Show the first `error[E...]` from stderr.
 
-**Step 3 — Build sandbox consumer app**
+**Step 3 — Build demo consumer app**
 ```bash
-cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/Cargo.toml
+cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/Cargo.toml
 ```
-Failure here usually means the sandbox has a Pilcrow API incompatibility.
+Failure here usually means the demo has a Pilcrow API incompatibility.
 
 **Report format:**
 - Step 1: ✓ / ✗ + first error line if failed

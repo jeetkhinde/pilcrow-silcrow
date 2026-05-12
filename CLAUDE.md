@@ -6,7 +6,7 @@
 pilcrow-silcrow/
   pilcrow -> ../../pilcrow      # Pilcrow framework repo (Rust SSR engine)
   silcrow -> ../../silcrow      # Silcrow client runtime repo (JS)
-  sandbox/                     # Real consumer app, depends on Pilcrow by path
+  demo/                        # Real consumer app, depends on Pilcrow by path
   plans/                       # Feature implementation plans
   .claude/commands/            # Project slash commands
   .claude/hooks/               # Stop hook scripts
@@ -61,9 +61,9 @@ If node_modules is missing, run `npm install` in the pilcrow root first.
 cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 
-# Sandbox consumer app
-cargo build --manifest-path sandbox/Cargo.toml
-cargo run   --manifest-path sandbox/Cargo.toml
+# Demo consumer app
+cargo build --manifest-path demo/Cargo.toml
+cargo run   --manifest-path demo/Cargo.toml
 
 # Silcrow JS runtime
 cd silcrow && npm run build
