@@ -35,6 +35,13 @@
       "input_tokens": 0,
       "output_tokens": 0,
       "files": 61
+    },
+    {
+      "date": "2026-05-12T02:30:26.397728+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 14,
+      "note": "incremental: live-props feature (14 framework files)"
     }
   ],
   "total_input_tokens": 3200,

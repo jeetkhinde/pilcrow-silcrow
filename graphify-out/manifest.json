@@ -119,6 +119,54 @@
     "mtime": 1778362030.068694,
     "hash": "bfbe18360204ed78961ab6e866046dad"
   },
+  "pilcrow/crates/runtime/src/live_props/baking.rs": {
+    "mtime": 1778548422.6582904,
+    "hash": "5e7a8ce5f527f78ba27aa3a20813994d"
+  },
+  "pilcrow/crates/runtime/src/live_props/broadcast.rs": {
+    "mtime": 1778547986.4117188,
+    "hash": "9deb8f374f1c22d4df54c94244307bd5"
+  },
+  "pilcrow/crates/runtime/src/live_props/dep.rs": {
+    "mtime": 1778547587.6113274,
+    "hash": "f6a5e9bd2c98bf18b8c4b6c3d56268a9"
+  },
+  "pilcrow/crates/runtime/src/live_props/model.rs": {
+    "mtime": 1778547374.0965831,
+    "hash": "fe67f2f18ede6af9a13f12a0ffb8c884"
+  },
+  "pilcrow/crates/runtime/src/live_props/mod.rs": {
+    "mtime": 1778548429.5561876,
+    "hash": "488a0c20a4627cafc2a17b06f1d9a18c"
+  },
+  "pilcrow/crates/runtime/src/live_props/store.rs": {
+    "mtime": 1778547873.0245786,
+    "hash": "7214016a05f1015c70b584a016f1f40f"
+  },
+  "pilcrow/crates/macros/src/handler.rs": {
+    "mtime": 1778548343.66721,
+    "hash": "7166479e63bd26bb153c8afccd163699"
+  },
+  "pilcrow/crates/macros/src/lib.rs": {
+    "mtime": 1778548388.257028,
+    "hash": "a73cde8be58a32eb1db43934d3dbb2a9"
+  },
+  "pilcrow/crates/macros/src/invalidate_macro.rs": {
+    "mtime": 1778548377.108762,
+    "hash": "9e63fe356ba96b39229c10d855fbeb91"
+  },
+  "pilcrow/crates/macros/src/live_props_derive.rs": {
+    "mtime": 1778547708.2774734,
+    "hash": "9c0632ef46d527391d9bf8a7978d1b81"
+  },
+  "pilcrow/crates/core/src/config/config.rs": {
+    "mtime": 1778548529.5866237,
+    "hash": "5f649a2a0e79aa3ac10345ad573691bc"
+  },
+  "pilcrow/crates/runtime/src/start.rs": {
+    "mtime": 1778548049.9954615,
+    "hash": "ab0138ec2c0e0c1892537ce0203051b3"
+  },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
     "mtime": 1777673037.6269417,
     "hash": "0735d5e964c7b43c2f2419e8c54d465b"
@@ -242,5 +290,13 @@
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/sandbox/widgets/user-card.html": {
     "mtime": 1776723000.4884152,
     "hash": "ef70f3299222efa6ee559c3d5ed41958"
+  },
+  "pilcrow/migrations/001_pilcrow_cache.sql": {
+    "mtime": 1778547025.935809,
+    "hash": "145110de12b010cc3667ec7dc1203feb"
+  },
+  "pilcrow/migrations/002_pilcrow_cache_indexes.sql": {
+    "mtime": 1778547027.3955376,
+    "hash": "cd0a9ce37310cc44fda4d34689cfce17"
   }
 }
