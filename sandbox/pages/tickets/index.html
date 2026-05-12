@@ -1,0 +1,71 @@
+---
+---
+<pilcrow:head>
+  <title>Ticket Board — Pilcrow Live Props</title>
+  <style>
+    .board { border-collapse: collapse; width: 100%; margin-top: 1.5rem; }
+    .board th, .board td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .board th { font-weight: 600; color: #6b7280; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .status { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .status-open { background: #fef9c3; color: #854d0e; }
+    .status-resolved { background: #dcfce7; color: #166534; }
+    .btn { padding: 0.35rem 0.9rem; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 0.875rem; }
+    .btn:hover { background: #f9fafb; }
+    .note { margin-top: 2rem; padding: 1rem 1.25rem; background: #f0f9ff; border-left: 4px solid #38bdf8; border-radius: 4px; font-size: 0.875rem; color: #0c4a6e; }
+    code { font-family: monospace; background: #e0f2fe; padding: 0.1em 0.3em; border-radius: 3px; }
+  </style>
+</pilcrow:head>
+
+<h1>Ticket Board</h1>
+<p>Statuses stream live over SSE — open this page in two browser windows and click Toggle in one to see the other update instantly.</p>
+
+<table class="board">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Fix login timeout</td>
+      <td>
+        <span class="status" data-pilcrow-live-field="status_1">{{ status_1 }}</span>
+      </td>
+      <td>
+        <button class="btn" s-post="?/resolve_1">Toggle</button>
+      </td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Update API docs</td>
+      <td>
+        <span class="status" data-pilcrow-live-field="status_2">{{ status_2 }}</span>
+      </td>
+      <td>
+        <button class="btn" s-post="?/resolve_2">Toggle</button>
+      </td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Deploy to staging</td>
+      <td>
+        <span class="status" data-pilcrow-live-field="status_3">{{ status_3 }}</span>
+      </td>
+      <td>
+        <button class="btn" s-post="?/resolve_3">Toggle</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>How it works:</strong> each <code>LiveProp::watch(rx)</code> field opens an SSE connection
+  per-field. Clicking Toggle sends to the in-memory <code>watch::Sender</code>, which pushes the new
+  value to every subscriber. With <code>DATABASE_URL</code> set and the <code>live-props</code> feature
+  enabled, a <code>#[handler(live)]</code> handler would additionally persist slot values to
+  <code>pilcrow_cache</code> and support dep-key invalidation across restarts.
+</div>
