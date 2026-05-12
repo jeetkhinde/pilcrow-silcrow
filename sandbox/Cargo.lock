@@ -1934,6 +1934,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "pilcrow-routekit",
+ "pilcrow-runtime",
  "pilcrow-web",
  "reqwest",
  "serde",

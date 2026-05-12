@@ -6957,9 +6957,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L8",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_init",
-      "confidence_score": 1.0
+      "target": "tickets_index_init"
     },
     {
       "relation": "contains",
@@ -6967,9 +6967,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_props",
-      "confidence_score": 1.0
+      "target": "tickets_index_props"
     },
     {
       "relation": "contains",
@@ -6977,9 +6977,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L18",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_load",
-      "confidence_score": 1.0
+      "target": "tickets_index_load"
     },
     {
       "relation": "contains",
@@ -6987,9 +6987,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L26",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_resolve_1",
-      "confidence_score": 1.0
+      "target": "tickets_index_resolve_1"
     },
     {
       "relation": "contains",
@@ -6997,9 +6997,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_resolve_2",
-      "confidence_score": 1.0
+      "target": "tickets_index_resolve_2"
     },
     {
       "relation": "contains",
@@ -7007,9 +7007,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L42",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "sandbox_pages_tickets_index_rs",
-      "target": "tickets_index_resolve_3",
-      "confidence_score": 1.0
+      "target": "tickets_index_resolve_3"
     },
     {
       "relation": "calls",
@@ -7018,9 +7018,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tickets_index_load",
-      "target": "tickets_index_init",
-      "confidence_score": 1.0
+      "target": "tickets_index_init"
     },
     {
       "relation": "calls",
@@ -7029,9 +7029,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tickets_index_resolve_1",
-      "target": "tickets_index_init",
-      "confidence_score": 1.0
+      "target": "tickets_index_init"
     },
     {
       "relation": "calls",
@@ -7040,9 +7040,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L35",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tickets_index_resolve_2",
-      "target": "tickets_index_init",
-      "confidence_score": 1.0
+      "target": "tickets_index_init"
     },
     {
       "relation": "calls",
@@ -7051,9 +7051,9 @@
       "source_file": "sandbox/pages/tickets/index.rs",
       "source_location": "L43",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "tickets_index_resolve_3",
-      "target": "tickets_index_init",
-      "confidence_score": 1.0
+      "target": "tickets_index_init"
     },
     {
       "relation": "contains",
@@ -17530,5 +17530,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "02183d71887d2cbcc9742638c364614209a6b99f"
+  "built_at_commit": "c2f4dadba9aabea608474eb3aca5eb52571d0855"
 }
