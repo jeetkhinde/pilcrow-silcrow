@@ -106,7 +106,7 @@ For ANY question about React usage in Pilcrow/Silcrow:
 2. Read `.claude/react-hook-guide.md` — every hook with usage examples
 
 Do NOT open `pilcrow/crates/routekit/src/templating/react.rs`, `react-islands.js`,
-or `sandbox/react/` unless the user asks for implementation internals or you are
+or `demo/react/` unless the user asks for implementation internals or you are
 actively debugging a mismatch between the docs and real behavior.
 
 The authoritative hook source is the `PILCROW_REACT_TS` constant in `react.rs` —
