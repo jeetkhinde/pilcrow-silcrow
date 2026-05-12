@@ -1,5 +1,5 @@
 ---
-description: Verify the full silcrow → pilcrow → sandbox build chain in sequence
+description: Verify the full silcrow → pilcrow → demo build chain in sequence
 allowed-tools: Bash
 ---
 
@@ -27,4 +27,4 @@ Failure here usually means the demo has a Pilcrow API incompatibility.
 - Step 1: ✓ / ✗ + first error line if failed
 - Step 2: ✓ / ✗ + first error line if failed
 - Step 3: ✓ / ✗ + first error line if failed
-- If all pass: "Build chain OK — silcrow.js is embedded and sandbox compiles."
+- If all pass: "Build chain OK — silcrow.js is embedded and demo compiles."
