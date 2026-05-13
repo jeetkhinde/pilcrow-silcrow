@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 719 nodes · 1432 edges · 62 communities (39 shown, 23 thin omitted)
+- 719 nodes · 1432 edges · 62 communities (40 shown, 22 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8e8e981e`
+- Built from commit: `2e6da43a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -100,7 +100,7 @@
 - **DB schema: pilcrow_cache + pilcrow_routes tables + GIN + stale indexes** — migration_001_pilcrow_cache, migration_001_pilcrow_routes, migration_002_gin_index, migration_002_stale_index [EXTRACTED 1.00]
 - **Startup registration: start_with_adapter registers LiveBroadcast + LivePageStore as Axum extensions** — runtime_start_start_with_adapter, runtime_start_live_props_registration, live_props_broadcast_livebroadcast, live_props_store_livepagestore [EXTRACTED 1.00]
 
-## Communities (62 total, 23 thin omitted)
+## Communities (62 total, 22 thin omitted)
 
 ### Community 0 - "Baked Pages Store Engine"
 Cohesion: 0.06
@@ -148,7 +148,7 @@ Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Dem
 
 ### Community 11 - "Handler Macro Logic"
 Cohesion: 0.23
-Nodes (9): bust(), load(), now_utc(), Props, chrono_now(), load(), Props, load() (+1 more)
+Nodes (8): bust(), load(), now_utc(), Props, load(), Props, load(), Props
 
 ### Community 12 - "API Route Handlers"
 Cohesion: 0.24
@@ -191,12 +191,12 @@ Cohesion: 0.5
 Nodes (3): load(), now_utc(), Props
 
 ### Community 24 - "App Lifecycle Hooks B"
-Cohesion: 0.7
-Nodes (3): counter_tx(), load(), Props
-
-### Community 25 - "Counter Page Handler"
 Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
+
+### Community 25 - "Counter Page Handler"
+Cohesion: 0.7
+Nodes (3): counter_tx(), load(), Props
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
@@ -206,9 +206,13 @@ Nodes (5): createSilcrowStore — SolidJS store bound to Silcrow atom scope, san
 Cohesion: 0.7
 Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type()
 
-### Community 32 - "App Shell & Navigation"
+### Community 31 - "Codegen Build Scripts"
 Cohesion: 0.67
 Nodes (3): load(), now_utc(), Props
+
+### Community 32 - "App Shell & Navigation"
+Cohesion: 0.67
+Nodes (3): chrono_now(), load(), Props
 
 ### Community 40 - "Live Props Module Root"
 Cohesion: 1.0
@@ -229,7 +233,7 @@ Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 ## Knowledge Gaps
 - **143 isolated node(s):** `Props`, `Props`, `Architecture`, `Integration`, `Build Rule` (+138 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

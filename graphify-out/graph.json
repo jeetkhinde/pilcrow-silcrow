@@ -272,7 +272,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L1",
       "id": "demo_pages_index_rs",
-      "community": 31,
+      "community": 11,
       "norm_label": "index.rs"
     },
     {
@@ -281,7 +281,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L1",
       "id": "pages_index_props",
-      "community": 31,
+      "community": 11,
       "norm_label": "props"
     },
     {
@@ -290,7 +290,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L6",
       "id": "pages_index_load",
-      "community": 31,
+      "community": 11,
       "norm_label": "load()"
     },
     {
@@ -533,7 +533,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L1",
       "id": "demo_pages_live_index_rs",
-      "community": 24,
+      "community": 25,
       "norm_label": "index.rs"
     },
     {
@@ -542,7 +542,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L6",
       "id": "live_index_counter_tx",
-      "community": 24,
+      "community": 25,
       "norm_label": "counter_tx()"
     },
     {
@@ -551,7 +551,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L22",
       "id": "live_index_props",
-      "community": 24,
+      "community": 25,
       "norm_label": "props"
     },
     {
@@ -560,7 +560,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L27",
       "id": "live_index_load",
-      "community": 24,
+      "community": 25,
       "norm_label": "load()"
     },
     {
@@ -4033,7 +4033,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/index.rs",
       "source_location": "L1",
-      "community": 31,
+      "community": 11,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_index_rs"
     },
@@ -4132,7 +4132,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L1",
-      "community": 25,
+      "community": 24,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_deferred_index_rs"
     },
@@ -4141,7 +4141,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L12",
-      "community": 25,
+      "community": 24,
       "norm_label": "props",
       "id": "deferred_index_props"
     },
@@ -4150,7 +4150,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L20",
-      "community": 25,
+      "community": 24,
       "norm_label": "load()",
       "id": "deferred_index_load"
     },
@@ -4159,7 +4159,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L37",
-      "community": 25,
+      "community": 24,
       "norm_label": "render_posts()",
       "id": "deferred_index_render_posts"
     },
@@ -4168,7 +4168,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L57",
-      "community": 25,
+      "community": 24,
       "norm_label": "now_utc()",
       "id": "deferred_index_now_utc"
     },
@@ -4177,7 +4177,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L1",
-      "community": 32,
+      "community": 12,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_streaming_index_rs"
     },
@@ -4186,7 +4186,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L7",
-      "community": 32,
+      "community": 12,
       "norm_label": "props",
       "id": "streaming_index_props"
     },
@@ -4204,7 +4204,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L27",
-      "community": 32,
+      "community": 12,
       "norm_label": "load()",
       "id": "streaming_index_load"
     },
@@ -4213,7 +4213,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L38",
-      "community": 32,
+      "community": 12,
       "norm_label": "now_utc()",
       "id": "streaming_index_now_utc"
     },
@@ -4222,7 +4222,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L1",
-      "community": 12,
+      "community": 31,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssg_index_rs"
     },
@@ -4231,7 +4231,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L6",
-      "community": 12,
+      "community": 31,
       "norm_label": "props",
       "id": "ssg_index_props"
     },
@@ -4240,7 +4240,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L13",
-      "community": 12,
+      "community": 31,
       "norm_label": "load()",
       "id": "ssg_index_load"
     },
@@ -4249,7 +4249,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L22",
-      "community": 12,
+      "community": 31,
       "norm_label": "now_utc()",
       "id": "ssg_index_now_utc"
     },
@@ -4258,7 +4258,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L1",
-      "community": 11,
+      "community": 32,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssr_index_rs"
     },
@@ -4267,7 +4267,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L4",
-      "community": 11,
+      "community": 32,
       "norm_label": "props",
       "id": "ssr_index_props"
     },
@@ -4276,7 +4276,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L11",
-      "community": 11,
+      "community": 32,
       "norm_label": "load()",
       "id": "ssr_index_load"
     },
@@ -4285,7 +4285,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L20",
-      "community": 11,
+      "community": 32,
       "norm_label": "chrono_now()",
       "id": "ssr_index_chrono_now"
     },
@@ -4483,7 +4483,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/live/index.rs",
       "source_location": "L1",
-      "community": 24,
+      "community": 25,
       "norm_label": "index.rs",
       "id": "sandbox_pages_live_index_rs"
     },
@@ -21827,5 +21827,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "8e8e981e8571d2ee871b7dc6b4f4076b828c94d9"
+  "built_at_commit": "2e6da43a99bf574f5ba522148239f033a222084f"
 }
