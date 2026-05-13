@@ -1,11 +1,13 @@
 
-# Read Claude.md at workspace root.
+# Agent Instructions
 
-## CLAUDE.md — pilcrow-silcrow workspace
-
-Read Claude.md for project level info, then this file for agent-specific info.
-/Pilcrow/CLAUDE.md
-/Silcrow/CLAUDE.md
+Reading order:
+1. Claude.md (workspace root) — project topology, build commands, crate map
+2. AGENTS.md (this file) — agent-specific instructions
+3. pilcrow/CLAUDE.md — Pilcrow framework guidance
+4. silcrow/CLAUDE.md — Silcrow JS runtime guidance
+5. pilcrow/AGENTS.md — Pilcrow-specific agent rules, if present
+6. silcrow/AGENTS.md — Silcrow-specific agent rules, if present
 
 ## graphify
 
