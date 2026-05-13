@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 719 nodes · 1432 edges · 62 communities (40 shown, 22 thin omitted)
+- 719 nodes · 1432 edges · 62 communities (39 shown, 23 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7acb69a7`
+- Built from commit: `8e8e981e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -100,7 +100,7 @@
 - **DB schema: pilcrow_cache + pilcrow_routes tables + GIN + stale indexes** — migration_001_pilcrow_cache, migration_001_pilcrow_routes, migration_002_gin_index, migration_002_stale_index [EXTRACTED 1.00]
 - **Startup registration: start_with_adapter registers LiveBroadcast + LivePageStore as Axum extensions** — runtime_start_start_with_adapter, runtime_start_live_props_registration, live_props_broadcast_livebroadcast, live_props_store_livepagestore [EXTRACTED 1.00]
 
-## Communities (62 total, 22 thin omitted)
+## Communities (62 total, 23 thin omitted)
 
 ### Community 0 - "Baked Pages Store Engine"
 Cohesion: 0.06
@@ -148,7 +148,7 @@ Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Dem
 
 ### Community 11 - "Handler Macro Logic"
 Cohesion: 0.23
-Nodes (8): bust(), load(), now_utc(), Props, load(), Props, load(), Props
+Nodes (9): bust(), load(), now_utc(), Props, chrono_now(), load(), Props, load() (+1 more)
 
 ### Community 12 - "API Route Handlers"
 Cohesion: 0.24
@@ -159,12 +159,12 @@ Cohesion: 0.24
 Nodes (4): body_uses_client(), ClientVisitor, expand(), is_live_attr()
 
 ### Community 14 - "Counter Feature"
-Cohesion: 0.39
-Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
-
-### Community 15 - "Baked Pages Architecture Docs"
 Cohesion: 0.44
 Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
+
+### Community 15 - "Baked Pages Architecture Docs"
+Cohesion: 0.39
+Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
 
 ### Community 17 - "Page Templates"
 Cohesion: 0.57
@@ -187,16 +187,16 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 23 - "App Lifecycle Hooks A"
-Cohesion: 0.6
-Nodes (4): load(), now_utc(), Props, render_posts()
+Cohesion: 0.5
+Nodes (3): load(), now_utc(), Props
 
 ### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.7
 Nodes (3): counter_tx(), load(), Props
 
 ### Community 25 - "Counter Page Handler"
-Cohesion: 0.5
-Nodes (3): load(), now_utc(), Props
+Cohesion: 0.6
+Nodes (4): load(), now_utc(), Props, render_posts()
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
@@ -209,10 +209,6 @@ Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type(
 ### Community 32 - "App Shell & Navigation"
 Cohesion: 0.67
 Nodes (3): load(), now_utc(), Props
-
-### Community 33 - "Error & Fallback Pages"
-Cohesion: 0.67
-Nodes (3): chrono_now(), load(), Props
 
 ### Community 40 - "Live Props Module Root"
 Cohesion: 1.0
@@ -233,18 +229,18 @@ Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 ## Knowledge Gaps
 - **143 isolated node(s):** `Props`, `Props`, `Architecture`, `Integration`, `Build Rule` (+138 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Props` connect `Handler Macro Logic` to `Baked Pages Store Engine`, `Config & Cache Settings`, `SSG Page Handlers`, `Codegen Build Scripts`?**
+- **Why does `Props` connect `Handler Macro Logic` to `Baked Pages Store Engine`, `Error & Fallback Pages`, `Config & Cache Settings`, `SSG Page Handlers`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Sandbox E-commerce UI`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Store Engine`, `Handler Macro Logic`, `Counter Feature`?**
+- **Why does `get()` connect `Counter Feature` to `Baked Pages Store Engine`, `Handler Macro Logic`, `Baked Pages Architecture Docs`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Architecture` to the rest of the system?**
   _143 weakly-connected nodes found - possible documentation gaps or missing edges._
