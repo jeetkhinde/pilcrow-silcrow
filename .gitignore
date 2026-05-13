@@ -1,11 +1,13 @@
 # Compiled output
-sandbox/target
-sandbox/target/
-sandbox/node_modules
-sandbox/node_modules/
+demo/target
+demo/target/
+demo/node_modules
+demo/node_modules/
+demo/.pilcrow-baked
+
 target/
 public/
-sandbox/.pilcrow-baked/
+
 
 
 

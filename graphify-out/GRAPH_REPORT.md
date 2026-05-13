@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8ead4663`
+- Built from commit: `7acb69a7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -187,16 +187,16 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 23 - "App Lifecycle Hooks A"
-Cohesion: 0.5
-Nodes (3): load(), now_utc(), Props
-
-### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
 
-### Community 25 - "Counter Page Handler"
+### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.7
 Nodes (3): counter_tx(), load(), Props
+
+### Community 25 - "Counter Page Handler"
+Cohesion: 0.5
+Nodes (3): load(), now_utc(), Props
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
@@ -208,11 +208,11 @@ Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type(
 
 ### Community 32 - "App Shell & Navigation"
 Cohesion: 0.67
-Nodes (3): chrono_now(), load(), Props
+Nodes (3): load(), now_utc(), Props
 
 ### Community 33 - "Error & Fallback Pages"
 Cohesion: 0.67
-Nodes (3): load(), now_utc(), Props
+Nodes (3): chrono_now(), load(), Props
 
 ### Community 40 - "Live Props Module Root"
 Cohesion: 1.0

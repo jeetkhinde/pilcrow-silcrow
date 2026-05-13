@@ -30,7 +30,7 @@ pub async fn load(_req: Req) -> AppResult<Props> {
         server_time: now_utc(),
         live_count: pilcrow_web::LiveProp::watch(rx),
         async_time: pilcrow_web::AsyncValue::spawn(async {
-            tokio::time::sleep(std::time::Duration::from_millis(700)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(10000)).await;
             now_utc()
         }),
     })
