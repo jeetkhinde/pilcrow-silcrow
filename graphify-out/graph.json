@@ -83,7 +83,7 @@
       "source_file": "demo/build.rs",
       "source_location": "L1",
       "id": "demo_build_rs",
-      "community": 43,
+      "community": 42,
       "norm_label": "build.rs"
     },
     {
@@ -92,7 +92,7 @@
       "source_file": "demo/build.rs",
       "source_location": "L1",
       "id": "demo_build_main",
-      "community": 43,
+      "community": 42,
       "norm_label": "main()"
     },
     {
@@ -101,7 +101,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L1",
       "id": "demo_hooks_rs",
-      "community": 28,
+      "community": 27,
       "norm_label": "hooks.rs"
     },
     {
@@ -110,7 +110,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L7",
       "id": "demo_hooks_handle",
-      "community": 28,
+      "community": 27,
       "norm_label": "handle()"
     },
     {
@@ -119,7 +119,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L20",
       "id": "demo_hooks_handle_error",
-      "community": 28,
+      "community": 27,
       "norm_label": "handle_error()"
     },
     {
@@ -128,7 +128,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L28",
       "id": "demo_hooks_init",
-      "community": 28,
+      "community": 27,
       "norm_label": "init()"
     },
     {
@@ -137,7 +137,7 @@
       "source_file": "demo/solid/silcrow-solid.ts",
       "source_location": "L1",
       "id": "demo_solid_silcrow_solid_ts",
-      "community": 37,
+      "community": 36,
       "norm_label": "silcrow-solid.ts"
     },
     {
@@ -146,7 +146,7 @@
       "source_file": "demo/solid/silcrow-solid.ts",
       "source_location": "L31",
       "id": "solid_silcrow_solid_createsilcrowstore",
-      "community": 37,
+      "community": 36,
       "norm_label": "createsilcrowstore()"
     },
     {
@@ -155,7 +155,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L1",
       "id": "demo_solid_counter_tsx",
-      "community": 12,
+      "community": 10,
       "norm_label": "counter.tsx"
     },
     {
@@ -164,7 +164,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L3",
       "id": "solid_counter_props",
-      "community": 12,
+      "community": 10,
       "norm_label": "props"
     },
     {
@@ -173,7 +173,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L7",
       "id": "solid_counter_counter",
-      "community": 12,
+      "community": 10,
       "norm_label": "counter()"
     },
     {
@@ -182,7 +182,7 @@
       "source_file": "demo/params/integer.rs",
       "source_location": "L1",
       "id": "demo_params_integer_rs",
-      "community": 38,
+      "community": 37,
       "norm_label": "integer.rs"
     },
     {
@@ -191,7 +191,7 @@
       "source_file": "demo/params/integer.rs",
       "source_location": "L2",
       "id": "params_integer_match_param",
-      "community": 38,
+      "community": 37,
       "norm_label": "match_param()"
     },
     {
@@ -200,7 +200,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L1",
       "id": "demo_api_products_rs",
-      "community": 14,
+      "community": 15,
       "norm_label": "products.rs"
     },
     {
@@ -209,7 +209,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L4",
       "id": "api_products_product",
-      "community": 14,
+      "community": 15,
       "norm_label": "product"
     },
     {
@@ -218,7 +218,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L12",
       "id": "api_products_apiresponse",
-      "community": 14,
+      "community": 15,
       "norm_label": "apiresponse"
     },
     {
@@ -227,7 +227,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L17",
       "id": "api_products_params",
-      "community": 14,
+      "community": 15,
       "norm_label": "params"
     },
     {
@@ -236,7 +236,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L21",
       "id": "api_products_get",
-      "community": 14,
+      "community": 15,
       "norm_label": "get()"
     },
     {
@@ -245,7 +245,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L38",
       "id": "api_products_render_cards",
-      "community": 14,
+      "community": 15,
       "norm_label": "render_cards()"
     },
     {
@@ -254,7 +254,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L64",
       "id": "api_products_escape",
-      "community": 14,
+      "community": 15,
       "norm_label": "escape()"
     },
     {
@@ -263,7 +263,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L71",
       "id": "api_products_router",
-      "community": 14,
+      "community": 15,
       "norm_label": "router()"
     },
     {
@@ -272,7 +272,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L1",
       "id": "demo_pages_index_rs",
-      "community": 11,
+      "community": 12,
       "norm_label": "index.rs"
     },
     {
@@ -281,7 +281,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L1",
       "id": "pages_index_props",
-      "community": 11,
+      "community": 12,
       "norm_label": "props"
     },
     {
@@ -290,7 +290,7 @@
       "source_file": "demo/pages/index.rs",
       "source_location": "L6",
       "id": "pages_index_load",
-      "community": 11,
+      "community": 12,
       "norm_label": "load()"
     },
     {
@@ -299,7 +299,7 @@
       "source_file": "demo/pages/demo/react-island/index.rs",
       "source_location": "L1",
       "id": "demo_pages_demo_react_island_index_rs",
-      "community": 39,
+      "community": 38,
       "norm_label": "index.rs"
     },
     {
@@ -308,7 +308,7 @@
       "source_file": "demo/pages/demo/react-island/index.rs",
       "source_location": "L1",
       "id": "react_island_index_props",
-      "community": 39,
+      "community": 38,
       "norm_label": "props"
     },
     {
@@ -317,7 +317,7 @@
       "source_file": "demo/pages/demo/react-island/index.rs",
       "source_location": "L6",
       "id": "react_island_index_load",
-      "community": 39,
+      "community": 38,
       "norm_label": "load()"
     },
     {
@@ -434,7 +434,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L1",
       "id": "demo_pages_products_index_rs",
-      "community": 15,
+      "community": 14,
       "norm_label": "index.rs"
     },
     {
@@ -443,7 +443,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L7",
       "id": "products_index_apiresponse",
-      "community": 15,
+      "community": 14,
       "norm_label": "apiresponse"
     },
     {
@@ -452,7 +452,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L12",
       "id": "products_index_product",
-      "community": 15,
+      "community": 14,
       "norm_label": "product"
     },
     {
@@ -461,7 +461,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L19",
       "id": "products_index_productview",
-      "community": 15,
+      "community": 14,
       "norm_label": "productview"
     },
     {
@@ -470,7 +470,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L27",
       "id": "products_index_categoryinfo",
-      "community": 15,
+      "community": 14,
       "norm_label": "categoryinfo"
     },
     {
@@ -479,7 +479,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L32",
       "id": "products_index_category",
-      "community": 15,
+      "community": 14,
       "norm_label": "category"
     },
     {
@@ -488,7 +488,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L37",
       "id": "products_index_props",
-      "community": 15,
+      "community": 14,
       "norm_label": "props"
     },
     {
@@ -497,7 +497,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L43",
       "id": "products_index_load",
-      "community": 15,
+      "community": 14,
       "norm_label": "load()"
     },
     {
@@ -506,7 +506,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L1",
       "id": "demo_pages_about_index_rs",
-      "community": 34,
+      "community": 33,
       "norm_label": "index.rs"
     },
     {
@@ -515,7 +515,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L1",
       "id": "about_index_props",
-      "community": 34,
+      "community": 33,
       "norm_label": "props"
     },
     {
@@ -524,7 +524,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L6",
       "id": "about_index_load",
-      "community": 34,
+      "community": 33,
       "norm_label": "load()"
     },
     {
@@ -767,7 +767,7 @@
       "source_file": "demo/react/DemoCounter.tsx",
       "source_location": "L1",
       "id": "demo_react_democounter_tsx",
-      "community": 44,
+      "community": 43,
       "norm_label": "democounter.tsx"
     },
     {
@@ -776,7 +776,7 @@
       "source_file": "demo/react/DemoCounter.tsx",
       "source_location": "L3",
       "id": "react_democounter_democounter",
-      "community": 44,
+      "community": 43,
       "norm_label": "democounter()"
     },
     {
@@ -1019,7 +1019,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L1",
       "id": "demo_react_greeting_tsx",
-      "community": 30,
+      "community": 29,
       "norm_label": "greeting.tsx"
     },
     {
@@ -1028,7 +1028,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L1",
       "id": "react_greeting_props",
-      "community": 30,
+      "community": 29,
       "norm_label": "props"
     },
     {
@@ -1037,7 +1037,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L6",
       "id": "react_greeting_greeting",
-      "community": 30,
+      "community": 29,
       "norm_label": "greeting()"
     },
     {
@@ -1091,7 +1091,7 @@
       "source_file": "demo/widgets/user-card.rs",
       "source_location": "L1",
       "id": "demo_widgets_user_card_rs",
-      "community": 11,
+      "community": 12,
       "norm_label": "user-card.rs"
     },
     {
@@ -1100,7 +1100,7 @@
       "source_file": "demo/widgets/user-card.rs",
       "source_location": "L1",
       "id": "widgets_user_card_props",
-      "community": 11,
+      "community": 12,
       "norm_label": "props"
     },
     {
@@ -1109,7 +1109,7 @@
       "source_file": "demo/widgets/user-card.rs",
       "source_location": "L6",
       "id": "widgets_user_card_load",
-      "community": 11,
+      "community": 12,
       "norm_label": "load()"
     },
     {
@@ -3836,7 +3836,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L1",
       "id": "docs_superpowers_specs_2026_05_12_demo_app_consolidation_design_md",
-      "community": 10,
+      "community": 11,
       "norm_label": "2026-05-12-demo-app-consolidation-design.md"
     },
     {
@@ -3845,7 +3845,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L1",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_app_consolidation_design",
-      "community": 10,
+      "community": 11,
       "norm_label": "demo app consolidation design"
     },
     {
@@ -3854,7 +3854,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L7",
       "id": "specs_2026_05_12_demo_app_consolidation_design_overview",
-      "community": 10,
+      "community": 11,
       "norm_label": "overview"
     },
     {
@@ -3863,7 +3863,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L11",
       "id": "specs_2026_05_12_demo_app_consolidation_design_motivation",
-      "community": 10,
+      "community": 11,
       "norm_label": "motivation"
     },
     {
@@ -3872,7 +3872,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L17",
       "id": "specs_2026_05_12_demo_app_consolidation_design_app_identity",
-      "community": 10,
+      "community": 11,
       "norm_label": "app identity"
     },
     {
@@ -3881,7 +3881,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L28",
       "id": "specs_2026_05_12_demo_app_consolidation_design_page_inventory",
-      "community": 10,
+      "community": 11,
       "norm_label": "page inventory"
     },
     {
@@ -3890,7 +3890,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L30",
       "id": "specs_2026_05_12_demo_app_consolidation_design_kept_from_sandbox_unchanged",
-      "community": 10,
+      "community": 11,
       "norm_label": "kept (from sandbox, unchanged)"
     },
     {
@@ -3899,7 +3899,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L42",
       "id": "specs_2026_05_12_demo_app_consolidation_design_deleted_from_pilcrow_demos_not_migrated",
-      "community": 10,
+      "community": 11,
       "norm_label": "deleted (from pilcrow-demos, not migrated)"
     },
     {
@@ -3908,7 +3908,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L46",
       "id": "specs_2026_05_12_demo_app_consolidation_design_added",
-      "community": 10,
+      "community": 11,
       "norm_label": "added"
     },
     {
@@ -3917,7 +3917,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L53",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_fsr_page_design",
-      "community": 10,
+      "community": 11,
       "norm_label": "`/demo/fsr` page design"
     },
     {
@@ -3926,7 +3926,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L72",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_react_island_page_design",
-      "community": 10,
+      "community": 11,
       "norm_label": "`/demo/react-island` page design"
     },
     {
@@ -3935,7 +3935,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L91",
       "id": "specs_2026_05_12_demo_app_consolidation_design_nav_layout",
-      "community": 10,
+      "community": 11,
       "norm_label": "nav & layout"
     },
     {
@@ -3944,7 +3944,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L101",
       "id": "specs_2026_05_12_demo_app_consolidation_design_out_of_scope",
-      "community": 10,
+      "community": 11,
       "norm_label": "out of scope"
     },
     {
@@ -3953,7 +3953,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L106",
       "id": "specs_2026_05_12_demo_app_consolidation_design_file_operations_summary",
-      "community": 10,
+      "community": 11,
       "norm_label": "file operations summary"
     },
     {
@@ -3961,7 +3961,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/build.rs",
       "source_location": "L1",
-      "community": 45,
+      "community": 44,
       "norm_label": "build.rs",
       "id": "pilcrow_demos_build_rs"
     },
@@ -3970,7 +3970,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/build.rs",
       "source_location": "L1",
-      "community": 45,
+      "community": 44,
       "norm_label": "main()",
       "id": "pilcrow_demos_build_main"
     },
@@ -3979,7 +3979,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L1",
-      "community": 29,
+      "community": 28,
       "norm_label": "hooks.rs",
       "id": "pilcrow_demos_hooks_rs"
     },
@@ -3988,7 +3988,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L3",
-      "community": 29,
+      "community": 28,
       "norm_label": "handle()",
       "id": "pilcrow_demos_hooks_handle"
     },
@@ -3997,7 +3997,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L7",
-      "community": 29,
+      "community": 28,
       "norm_label": "handle_error()",
       "id": "pilcrow_demos_hooks_handle_error"
     },
@@ -4006,7 +4006,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L12",
-      "community": 29,
+      "community": 28,
       "norm_label": "init()",
       "id": "pilcrow_demos_hooks_init"
     },
@@ -4015,7 +4015,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/index.rs",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_index_rs"
     },
@@ -4024,7 +4024,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L1",
-      "community": 25,
+      "community": 10,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_isr_ssg_index_rs"
     },
@@ -4033,7 +4033,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L7",
-      "community": 25,
+      "community": 10,
       "norm_label": "props",
       "id": "isr_ssg_index_props"
     },
@@ -4042,7 +4042,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L14",
-      "community": 25,
+      "community": 10,
       "norm_label": "load()",
       "id": "isr_ssg_index_load"
     },
@@ -4051,7 +4051,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L23",
-      "community": 25,
+      "community": 10,
       "norm_label": "bust()",
       "id": "isr_ssg_index_bust"
     },
@@ -4060,7 +4060,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L28",
-      "community": 25,
+      "community": 10,
       "norm_label": "now_utc()",
       "id": "isr_ssg_index_now_utc"
     },
@@ -4069,7 +4069,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr/index.rs",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_isr_index_rs"
     },
@@ -4078,7 +4078,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr/index.rs",
       "source_location": "L10",
-      "community": 11,
+      "community": 12,
       "norm_label": "props",
       "id": "isr_index_props"
     },
@@ -4087,7 +4087,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr/index.rs",
       "source_location": "L17",
-      "community": 11,
+      "community": 12,
       "norm_label": "load()",
       "id": "isr_index_load"
     },
@@ -4096,7 +4096,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr/index.rs",
       "source_location": "L26",
-      "community": 11,
+      "community": 12,
       "norm_label": "bust()",
       "id": "isr_index_bust"
     },
@@ -4105,7 +4105,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr/index.rs",
       "source_location": "L31",
-      "community": 11,
+      "community": 12,
       "norm_label": "now_utc()",
       "id": "isr_index_now_utc"
     },
@@ -4159,7 +4159,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L1",
-      "community": 32,
+      "community": 31,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_streaming_index_rs"
     },
@@ -4168,7 +4168,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L7",
-      "community": 32,
+      "community": 31,
       "norm_label": "props",
       "id": "streaming_index_props"
     },
@@ -4186,7 +4186,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L27",
-      "community": 32,
+      "community": 31,
       "norm_label": "load()",
       "id": "streaming_index_load"
     },
@@ -4195,7 +4195,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L38",
-      "community": 32,
+      "community": 31,
       "norm_label": "now_utc()",
       "id": "streaming_index_now_utc"
     },
@@ -4204,7 +4204,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L1",
-      "community": 12,
+      "community": 10,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssg_index_rs"
     },
@@ -4213,7 +4213,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L6",
-      "community": 12,
+      "community": 10,
       "norm_label": "props",
       "id": "ssg_index_props"
     },
@@ -4222,7 +4222,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L13",
-      "community": 12,
+      "community": 10,
       "norm_label": "load()",
       "id": "ssg_index_load"
     },
@@ -4231,7 +4231,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L22",
-      "community": 12,
+      "community": 10,
       "norm_label": "now_utc()",
       "id": "ssg_index_now_utc"
     },
@@ -4240,7 +4240,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L1",
-      "community": 31,
+      "community": 30,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssr_index_rs"
     },
@@ -4249,7 +4249,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L4",
-      "community": 31,
+      "community": 30,
       "norm_label": "props",
       "id": "ssr_index_props"
     },
@@ -4258,7 +4258,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L11",
-      "community": 31,
+      "community": 30,
       "norm_label": "load()",
       "id": "ssr_index_load"
     },
@@ -4267,7 +4267,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L20",
-      "community": 31,
+      "community": 30,
       "norm_label": "chrono_now()",
       "id": "ssr_index_chrono_now"
     },
@@ -4285,7 +4285,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L1",
-      "community": 12,
+      "community": 10,
       "norm_label": "counter.rs",
       "id": "pilcrow_demos_src_data_counter_rs"
     },
@@ -4294,7 +4294,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L6",
-      "community": 12,
+      "community": 10,
       "norm_label": "increment()",
       "id": "data_counter_increment"
     },
@@ -4303,7 +4303,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L10",
-      "community": 12,
+      "community": 10,
       "norm_label": "current()",
       "id": "data_counter_current"
     },
@@ -4312,7 +4312,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/mod.rs",
       "source_location": "L1",
-      "community": 49,
+      "community": 48,
       "norm_label": "mod.rs",
       "id": "pilcrow_demos_src_data_mod_rs"
     },
@@ -4366,7 +4366,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L1",
-      "community": 33,
+      "community": 32,
       "norm_label": "hooks.rs",
       "id": "sandbox_hooks_rs"
     },
@@ -4375,7 +4375,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L7",
-      "community": 33,
+      "community": 32,
       "norm_label": "handle()",
       "id": "sandbox_hooks_handle"
     },
@@ -4384,7 +4384,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L20",
-      "community": 33,
+      "community": 32,
       "norm_label": "handle_error()",
       "id": "sandbox_hooks_handle_error"
     },
@@ -4393,7 +4393,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L28",
-      "community": 33,
+      "community": 32,
       "norm_label": "init()",
       "id": "sandbox_hooks_init"
     },
@@ -4402,7 +4402,7 @@
       "file_type": "code",
       "source_file": "sandbox/solid/silcrow-solid.ts",
       "source_location": "L1",
-      "community": 37,
+      "community": 36,
       "norm_label": "silcrow-solid.ts",
       "id": "sandbox_solid_silcrow_solid_ts"
     },
@@ -4420,7 +4420,7 @@
       "file_type": "code",
       "source_file": "sandbox/params/integer.rs",
       "source_location": "L1",
-      "community": 38,
+      "community": 37,
       "norm_label": "integer.rs",
       "id": "sandbox_params_integer_rs"
     },
@@ -4429,7 +4429,7 @@
       "file_type": "code",
       "source_file": "sandbox/api/products.rs",
       "source_location": "L1",
-      "community": 14,
+      "community": 15,
       "norm_label": "products.rs",
       "id": "sandbox_api_products_rs"
     },
@@ -4438,7 +4438,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/index.rs",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "index.rs",
       "id": "sandbox_pages_index_rs"
     },
@@ -4456,7 +4456,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L1",
-      "community": 15,
+      "community": 14,
       "norm_label": "index.rs",
       "id": "sandbox_pages_products_index_rs"
     },
@@ -4465,7 +4465,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/about/index.rs",
       "source_location": "L1",
-      "community": 34,
+      "community": 33,
       "norm_label": "index.rs",
       "id": "sandbox_pages_about_index_rs"
     },
@@ -4510,7 +4510,7 @@
       "file_type": "code",
       "source_file": "sandbox/react/Greeting.tsx",
       "source_location": "L1",
-      "community": 30,
+      "community": 29,
       "norm_label": "greeting.tsx",
       "id": "sandbox_react_greeting_tsx"
     },
@@ -4528,7 +4528,7 @@
       "file_type": "code",
       "source_file": "sandbox/widgets/user-card.rs",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "user-card.rs",
       "id": "sandbox_widgets_user_card_rs"
     },
@@ -4577,7 +4577,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 39,
       "norm_label": "pilcrow-demos build.rs",
       "id": "pilcrow_demos_build"
     },
@@ -4590,7 +4590,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 39,
       "norm_label": "routekit::compile_current_crate_sources",
       "id": "routekit_compile_current_crate"
     },
@@ -4603,7 +4603,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 45,
       "norm_label": "pilcrow-demos hooks.rs",
       "id": "pilcrow_demos_hooks"
     },
@@ -4711,7 +4711,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 46,
       "norm_label": "pilcrow-demos src/main.rs",
       "id": "pilcrow_demos_main"
     },
@@ -4724,7 +4724,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 46,
       "norm_label": "pilcrow_web::pilcrow_app! macro",
       "id": "pilcrow_web_pilcrow_app_macro"
     },
@@ -4737,7 +4737,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 48,
+      "community": 47,
       "norm_label": "pilcrow-demos src/data/counter.rs",
       "id": "pilcrow_demos_data_counter"
     },
@@ -4763,7 +4763,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 48,
+      "community": 47,
       "norm_label": "pilcrow-demos src/data/mod.rs",
       "id": "pilcrow_demos_data_mod"
     },
@@ -4776,7 +4776,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 40,
+      "community": 39,
       "norm_label": "sandbox build.rs",
       "id": "sandbox_build"
     },
@@ -4789,7 +4789,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 45,
       "norm_label": "sandbox hooks.rs",
       "id": "sandbox_hooks"
     },
@@ -4802,7 +4802,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 26,
+      "community": 25,
       "norm_label": "sandbox solid/silcrow-solid.ts",
       "id": "sandbox_solid_silcrow_solid"
     },
@@ -4815,7 +4815,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 26,
+      "community": 25,
       "norm_label": "silcrow.subscribe api",
       "id": "silcrow_subscribe_api"
     },
@@ -4828,7 +4828,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 26,
+      "community": 25,
       "norm_label": "silcrow.snapshot api",
       "id": "silcrow_snapshot_api"
     },
@@ -4842,7 +4842,7 @@
       "author": null,
       "contributor": null,
       "rationale": "Bridges Silcrow's network-owned atom scopes into SolidJS reactive stores. Seeds from snapshot for SSR-hydrated data sync, then subscribes for live patches. This ensures the component never fetches data itself \u2014 Silcrow owns the network layer.",
-      "community": 26,
+      "community": 25,
       "norm_label": "createsilcrowstore \u2014 solidjs store bound to silcrow atom scope",
       "id": "create_silcrow_store_pattern"
     },
@@ -4855,7 +4855,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 26,
+      "community": 25,
       "norm_label": "sandbox solid/counter.tsx",
       "id": "sandbox_solid_counter"
     },
@@ -4868,7 +4868,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 50,
+      "community": 49,
       "norm_label": "sandbox params/integer.rs",
       "id": "sandbox_params_integer"
     },
@@ -4920,7 +4920,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 51,
+      "community": 50,
       "norm_label": "about page handler",
       "id": "about_page_rs"
     },
@@ -5011,7 +5011,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 52,
+      "community": 51,
       "norm_label": "greeting react component (ssr island)",
       "id": "greeting_tsx"
     },
@@ -5037,7 +5037,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 53,
+      "community": 52,
       "norm_label": "user card widget handler",
       "id": "user_card_widget_rs"
     },
@@ -5050,7 +5050,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 54,
+      "community": 53,
       "norm_label": "sandbox app entry point",
       "id": "sandbox_main_rs"
     },
@@ -5180,7 +5180,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 55,
+      "community": 54,
       "norm_label": "card ui component",
       "id": "sandbox_ui_card"
     },
@@ -5206,7 +5206,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 40,
       "norm_label": "nav ui component",
       "id": "sandbox_ui_nav"
     },
@@ -5219,7 +5219,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 40,
       "norm_label": "s-boost silcrow directive for spa navigation",
       "id": "silcrow_boost_directive"
     },
@@ -5271,7 +5271,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 41,
+      "community": 40,
       "norm_label": "sandbox root layout",
       "id": "sandbox_pages_layout"
     },
@@ -5284,7 +5284,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 41,
       "norm_label": "404 not found page",
       "id": "sandbox_pages_not_found"
     },
@@ -5297,7 +5297,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 41,
       "norm_label": "loading skeleton page",
       "id": "sandbox_pages_loading"
     },
@@ -5310,7 +5310,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 42,
+      "community": 41,
       "norm_label": "error page",
       "id": "sandbox_pages_error"
     },
@@ -5323,7 +5323,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 56,
+      "community": 55,
       "norm_label": "about page",
       "id": "sandbox_pages_about"
     },
@@ -5336,7 +5336,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 57,
+      "community": 56,
       "norm_label": "live props demo page",
       "id": "sandbox_pages_live"
     },
@@ -5401,7 +5401,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 58,
+      "community": 57,
       "norm_label": "user card widget",
       "id": "sandbox_widgets_user_card"
     },
@@ -5414,7 +5414,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 59,
+      "community": 58,
       "norm_label": "pilcrow-demos pages/index.rs",
       "id": "pilcrow_demos_pages_index"
     },
@@ -5659,7 +5659,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/dep.rs",
       "source_location": "L1",
-      "community": 35,
+      "community": 34,
       "norm_label": "dep.rs",
       "id": "pilcrow_crates_runtime_src_live_props_dep_rs"
     },
@@ -5668,7 +5668,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/dep.rs",
       "source_location": "L34",
-      "community": 35,
+      "community": 34,
       "norm_label": "dep_with_numeric_literal()",
       "id": "live_props_dep_dep_with_numeric_literal"
     },
@@ -5677,7 +5677,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/dep.rs",
       "source_location": "L40",
-      "community": 35,
+      "community": 34,
       "norm_label": "dep_with_variable()",
       "id": "live_props_dep_dep_with_variable"
     },
@@ -5686,7 +5686,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/dep.rs",
       "source_location": "L47",
-      "community": 35,
+      "community": 34,
       "norm_label": "dep_with_string_value()",
       "id": "live_props_dep_dep_with_string_value"
     },
@@ -5812,7 +5812,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/mod.rs",
       "source_location": "L1",
-      "community": 60,
+      "community": 59,
       "norm_label": "mod.rs",
       "id": "pilcrow_crates_runtime_src_live_props_mod_rs"
     },
@@ -6109,7 +6109,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/invalidate_macro.rs",
       "source_location": "L1",
-      "community": 36,
+      "community": 35,
       "norm_label": "invalidate_macro.rs",
       "id": "pilcrow_crates_macros_src_invalidate_macro_rs"
     },
@@ -6118,7 +6118,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/invalidate_macro.rs",
       "source_location": "L6",
-      "community": 36,
+      "community": 35,
       "norm_label": "invalidateinput",
       "id": "src_invalidate_macro_invalidateinput"
     },
@@ -6127,7 +6127,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/invalidate_macro.rs",
       "source_location": "L11",
-      "community": 36,
+      "community": 35,
       "norm_label": ".parse()",
       "id": "src_invalidate_macro_invalidateinput_parse"
     },
@@ -6136,7 +6136,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/invalidate_macro.rs",
       "source_location": "L32",
-      "community": 36,
+      "community": 35,
       "norm_label": "expand()",
       "id": "src_invalidate_macro_expand"
     },
@@ -6145,7 +6145,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L1",
-      "community": 27,
+      "community": 26,
       "norm_label": "live_props_derive.rs",
       "id": "pilcrow_crates_macros_src_live_props_derive_rs"
     },
@@ -6154,7 +6154,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L6",
-      "community": 27,
+      "community": 26,
       "norm_label": "expand()",
       "id": "src_live_props_derive_expand"
     },
@@ -6163,7 +6163,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L37",
-      "community": 27,
+      "community": 26,
       "norm_label": "extract_live_fields()",
       "id": "src_live_props_derive_extract_live_fields"
     },
@@ -6172,7 +6172,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L74",
-      "community": 27,
+      "community": 26,
       "norm_label": "is_live_props_type()",
       "id": "src_live_props_derive_is_live_props_type"
     },
@@ -6181,7 +6181,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L83",
-      "community": 27,
+      "community": 26,
       "norm_label": "find_u32_attr()",
       "id": "src_live_props_derive_find_u32_attr"
     },
@@ -6735,7 +6735,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 61,
+      "community": 60,
       "norm_label": "#[handler(live)] attribute",
       "id": "macros_handler_live_attr"
     },
@@ -17074,9 +17074,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L1",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "agents_md",
-      "target": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_opencode_agent_instructions"
     },
     {
       "relation": "contains",
@@ -17104,9 +17104,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_first_rule",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_first_rule"
     },
     {
       "relation": "contains",
@@ -17114,9 +17114,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_workspace",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_workspace"
     },
     {
       "relation": "contains",
@@ -17124,9 +17124,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_graphify_first",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_graphify_first"
     },
     {
       "relation": "contains",
@@ -17134,9 +17134,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship"
     },
     {
       "relation": "contains",
@@ -17144,9 +17144,9 @@
       "source_file": "AGENTS.md",
       "source_location": "L51",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_work_style",
-      "confidence_score": 1.0
+      "target": "pilcrow_silcrow_agents_work_style"
     },
     {
       "relation": "contains",
@@ -21798,5 +21798,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "a20cca1c80b73fe2f450539358483a595b64f80d"
+  "built_at_commit": "ba5de4d4ed2b84958ac86501f56757de18301cb1"
 }

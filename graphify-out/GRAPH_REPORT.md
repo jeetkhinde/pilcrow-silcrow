@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 718 nodes · 1430 edges · 62 communities (40 shown, 22 thin omitted)
+- 718 nodes · 1430 edges · 61 communities (39 shown, 22 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a20cca1c`
+- Built from commit: `ba5de4d4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -42,21 +42,21 @@
 - [[_COMMUNITY_App Lifecycle Hooks B|App Lifecycle Hooks B]]
 - [[_COMMUNITY_Counter Page Handler|Counter Page Handler]]
 - [[_COMMUNITY_Timestamp Page Handler|Timestamp Page Handler]]
-- [[_COMMUNITY_SSG Page Handler|SSG Page Handler]]
+- [[_COMMUNITY_invalidate! Macro|invalidate! Macro]]
 - [[_COMMUNITY_Static Page Handler|Static Page Handler]]
 - [[_COMMUNITY_Codegen Build Scripts|Codegen Build Scripts]]
-- [[_COMMUNITY_App Shell & Navigation|App Shell & Navigation]]
-- [[_COMMUNITY_Sandbox Main|Sandbox Main]]
+- [[_COMMUNITY_Error & Fallback Pages|Error & Fallback Pages]]
+- [[_COMMUNITY_SolidJS Store|SolidJS Store]]
 - [[_COMMUNITY_Path Param Matching|Path Param Matching]]
 - [[_COMMUNITY_App Hooks|App Hooks]]
 - [[_COMMUNITY_App Entry & Macro|App Entry & Macro]]
 - [[_COMMUNITY_Counter Data Layer|Counter Data Layer]]
 - [[_COMMUNITY_Live Props Module Root|Live Props Module Root]]
 - [[_COMMUNITY_Sandbox Params|Sandbox Params]]
-- [[_COMMUNITY_About Page Handler|About Page Handler]]
+- [[_COMMUNITY_Sandbox Entry Point|Sandbox Entry Point]]
 - [[_COMMUNITY_Card UI Component|Card UI Component]]
 - [[_COMMUNITY_About Page|About Page]]
-- [[_COMMUNITY_Live Props Demo Page|Live Props Demo Page]]
+- [[_COMMUNITY_User Card Widget|User Card Widget]]
 - [[_COMMUNITY_Demos Index Page|Demos Index Page]]
 - [[_COMMUNITY_Mod Root|Mod Root]]
 - [[_COMMUNITY_Handler Live Attribute|Handler Live Attribute]]
@@ -66,8 +66,7 @@
 - [[_COMMUNITY_Community 56|Community 56]]
 - [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
-- [[_COMMUNITY_Community 59|Community 59]]
-- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 60|Community 60]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `BakedPageStore` - 47 edges
@@ -100,7 +99,7 @@
 - **DB schema: pilcrow_cache + pilcrow_routes tables + GIN + stale indexes** — migration_001_pilcrow_cache, migration_001_pilcrow_routes, migration_002_gin_index, migration_002_stale_index [EXTRACTED 1.00]
 - **Startup registration: start_with_adapter registers LiveBroadcast + LivePageStore as Axum extensions** — runtime_start_start_with_adapter, runtime_start_live_props_registration, live_props_broadcast_livebroadcast, live_props_store_livepagestore [EXTRACTED 1.00]
 
-## Communities (62 total, 22 thin omitted)
+## Communities (61 total, 22 thin omitted)
 
 ### Community 0 - "Baked Pages Store Engine"
 Cohesion: 0.09
@@ -143,28 +142,28 @@ Cohesion: 0.14
 Nodes (16): Counter React Component (all hook demos), FragmentGrid React Component, Live Page Handler (SSE counter), LiveProp Pattern — tokio watch channel for live SSE props, Product Grid Widget Handler, <react> custom element for mounting React islands with strategy attribute, React Islands Example README, code:toml ([routing]) (+8 more)
 
 ### Community 10 - "ISR/SSG Pages"
+Cohesion: 0.16
+Nodes (10): current(), increment(), load(), now_utc(), Props, Counter(), Props, load() (+2 more)
+
+### Community 11 - "Handler Macro Logic"
 Cohesion: 0.14
 Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Demo App Consolidation Design, `/demo/fsr` Page Design, `/demo/react-island` Page Design, File Operations Summary, Kept (from sandbox, unchanged) (+5 more)
 
-### Community 11 - "Handler Macro Logic"
+### Community 12 - "API Route Handlers"
 Cohesion: 0.23
 Nodes (8): bust(), load(), now_utc(), Props, load(), Props, load(), Props
-
-### Community 12 - "API Route Handlers"
-Cohesion: 0.24
-Nodes (7): current(), increment(), Counter(), Props, load(), now_utc(), Props
 
 ### Community 13 - "Proc-macro Entry Points"
 Cohesion: 0.24
 Nodes (4): body_uses_client(), ClientVisitor, expand(), is_live_attr()
 
 ### Community 14 - "Counter Feature"
-Cohesion: 0.44
-Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
-
-### Community 15 - "Baked Pages Architecture Docs"
 Cohesion: 0.39
 Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
+
+### Community 15 - "Baked Pages Architecture Docs"
+Cohesion: 0.44
+Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
 
 ### Community 17 - "Page Templates"
 Cohesion: 0.57
@@ -195,34 +194,30 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
 
 ### Community 25 - "Counter Page Handler"
-Cohesion: 0.5
-Nodes (3): load(), now_utc(), Props
-
-### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
 Nodes (5): createSilcrowStore — SolidJS store bound to Silcrow atom scope, sandbox solid/Counter.tsx, sandbox solid/silcrow-solid.ts, Silcrow.snapshot API, Silcrow.subscribe API
 
-### Community 27 - "SSG Page Handler"
+### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.7
 Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type()
 
-### Community 31 - "Codegen Build Scripts"
+### Community 30 - "Static Page Handler"
 Cohesion: 0.67
 Nodes (3): chrono_now(), load(), Props
 
-### Community 32 - "App Shell & Navigation"
+### Community 31 - "Codegen Build Scripts"
 Cohesion: 0.67
 Nodes (3): load(), now_utc(), Props
 
-### Community 40 - "Live Props Module Root"
+### Community 39 - "Counter Data Layer"
 Cohesion: 1.0
 Nodes (3): pilcrow-demos build.rs, routekit::compile_current_crate_sources, sandbox build.rs
 
-### Community 41 - "Sandbox Params"
+### Community 40 - "Live Props Module Root"
 Cohesion: 0.67
 Nodes (3): Sandbox Root Layout, Nav UI Component, s-boost Silcrow directive for SPA navigation
 
-### Community 42 - "About Page Handler"
+### Community 41 - "Sandbox Params"
 Cohesion: 0.67
 Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 
@@ -240,11 +235,11 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Props` connect `Handler Macro Logic` to `Baked Pages Store Engine`, `SSG Page Handlers`, `Live Props Core & HTML Injection`, `Static Page Handler`?**
+- **Why does `Props` connect `API Route Handlers` to `Baked Pages Store Engine`, `SSG Page Handlers`, `Live Props Core & HTML Injection`, `invalidate! Macro`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Baked Pages Request Handling`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `get()` connect `Counter Feature` to `Baked Pages Request Handling`, `Handler Macro Logic`, `Baked Pages Architecture Docs`?**
+- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Request Handling`, `API Route Handlers`, `Counter Feature`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Architecture` to the rest of the system?**
   _144 weakly-connected nodes found - possible documentation gaps or missing edges._
