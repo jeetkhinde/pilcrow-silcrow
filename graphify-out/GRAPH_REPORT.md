@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1634fba7`
+- Built from commit: `8ead4663`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -159,12 +159,12 @@ Cohesion: 0.24
 Nodes (4): body_uses_client(), ClientVisitor, expand(), is_live_attr()
 
 ### Community 14 - "Counter Feature"
-Cohesion: 0.44
-Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
-
-### Community 15 - "Baked Pages Architecture Docs"
 Cohesion: 0.39
 Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
+
+### Community 15 - "Baked Pages Architecture Docs"
+Cohesion: 0.44
+Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
 
 ### Community 17 - "Page Templates"
 Cohesion: 0.57
@@ -187,16 +187,16 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 23 - "App Lifecycle Hooks A"
+Cohesion: 0.5
+Nodes (3): load(), now_utc(), Props
+
+### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
 
-### Community 24 - "App Lifecycle Hooks B"
+### Community 25 - "Counter Page Handler"
 Cohesion: 0.7
 Nodes (3): counter_tx(), load(), Props
-
-### Community 25 - "Counter Page Handler"
-Cohesion: 0.5
-Nodes (3): load(), now_utc(), Props
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
@@ -208,11 +208,11 @@ Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type(
 
 ### Community 32 - "App Shell & Navigation"
 Cohesion: 0.67
-Nodes (3): load(), now_utc(), Props
+Nodes (3): chrono_now(), load(), Props
 
 ### Community 33 - "Error & Fallback Pages"
 Cohesion: 0.67
-Nodes (3): chrono_now(), load(), Props
+Nodes (3): load(), now_utc(), Props
 
 ### Community 40 - "Live Props Module Root"
 Cohesion: 1.0
@@ -244,7 +244,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Sandbox E-commerce UI`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `get()` connect `Counter Feature` to `Baked Pages Store Engine`, `Handler Macro Logic`, `Baked Pages Architecture Docs`?**
+- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Store Engine`, `Handler Macro Logic`, `Counter Feature`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Architecture` to the rest of the system?**
   _143 weakly-connected nodes found - possible documentation gaps or missing edges._

@@ -200,7 +200,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L1",
       "id": "demo_api_products_rs",
-      "community": 14,
+      "community": 15,
       "norm_label": "products.rs"
     },
     {
@@ -209,7 +209,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L4",
       "id": "api_products_product",
-      "community": 14,
+      "community": 15,
       "norm_label": "product"
     },
     {
@@ -218,7 +218,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L12",
       "id": "api_products_apiresponse",
-      "community": 14,
+      "community": 15,
       "norm_label": "apiresponse"
     },
     {
@@ -227,7 +227,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L17",
       "id": "api_products_params",
-      "community": 14,
+      "community": 15,
       "norm_label": "params"
     },
     {
@@ -236,7 +236,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L21",
       "id": "api_products_get",
-      "community": 14,
+      "community": 15,
       "norm_label": "get()"
     },
     {
@@ -245,7 +245,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L38",
       "id": "api_products_render_cards",
-      "community": 14,
+      "community": 15,
       "norm_label": "render_cards()"
     },
     {
@@ -254,7 +254,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L64",
       "id": "api_products_escape",
-      "community": 14,
+      "community": 15,
       "norm_label": "escape()"
     },
     {
@@ -263,7 +263,7 @@
       "source_file": "demo/api/products.rs",
       "source_location": "L71",
       "id": "api_products_router",
-      "community": 14,
+      "community": 15,
       "norm_label": "router()"
     },
     {
@@ -434,7 +434,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L1",
       "id": "demo_pages_products_index_rs",
-      "community": 15,
+      "community": 14,
       "norm_label": "index.rs"
     },
     {
@@ -443,7 +443,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L7",
       "id": "products_index_apiresponse",
-      "community": 15,
+      "community": 14,
       "norm_label": "apiresponse"
     },
     {
@@ -452,7 +452,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L12",
       "id": "products_index_product",
-      "community": 15,
+      "community": 14,
       "norm_label": "product"
     },
     {
@@ -461,7 +461,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L19",
       "id": "products_index_productview",
-      "community": 15,
+      "community": 14,
       "norm_label": "productview"
     },
     {
@@ -470,7 +470,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L27",
       "id": "products_index_categoryinfo",
-      "community": 15,
+      "community": 14,
       "norm_label": "categoryinfo"
     },
     {
@@ -479,7 +479,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L32",
       "id": "products_index_category",
-      "community": 15,
+      "community": 14,
       "norm_label": "category"
     },
     {
@@ -488,7 +488,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L37",
       "id": "products_index_props",
-      "community": 15,
+      "community": 14,
       "norm_label": "props"
     },
     {
@@ -497,7 +497,7 @@
       "source_file": "demo/pages/products/index.rs",
       "source_location": "L43",
       "id": "products_index_load",
-      "community": 15,
+      "community": 14,
       "norm_label": "load()"
     },
     {
@@ -533,7 +533,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L1",
       "id": "demo_pages_live_index_rs",
-      "community": 24,
+      "community": 25,
       "norm_label": "index.rs"
     },
     {
@@ -542,7 +542,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L6",
       "id": "live_index_counter_tx",
-      "community": 24,
+      "community": 25,
       "norm_label": "counter_tx()"
     },
     {
@@ -551,7 +551,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L22",
       "id": "live_index_props",
-      "community": 24,
+      "community": 25,
       "norm_label": "props"
     },
     {
@@ -560,7 +560,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L27",
       "id": "live_index_load",
-      "community": 24,
+      "community": 25,
       "norm_label": "load()"
     },
     {
@@ -4042,7 +4042,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L1",
-      "community": 25,
+      "community": 23,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_isr_ssg_index_rs"
     },
@@ -4051,7 +4051,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L7",
-      "community": 25,
+      "community": 23,
       "norm_label": "props",
       "id": "isr_ssg_index_props"
     },
@@ -4060,7 +4060,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L14",
-      "community": 25,
+      "community": 23,
       "norm_label": "load()",
       "id": "isr_ssg_index_load"
     },
@@ -4069,7 +4069,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L23",
-      "community": 25,
+      "community": 23,
       "norm_label": "bust()",
       "id": "isr_ssg_index_bust"
     },
@@ -4078,7 +4078,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L28",
-      "community": 25,
+      "community": 23,
       "norm_label": "now_utc()",
       "id": "isr_ssg_index_now_utc"
     },
@@ -4132,7 +4132,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L1",
-      "community": 23,
+      "community": 24,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_deferred_index_rs"
     },
@@ -4141,7 +4141,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L12",
-      "community": 23,
+      "community": 24,
       "norm_label": "props",
       "id": "deferred_index_props"
     },
@@ -4150,7 +4150,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L20",
-      "community": 23,
+      "community": 24,
       "norm_label": "load()",
       "id": "deferred_index_load"
     },
@@ -4159,7 +4159,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L37",
-      "community": 23,
+      "community": 24,
       "norm_label": "render_posts()",
       "id": "deferred_index_render_posts"
     },
@@ -4168,7 +4168,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L57",
-      "community": 23,
+      "community": 24,
       "norm_label": "now_utc()",
       "id": "deferred_index_now_utc"
     },
@@ -4222,7 +4222,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L1",
-      "community": 32,
+      "community": 33,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssg_index_rs"
     },
@@ -4231,7 +4231,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L6",
-      "community": 32,
+      "community": 33,
       "norm_label": "props",
       "id": "ssg_index_props"
     },
@@ -4240,7 +4240,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L13",
-      "community": 32,
+      "community": 33,
       "norm_label": "load()",
       "id": "ssg_index_load"
     },
@@ -4249,7 +4249,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L22",
-      "community": 32,
+      "community": 33,
       "norm_label": "now_utc()",
       "id": "ssg_index_now_utc"
     },
@@ -4258,7 +4258,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L1",
-      "community": 33,
+      "community": 32,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssr_index_rs"
     },
@@ -4267,7 +4267,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L4",
-      "community": 33,
+      "community": 32,
       "norm_label": "props",
       "id": "ssr_index_props"
     },
@@ -4276,7 +4276,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L11",
-      "community": 33,
+      "community": 32,
       "norm_label": "load()",
       "id": "ssr_index_load"
     },
@@ -4285,7 +4285,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L20",
-      "community": 33,
+      "community": 32,
       "norm_label": "chrono_now()",
       "id": "ssr_index_chrono_now"
     },
@@ -4438,7 +4438,7 @@
       "file_type": "code",
       "source_file": "sandbox/api/products.rs",
       "source_location": "L1",
-      "community": 14,
+      "community": 15,
       "norm_label": "products.rs",
       "id": "sandbox_api_products_rs"
     },
@@ -4465,7 +4465,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/products/index.rs",
       "source_location": "L1",
-      "community": 15,
+      "community": 14,
       "norm_label": "index.rs",
       "id": "sandbox_pages_products_index_rs"
     },
@@ -4483,7 +4483,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/live/index.rs",
       "source_location": "L1",
-      "community": 24,
+      "community": 25,
       "norm_label": "index.rs",
       "id": "sandbox_pages_live_index_rs"
     },
@@ -21827,5 +21827,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "1634fba76b19ad0a997cd4a021d37fed9674747c"
+  "built_at_commit": "8ead4663db7c843113669844f9546111f161e0d0"
 }
