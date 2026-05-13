@@ -1,94 +1,94 @@
 {
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/build.rs": {
-    "mtime": 1775501853.960966,
+    "mtime": 1778631458.2689123,
     "hash": "bbbc1bdedf2d2550a9b593de96438de8"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/hooks.rs": {
-    "mtime": 1777403074.0857668,
+    "mtime": 1778631458.271246,
     "hash": "eb78fb0b06635d4db524b362bf592ff9"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/solid/silcrow-solid.ts": {
-    "mtime": 1777598300.7589357,
+    "mtime": 1778631458.2913535,
     "hash": "aa5e1832dd966d5c46e17c0d0b914302"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/solid/Counter.tsx": {
-    "mtime": 1777598305.5333326,
+    "mtime": 1778631458.2906585,
     "hash": "1dd9e96b10bd5bb7b00ecede461aa23d"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/params/integer.rs": {
-    "mtime": 1776713217.2016828,
+    "mtime": 1778631458.2865736,
     "hash": "c2bb5c1781dbcef561fad62535274e43"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/api/products.rs": {
-    "mtime": 1775850070.2235646,
+    "mtime": 1778631458.2682936,
     "hash": "95ebdda59957ac9baf7aa26eb29603e3"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/index.rs": {
-    "mtime": 1776510590.9900055,
+    "mtime": 1778631458.2823892,
     "hash": "1f3d420d2f36605a1166f378dda2477f"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/react-island/index.rs": {
-    "mtime": 1778630705.8959582,
+    "mtime": 1778631458.2811584,
     "hash": "bd9a9cdb1fc70205327c3db1d5286d9a"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/fsr/index.rs": {
-    "mtime": 1778628302.4064658,
+    "mtime": 1778631458.279795,
     "hash": "747ca46a90775b91a10c4c170698b61d"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/index.rs": {
-    "mtime": 1778595134.9025774,
+    "mtime": 1778631458.2860208,
     "hash": "a7c9806a71a6e0123121a7669f948059"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/products/index.rs": {
-    "mtime": 1777056276.8565223,
+    "mtime": 1778631458.2847233,
     "hash": "4995e5cf1bd2f5df35b3bc0c640fdb4d"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/about/index.rs": {
-    "mtime": 1776510582.254777,
+    "mtime": 1778631458.278374,
     "hash": "9001049e851ff52f126cdca01463a32d"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/live/index.rs": {
-    "mtime": 1777922096.464445,
+    "mtime": 1778631458.2836866,
     "hash": "3c1c38efecac77f463723c2c27b19fef"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/react/silcrow-react.ts": {
-    "mtime": 1777767894.959855,
+    "mtime": 1778631458.2898295,
     "hash": "ed1538c0bb3419241cd991a4765f9175"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/react/DemoCounter.tsx": {
-    "mtime": 1778630698.800737,
+    "mtime": 1778631458.2879977,
     "hash": "24c50edc388bfb2d1f94824f76e25ab4"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/react/FragmentGrid.tsx": {
-    "mtime": 1777770025.3172996,
+    "mtime": 1778631458.2885835,
     "hash": "4cb04d90a8b83836ab208507ff749bcb"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/react/Counter.tsx": {
-    "mtime": 1777858497.5380127,
+    "mtime": 1778631458.2873228,
     "hash": "50dfa93016fd3e98023e6fe314443dcd"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/react/Greeting.tsx": {
-    "mtime": 1777666739.4343631,
+    "mtime": 1778631458.2891843,
     "hash": "2e5bcbb19a1664dc89a4e49db4a16262"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/widgets/product-grid.rs": {
-    "mtime": 1777688995.5052598,
+    "mtime": 1778631458.2971969,
     "hash": "ea575df8f29bff3b4e790dea918d41d8"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/widgets/user-card.rs": {
-    "mtime": 1776722976.180102,
+    "mtime": 1778631458.2981935,
     "hash": "f55a7956069968bf8ebfabda828ffdd0"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/src/main.rs": {
-    "mtime": 1777931838.0427768,
+    "mtime": 1778631458.293087,
     "hash": "1847f93f730ce912b7bb1d59ba3efb1e"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/src/baked_pages.rs": {
-    "mtime": 1778362030.068694,
+    "mtime": 1778631458.292444,
     "hash": "bfbe18360204ed78961ab6e866046dad"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
-    "mtime": 1778627824.5283751,
+    "mtime": 1778631458.2647712,
     "hash": "251b81994a650448b3714b324e0b060f"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_IMPLEMENTATION_PLAN.md": {
@@ -100,103 +100,103 @@
     "hash": "da79aa9343cd2b362206f03762160abc"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/AGENTS.md": {
-    "mtime": 1778631004.0773811,
-    "hash": "c2ee848c45001a7d33b155c0486dce83"
+    "mtime": 1778632724.4240932,
+    "hash": "f0a25fbe21f1232cae99cfb61e8e748c"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CLAUDE.md": {
-    "mtime": 1778627849.4324672,
+    "mtime": 1778631458.263828,
     "hash": "5ba724bfe8ac8ff576c4e7b078bdec91"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Card.html": {
-    "mtime": 1777594215.7942483,
+    "mtime": 1778631458.2936394,
     "hash": "d13b549d497bfe3415d5bc0f8119fd1f"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/ProductCard.html": {
-    "mtime": 1777594211.7002227,
+    "mtime": 1778631458.2954736,
     "hash": "0a06d880f0a14965604341497822be68"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Nav.html": {
-    "mtime": 1778628267.4308991,
+    "mtime": 1778631458.2947671,
     "hash": "8c4e24b303f905606af6f6195c623a18"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/docs/baked-pages.md": {
-    "mtime": 1778362677.7254245,
+    "mtime": 1778631458.2696748,
     "hash": "ca777ed0f8c9316b9ef1bf0bae365acf"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/examples/react-islands/README.md": {
-    "mtime": 1777588084.4607337,
+    "mtime": 1778631458.2705388,
     "hash": "e9885b95de080f56d800c7ee27b785fd"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/index.html": {
-    "mtime": 1777858497.5372663,
+    "mtime": 1778631458.2819028,
     "hash": "00c88b383bdd7b90278d0483f5672563"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/_layout.html": {
-    "mtime": 1777399642.6517632,
+    "mtime": 1778631458.2767963,
     "hash": "195b56452adc8dd196bf79e9e1e294ba"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/_not_found.html": {
-    "mtime": 1776364661.9664493,
+    "mtime": 1778631458.2775025,
     "hash": "b9b87417e948ac519f7517d631248cb2"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/_loading.html": {
-    "mtime": 1776381500.1852243,
+    "mtime": 1778631458.2771463,
     "hash": "4d259f0ffd605f2f941ae39bd4a30bd4"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/_error.html": {
-    "mtime": 1776364656.916935,
+    "mtime": 1778631458.2764108,
     "hash": "877b58ac553350eec4a865b2dfcb2436"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/react-island/index.html": {
-    "mtime": 1778630721.474594,
+    "mtime": 1778631458.280528,
     "hash": "4f80235da3d8d6ca5bf3e8f60cc4e154"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/fsr/index.html": {
-    "mtime": 1778628357.01733,
+    "mtime": 1778631458.279182,
     "hash": "fff6e20447ebfe0363105e99cf0a6afa"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/index.html": {
-    "mtime": 1778575538.407908,
+    "mtime": 1778631458.2854505,
     "hash": "df2c744464e23f1746fec908b37ca46d"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/products/index.html": {
-    "mtime": 1777399653.0670269,
+    "mtime": 1778631458.284296,
     "hash": "4aad083863b464c56b7ae4c7e980cb4f"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/about/index.html": {
-    "mtime": 1777399649.2241113,
+    "mtime": 1778631458.277966,
     "hash": "a81918bbdf72edbf5610bcf8c9d597c7"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/live/index.html": {
-    "mtime": 1777858291.5588822,
+    "mtime": 1778631458.2830894,
     "hash": "a0e427aaa074c37b2947c264640e0865"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/(admin)/stats.html": {
-    "mtime": 1776799637.9078937,
+    "mtime": 1778631458.2760165,
     "hash": "d0f5cc5266aed7eb8b622615788cdbc5"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/(admin)/_layout.html": {
-    "mtime": 1776799878.860231,
+    "mtime": 1778631458.275168,
     "hash": "95811de4f6536b66d0147fc8d7810628"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/(admin)/dashboard.html": {
-    "mtime": 1776800187.387255,
+    "mtime": 1778631458.2755914,
     "hash": "f4d4b82255a3c1f33c334dd65d465cbb"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/widgets/product-grid.html": {
-    "mtime": 1777688930.3532078,
+    "mtime": 1778631458.2964787,
     "hash": "84674c6318604ba90fa0fa95f288cee4"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/widgets/user-card.html": {
-    "mtime": 1776723000.4884152,
+    "mtime": 1778631458.297738,
     "hash": "ef70f3299222efa6ee559c3d5ed41958"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/plans/2026-05-12-demo-app-consolidation.md": {
-    "mtime": 1778625186.2835872,
+    "mtime": 1778631458.2992551,
     "hash": "2b1121a1f391c4ccc7e4341caaaa34c2"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md": {
-    "mtime": 1778624727.9888241,
+    "mtime": 1778631458.3001094,
     "hash": "fc713c4f9613cdedcd85cbac43597507"
   }
 }

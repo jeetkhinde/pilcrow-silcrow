@@ -101,7 +101,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L1",
       "id": "demo_hooks_rs",
-      "community": 27,
+      "community": 28,
       "norm_label": "hooks.rs"
     },
     {
@@ -110,7 +110,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L7",
       "id": "demo_hooks_handle",
-      "community": 27,
+      "community": 28,
       "norm_label": "handle()"
     },
     {
@@ -119,7 +119,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L20",
       "id": "demo_hooks_handle_error",
-      "community": 27,
+      "community": 28,
       "norm_label": "handle_error()"
     },
     {
@@ -128,7 +128,7 @@
       "source_file": "demo/hooks.rs",
       "source_location": "L28",
       "id": "demo_hooks_init",
-      "community": 27,
+      "community": 28,
       "norm_label": "init()"
     },
     {
@@ -155,7 +155,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L1",
       "id": "demo_solid_counter_tsx",
-      "community": 10,
+      "community": 11,
       "norm_label": "counter.tsx"
     },
     {
@@ -164,7 +164,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L3",
       "id": "solid_counter_props",
-      "community": 10,
+      "community": 11,
       "norm_label": "props"
     },
     {
@@ -173,7 +173,7 @@
       "source_file": "demo/solid/Counter.tsx",
       "source_location": "L7",
       "id": "solid_counter_counter",
-      "community": 10,
+      "community": 11,
       "norm_label": "counter()"
     },
     {
@@ -506,7 +506,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L1",
       "id": "demo_pages_about_index_rs",
-      "community": 33,
+      "community": 29,
       "norm_label": "index.rs"
     },
     {
@@ -515,7 +515,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L1",
       "id": "about_index_props",
-      "community": 33,
+      "community": 29,
       "norm_label": "props"
     },
     {
@@ -524,7 +524,7 @@
       "source_file": "demo/pages/about/index.rs",
       "source_location": "L6",
       "id": "about_index_load",
-      "community": 33,
+      "community": 29,
       "norm_label": "load()"
     },
     {
@@ -533,7 +533,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L1",
       "id": "demo_pages_live_index_rs",
-      "community": 23,
+      "community": 24,
       "norm_label": "index.rs"
     },
     {
@@ -542,7 +542,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L6",
       "id": "live_index_counter_tx",
-      "community": 23,
+      "community": 24,
       "norm_label": "counter_tx()"
     },
     {
@@ -551,7 +551,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L22",
       "id": "live_index_props",
-      "community": 23,
+      "community": 24,
       "norm_label": "props"
     },
     {
@@ -560,7 +560,7 @@
       "source_file": "demo/pages/live/index.rs",
       "source_location": "L27",
       "id": "live_index_load",
-      "community": 23,
+      "community": 24,
       "norm_label": "load()"
     },
     {
@@ -569,7 +569,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L1",
       "id": "demo_react_silcrow_react_ts",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrow-react.ts"
     },
     {
@@ -578,7 +578,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L20",
       "id": "react_silcrow_react_silcrowsubmitresult",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowsubmitresult"
     },
     {
@@ -587,7 +587,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L38",
       "id": "react_silcrow_react_silcrowsubmitoptions",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowsubmitoptions"
     },
     {
@@ -596,7 +596,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L57",
       "id": "react_silcrow_react_silcrowactionoptions",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowactionoptions"
     },
     {
@@ -605,7 +605,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L61",
       "id": "react_silcrow_react_pilcrowreactcontextvalue",
-      "community": 3,
+      "community": 2,
       "norm_label": "pilcrowreactcontextvalue"
     },
     {
@@ -614,7 +614,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L65",
       "id": "react_silcrow_react_pilcrowreactcontext",
-      "community": 3,
+      "community": 2,
       "norm_label": "pilcrowreactcontext"
     },
     {
@@ -623,7 +623,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L67",
       "id": "react_silcrow_react_pilcrowreactprovider",
-      "community": 3,
+      "community": 2,
       "norm_label": "pilcrowreactprovider()"
     },
     {
@@ -632,7 +632,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L77",
       "id": "react_silcrow_react_appendactionname",
-      "community": 3,
+      "community": 2,
       "norm_label": "appendactionname()"
     },
     {
@@ -641,7 +641,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L86",
       "id": "react_silcrow_react_resolvepilcrowaction",
-      "community": 3,
+      "community": 2,
       "norm_label": "resolvepilcrowaction()"
     },
     {
@@ -650,7 +650,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L103",
       "id": "react_silcrow_react_window",
-      "community": 3,
+      "community": 2,
       "norm_label": "window"
     },
     {
@@ -659,7 +659,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L126",
       "id": "react_silcrow_react_usesilcrowatom",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowatom()"
     },
     {
@@ -668,7 +668,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L142",
       "id": "react_silcrow_react_publishsilcrowatom",
-      "community": 3,
+      "community": 2,
       "norm_label": "publishsilcrowatom()"
     },
     {
@@ -677,7 +677,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L155",
       "id": "react_silcrow_react_usesilcrowprefetch",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowprefetch()"
     },
     {
@@ -686,7 +686,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L170",
       "id": "react_silcrow_react_usesilcrowroute",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowroute()"
     },
     {
@@ -695,7 +695,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L186",
       "id": "react_silcrow_react_submitsilcrow",
-      "community": 3,
+      "community": 2,
       "norm_label": "submitsilcrow()"
     },
     {
@@ -704,7 +704,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L217",
       "id": "react_silcrow_react_silcrowsubmithandler",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowsubmithandler()"
     },
     {
@@ -713,7 +713,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L245",
       "id": "react_silcrow_react_usesilcrowaction",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowaction()"
     },
     {
@@ -722,7 +722,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L266",
       "id": "react_silcrow_react_usepilcrownamedaction",
-      "community": 3,
+      "community": 2,
       "norm_label": "usepilcrownamedaction()"
     },
     {
@@ -731,7 +731,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L277",
       "id": "react_silcrow_react_usesilcrowresource",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowresource()"
     },
     {
@@ -740,7 +740,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L301",
       "id": "react_silcrow_react_silcrowformstate",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowformstate"
     },
     {
@@ -749,7 +749,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L307",
       "id": "react_silcrow_react_silcrowformresult",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrowformresult"
     },
     {
@@ -758,7 +758,7 @@
       "source_file": "demo/react/silcrow-react.ts",
       "source_location": "L317",
       "id": "react_silcrow_react_usesilcrowform",
-      "community": 3,
+      "community": 2,
       "norm_label": "usesilcrowform()"
     },
     {
@@ -785,7 +785,7 @@
       "source_file": "demo/react/FragmentGrid.tsx",
       "source_location": "L1",
       "id": "demo_react_fragmentgrid_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "fragmentgrid.tsx"
     },
     {
@@ -794,7 +794,7 @@
       "source_file": "demo/react/FragmentGrid.tsx",
       "source_location": "L3",
       "id": "react_fragmentgrid_row",
-      "community": 3,
+      "community": 2,
       "norm_label": "row"
     },
     {
@@ -803,7 +803,7 @@
       "source_file": "demo/react/FragmentGrid.tsx",
       "source_location": "L9",
       "id": "react_fragmentgrid_refreshstate",
-      "community": 3,
+      "community": 2,
       "norm_label": "refreshstate"
     },
     {
@@ -812,7 +812,7 @@
       "source_file": "demo/react/FragmentGrid.tsx",
       "source_location": "L14",
       "id": "react_fragmentgrid_fragmentgrid",
-      "community": 3,
+      "community": 2,
       "norm_label": "fragmentgrid()"
     },
     {
@@ -821,7 +821,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L1",
       "id": "demo_react_counter_tsx",
-      "community": 3,
+      "community": 2,
       "norm_label": "counter.tsx"
     },
     {
@@ -830,7 +830,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L36",
       "id": "react_counter_cartatom",
-      "community": 3,
+      "community": 2,
       "norm_label": "cartatom"
     },
     {
@@ -839,7 +839,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L37",
       "id": "react_counter_createstate",
-      "community": 3,
+      "community": 2,
       "norm_label": "createstate"
     },
     {
@@ -848,7 +848,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L38",
       "id": "react_counter_product",
-      "community": 3,
+      "community": 2,
       "norm_label": "product"
     },
     {
@@ -857,7 +857,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L39",
       "id": "react_counter_productdata",
-      "community": 3,
+      "community": 2,
       "norm_label": "productdata"
     },
     {
@@ -866,7 +866,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L40",
       "id": "react_counter_notifstate",
-      "community": 3,
+      "community": 2,
       "norm_label": "notifstate"
     },
     {
@@ -875,7 +875,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L46",
       "id": "react_counter_cartbadge",
-      "community": 3,
+      "community": 2,
       "norm_label": "cartbadge()"
     },
     {
@@ -884,7 +884,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L59",
       "id": "react_counter_usersummary",
-      "community": 3,
+      "community": 2,
       "norm_label": "usersummary()"
     },
     {
@@ -893,7 +893,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L73",
       "id": "react_counter_productrows",
-      "community": 3,
+      "community": 2,
       "norm_label": "productrows()"
     },
     {
@@ -902,7 +902,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L87",
       "id": "react_counter_productlistprefetch",
-      "community": 3,
+      "community": 2,
       "norm_label": "productlistprefetch()"
     },
     {
@@ -911,7 +911,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L101",
       "id": "react_counter_reviewlist",
-      "community": 3,
+      "community": 2,
       "norm_label": "reviewlist()"
     },
     {
@@ -920,7 +920,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L116",
       "id": "react_counter_reviewsection",
-      "community": 3,
+      "community": 2,
       "norm_label": "reviewsection()"
     },
     {
@@ -929,7 +929,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L128",
       "id": "react_counter_submitbutton",
-      "community": 3,
+      "community": 2,
       "norm_label": "submitbutton()"
     },
     {
@@ -938,7 +938,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L137",
       "id": "react_counter_directaddtocartform",
-      "community": 3,
+      "community": 2,
       "norm_label": "directaddtocartform()"
     },
     {
@@ -947,7 +947,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L155",
       "id": "react_counter_wishlistform",
-      "community": 3,
+      "community": 2,
       "norm_label": "wishlistform()"
     },
     {
@@ -956,7 +956,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L171",
       "id": "react_counter_notifymeform",
-      "community": 3,
+      "community": 2,
       "norm_label": "notifymeform()"
     },
     {
@@ -965,7 +965,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L188",
       "id": "react_counter_cartformschema",
-      "community": 3,
+      "community": 2,
       "norm_label": "cartformschema"
     },
     {
@@ -974,7 +974,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L193",
       "id": "react_counter_cartformvalues",
-      "community": 3,
+      "community": 2,
       "norm_label": "cartformvalues"
     },
     {
@@ -983,7 +983,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L195",
       "id": "react_counter_hookformaddtocartform",
-      "community": 3,
+      "community": 2,
       "norm_label": "hookformaddtocartform()"
     },
     {
@@ -992,7 +992,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L237",
       "id": "react_counter_cartclearbutton",
-      "community": 3,
+      "community": 2,
       "norm_label": "cartclearbutton()"
     },
     {
@@ -1001,7 +1001,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L257",
       "id": "react_counter_props",
-      "community": 3,
+      "community": 2,
       "norm_label": "props"
     },
     {
@@ -1010,7 +1010,7 @@
       "source_file": "demo/react/Counter.tsx",
       "source_location": "L261",
       "id": "react_counter_counter",
-      "community": 3,
+      "community": 2,
       "norm_label": "counter()"
     },
     {
@@ -1019,7 +1019,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L1",
       "id": "demo_react_greeting_tsx",
-      "community": 29,
+      "community": 31,
       "norm_label": "greeting.tsx"
     },
     {
@@ -1028,7 +1028,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L1",
       "id": "react_greeting_props",
-      "community": 29,
+      "community": 31,
       "norm_label": "props"
     },
     {
@@ -1037,7 +1037,7 @@
       "source_file": "demo/react/Greeting.tsx",
       "source_location": "L6",
       "id": "react_greeting_greeting",
-      "community": 29,
+      "community": 31,
       "norm_label": "greeting()"
     },
     {
@@ -1136,7 +1136,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1",
       "id": "demo_src_baked_pages_rs",
-      "community": 1,
+      "community": 0,
       "norm_label": "baked_pages.rs"
     },
     {
@@ -1145,7 +1145,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L37",
       "id": "src_baked_pages_dependencykey",
-      "community": 1,
+      "community": 0,
       "norm_label": "dependencykey"
     },
     {
@@ -1154,7 +1154,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L40",
       "id": "src_baked_pages_dependencykey_new",
-      "community": 1,
+      "community": 0,
       "norm_label": ".new()"
     },
     {
@@ -1163,7 +1163,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L44",
       "id": "src_baked_pages_dependencykey_as_str",
-      "community": 1,
+      "community": 0,
       "norm_label": ".as_str()"
     },
     {
@@ -1172,7 +1172,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L51",
       "id": "src_baked_pages_bakedslotkind",
-      "community": 1,
+      "community": 0,
       "norm_label": "bakedslotkind"
     },
     {
@@ -1181,7 +1181,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L57",
       "id": "src_baked_pages_bakedslotkind_marker_kind",
-      "community": 1,
+      "community": 4,
       "norm_label": ".marker_kind()"
     },
     {
@@ -1190,7 +1190,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L66",
       "id": "src_baked_pages_bakedslot",
-      "community": 1,
+      "community": 4,
       "norm_label": "bakedslot"
     },
     {
@@ -1199,7 +1199,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L73",
       "id": "src_baked_pages_bakedslot_text",
-      "community": 0,
+      "community": 4,
       "norm_label": ".text()"
     },
     {
@@ -1208,7 +1208,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L81",
       "id": "src_baked_pages_bakedslot_trusted_html",
-      "community": 1,
+      "community": 4,
       "norm_label": ".trusted_html()"
     },
     {
@@ -1217,7 +1217,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L92",
       "id": "src_baked_pages_bakeeligibility",
-      "community": 1,
+      "community": 0,
       "norm_label": "bakeeligibility"
     },
     {
@@ -1226,7 +1226,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L100",
       "id": "src_baked_pages_bakedartifactmode",
-      "community": 1,
+      "community": 0,
       "norm_label": "bakedartifactmode"
     },
     {
@@ -1235,7 +1235,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L106",
       "id": "src_baked_pages_bakedartifactmode_default",
-      "community": 1,
+      "community": 0,
       "norm_label": ".default()"
     },
     {
@@ -1244,7 +1244,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L112",
       "id": "src_baked_pages_bakedroutedeclaration",
-      "community": 0,
+      "community": 4,
       "norm_label": "bakedroutedeclaration"
     },
     {
@@ -1253,7 +1253,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L122",
       "id": "src_baked_pages_bakedroutedeclaration_new",
-      "community": 0,
+      "community": 4,
       "norm_label": ".new()"
     },
     {
@@ -1262,7 +1262,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L137",
       "id": "src_baked_pages_bakedroutedeclaration_lazy_on_first_hit",
-      "community": 0,
+      "community": 4,
       "norm_label": ".lazy_on_first_hit()"
     },
     {
@@ -1271,7 +1271,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L148",
       "id": "src_baked_pages_bakedroutedeclaration_build_time",
-      "community": 0,
+      "community": 4,
       "norm_label": ".build_time()"
     },
     {
@@ -1280,7 +1280,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L152",
       "id": "src_baked_pages_bakedroutedeclaration_never_bake",
-      "community": 0,
+      "community": 4,
       "norm_label": ".never_bake()"
     },
     {
@@ -1289,7 +1289,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L156",
       "id": "src_baked_pages_bakedroutedeclaration_full_page",
-      "community": 0,
+      "community": 4,
       "norm_label": ".full_page()"
     },
     {
@@ -1298,7 +1298,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L162",
       "id": "src_baked_pages_bakedroutedeclaration_fragment_composed",
-      "community": 0,
+      "community": 4,
       "norm_label": ".fragment_composed()"
     },
     {
@@ -1307,7 +1307,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L168",
       "id": "src_baked_pages_bakedroutedeclaration_text_slot",
-      "community": 0,
+      "community": 4,
       "norm_label": ".text_slot()"
     },
     {
@@ -1316,7 +1316,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L173",
       "id": "src_baked_pages_bakedroutedeclaration_trusted_html_slot",
-      "community": 1,
+      "community": 4,
       "norm_label": ".trusted_html_slot()"
     },
     {
@@ -1325,7 +1325,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L183",
       "id": "src_baked_pages_bakedroutedeclaration_to_page",
-      "community": 0,
+      "community": 4,
       "norm_label": ".to_page()"
     },
     {
@@ -1334,7 +1334,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L201",
       "id": "src_baked_pages_bakedroutedeclaration_slot",
-      "community": 0,
+      "community": 4,
       "norm_label": ".slot()"
     },
     {
@@ -1343,7 +1343,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L207",
       "id": "src_baked_pages_stalestate",
-      "community": 1,
+      "community": 0,
       "norm_label": "stalestate"
     },
     {
@@ -1361,7 +1361,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L220",
       "id": "src_baked_pages_stalestate_stale",
-      "community": 1,
+      "community": 0,
       "norm_label": ".stale()"
     },
     {
@@ -1388,7 +1388,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L289",
       "id": "src_baked_pages_bakedpage_fragment_composed",
-      "community": 0,
+      "community": 4,
       "norm_label": ".fragment_composed()"
     },
     {
@@ -1397,7 +1397,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L309",
       "id": "src_baked_pages_bakedlayout",
-      "community": 1,
+      "community": 0,
       "norm_label": "bakedlayout"
     },
     {
@@ -1415,7 +1415,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L331",
       "id": "src_baked_pages_bakedfragment",
-      "community": 1,
+      "community": 0,
       "norm_label": "bakedfragment"
     },
     {
@@ -1433,7 +1433,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L352",
       "id": "src_baked_pages_renderedbakedpage",
-      "community": 1,
+      "community": 0,
       "norm_label": "renderedbakedpage"
     },
     {
@@ -1442,7 +1442,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L358",
       "id": "src_baked_pages_servestate",
-      "community": 1,
+      "community": 0,
       "norm_label": "servestate"
     },
     {
@@ -1451,7 +1451,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L366",
       "id": "src_baked_pages_servestate_header_value",
-      "community": 1,
+      "community": 0,
       "norm_label": ".header_value()"
     },
     {
@@ -1460,7 +1460,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L375",
       "id": "src_baked_pages_servestate_ssr_load_header",
-      "community": 1,
+      "community": 0,
       "norm_label": ".ssr_load_header()"
     },
     {
@@ -1496,7 +1496,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L397",
       "id": "src_baked_pages_bakedpagestore_get_or_render",
-      "community": 0,
+      "community": 4,
       "norm_label": ".get_or_render()"
     },
     {
@@ -1505,7 +1505,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L429",
       "id": "src_baked_pages_bakedpagestore_get_or_render_declared",
-      "community": 0,
+      "community": 4,
       "norm_label": ".get_or_render_declared()"
     },
     {
@@ -1514,7 +1514,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L452",
       "id": "src_baked_pages_bakedpagestore_prebake_declared",
-      "community": 0,
+      "community": 4,
       "norm_label": ".prebake_declared()"
     },
     {
@@ -1523,7 +1523,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L480",
       "id": "src_baked_pages_bakedpagestore_serve_if_fresh",
-      "community": 0,
+      "community": 4,
       "norm_label": ".serve_if_fresh()"
     },
     {
@@ -1532,7 +1532,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L498",
       "id": "src_baked_pages_bakedpagestore_write_artifact",
-      "community": 0,
+      "community": 4,
       "norm_label": ".write_artifact()"
     },
     {
@@ -1541,7 +1541,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L522",
       "id": "src_baked_pages_bakedpagestore_write_layout",
-      "community": 0,
+      "community": 4,
       "norm_label": ".write_layout()"
     },
     {
@@ -1559,7 +1559,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L530",
       "id": "src_baked_pages_bakedpagestore_read_serving_artifact",
-      "community": 0,
+      "community": 4,
       "norm_label": ".read_serving_artifact()"
     },
     {
@@ -1676,7 +1676,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L709",
       "id": "src_baked_pages_bakedpagestore_read_page",
-      "community": 0,
+      "community": 4,
       "norm_label": ".read_page()"
     },
     {
@@ -1694,7 +1694,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L731",
       "id": "src_baked_pages_bakedpagestore_touch",
-      "community": 0,
+      "community": 4,
       "norm_label": ".touch()"
     },
     {
@@ -1721,7 +1721,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L782",
       "id": "src_baked_pages_bakedpagestore_html_path",
-      "community": 1,
+      "community": 0,
       "norm_label": ".html_path()"
     },
     {
@@ -1730,7 +1730,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L786",
       "id": "src_baked_pages_bakedpagestore_body_path",
-      "community": 0,
+      "community": 4,
       "norm_label": ".body_path()"
     },
     {
@@ -1802,7 +1802,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L831",
       "id": "src_baked_pages_add_index_slot",
-      "community": 1,
+      "community": 0,
       "norm_label": "add_index_slot()"
     },
     {
@@ -1811,7 +1811,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L843",
       "id": "src_baked_pages_slotvalue",
-      "community": 1,
+      "community": 0,
       "norm_label": "slotvalue"
     },
     {
@@ -1820,7 +1820,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L849",
       "id": "src_baked_pages_slotvalue_render_for_slot",
-      "community": 1,
+      "community": 0,
       "norm_label": ".render_for_slot()"
     },
     {
@@ -1829,7 +1829,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L868",
       "id": "src_baked_pages_trustedhtml",
-      "community": 1,
+      "community": 4,
       "norm_label": "trustedhtml"
     },
     {
@@ -1838,7 +1838,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L871",
       "id": "src_baked_pages_trustedhtml_from_sanitized",
-      "community": 1,
+      "community": 4,
       "norm_label": ".from_sanitized()"
     },
     {
@@ -1847,7 +1847,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L878",
       "id": "src_baked_pages_bakedpatchregistry",
-      "community": 0,
+      "community": 4,
       "norm_label": "bakedpatchregistry"
     },
     {
@@ -1856,7 +1856,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L884",
       "id": "src_baked_pages_bakedpatchregistry_new",
-      "community": 0,
+      "community": 4,
       "norm_label": ".new()"
     },
     {
@@ -1865,7 +1865,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L891",
       "id": "src_baked_pages_bakedpatchregistry_register_slot_recompute",
-      "community": 0,
+      "community": 4,
       "norm_label": ".register_slot_recompute()"
     },
     {
@@ -1874,7 +1874,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L898",
       "id": "src_baked_pages_bakedpatchregistry_register_declared_slot_recompute",
-      "community": 0,
+      "community": 4,
       "norm_label": ".register_declared_slot_recompute()"
     },
     {
@@ -1883,7 +1883,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L920",
       "id": "src_baked_pages_bakedpatchregistry_patch_dependency",
-      "community": 0,
+      "community": 4,
       "norm_label": ".patch_dependency()"
     },
     {
@@ -1892,7 +1892,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L977",
       "id": "src_baked_pages_updateoutcome",
-      "community": 1,
+      "community": 0,
       "norm_label": "updateoutcome"
     },
     {
@@ -1901,7 +1901,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L983",
       "id": "src_baked_pages_statusupdate",
-      "community": 1,
+      "community": 0,
       "norm_label": "statusupdate"
     },
     {
@@ -1910,7 +1910,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L988",
       "id": "src_baked_pages_updateresult",
-      "community": 1,
+      "community": 0,
       "norm_label": "updateresult"
     },
     {
@@ -1919,7 +1919,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L995",
       "id": "src_baked_pages_router",
-      "community": 1,
+      "community": 0,
       "norm_label": "router()"
     },
     {
@@ -1928,7 +1928,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1002",
       "id": "src_baked_pages_ticket_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_page()"
     },
     {
@@ -1937,7 +1937,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1006",
       "id": "src_baked_pages_ticket_summary_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_summary_page()"
     },
     {
@@ -1946,7 +1946,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1010",
       "id": "src_baked_pages_update_ticket_status",
-      "community": 1,
+      "community": 0,
       "norm_label": "update_ticket_status()"
     },
     {
@@ -1955,7 +1955,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1036",
       "id": "src_baked_pages_serve_baked_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "serve_baked_page()"
     },
     {
@@ -1964,7 +1964,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1047",
       "id": "src_baked_pages_serve_baked_page_result",
-      "community": 1,
+      "community": 0,
       "norm_label": "serve_baked_page_result()"
     },
     {
@@ -1973,7 +1973,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1058",
       "id": "src_baked_pages_baked_html_response",
-      "community": 1,
+      "community": 0,
       "norm_label": "baked_html_response()"
     },
     {
@@ -1982,7 +1982,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1071",
       "id": "src_baked_pages_render_ticket_baked_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "render_ticket_baked_page()"
     },
     {
@@ -1991,7 +1991,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1082",
       "id": "src_baked_pages_rebake_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "rebake_page()"
     },
     {
@@ -2000,7 +2000,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1091",
       "id": "src_baked_pages_ticket_route_declaration",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_route_declaration()"
     },
     {
@@ -2009,7 +2009,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1096",
       "id": "src_baked_pages_render_ticket_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "render_ticket_page()"
     },
     {
@@ -2018,7 +2018,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1124",
       "id": "src_baked_pages_text_slot",
-      "community": 0,
+      "community": 4,
       "norm_label": "text_slot()"
     },
     {
@@ -2027,7 +2027,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1132",
       "id": "src_baked_pages_text_slot_content",
-      "community": 1,
+      "community": 0,
       "norm_label": "text_slot_content()"
     },
     {
@@ -2036,7 +2036,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1140",
       "id": "src_baked_pages_trusted_html_slot_content",
-      "community": 1,
+      "community": 0,
       "norm_label": "trusted_html_slot_content()"
     },
     {
@@ -2045,7 +2045,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1144",
       "id": "src_baked_pages_emit_ticket_status_changed",
-      "community": 1,
+      "community": 0,
       "norm_label": "emit_ticket_status_changed()"
     },
     {
@@ -2054,7 +2054,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1148",
       "id": "src_baked_pages_ticket_patch_registry",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_patch_registry()"
     },
     {
@@ -2063,7 +2063,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1160",
       "id": "src_baked_pages_ticket_id_from_dependency",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_id_from_dependency()"
     },
     {
@@ -2090,7 +2090,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1209",
       "id": "src_baked_pages_slotboundary",
-      "community": 1,
+      "community": 0,
       "norm_label": "slotboundary"
     },
     {
@@ -2099,7 +2099,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1214",
       "id": "src_baked_pages_find_slot_boundary",
-      "community": 1,
+      "community": 0,
       "norm_label": "find_slot_boundary()"
     },
     {
@@ -2108,7 +2108,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1236",
       "id": "src_baked_pages_single_marker_pos",
-      "community": 1,
+      "community": 0,
       "norm_label": "single_marker_pos()"
     },
     {
@@ -2117,7 +2117,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1253",
       "id": "src_baked_pages_replace_slot_content",
-      "community": 1,
+      "community": 0,
       "norm_label": "replace_slot_content()"
     },
     {
@@ -2126,7 +2126,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1267",
       "id": "src_baked_pages_read_metadata",
-      "community": 1,
+      "community": 0,
       "norm_label": "read_metadata()"
     },
     {
@@ -2162,7 +2162,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1283",
       "id": "src_baked_pages_ticket_status",
-      "community": 1,
+      "community": 0,
       "norm_label": "ticket_status()"
     },
     {
@@ -2171,7 +2171,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1291",
       "id": "src_baked_pages_set_ticket_status",
-      "community": 1,
+      "community": 0,
       "norm_label": "set_ticket_status()"
     },
     {
@@ -2180,7 +2180,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1298",
       "id": "src_baked_pages_tickets",
-      "community": 1,
+      "community": 0,
       "norm_label": "tickets()"
     },
     {
@@ -2189,7 +2189,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1302",
       "id": "src_baked_pages_dependency_key",
-      "community": 1,
+      "community": 0,
       "norm_label": "dependency_key()"
     },
     {
@@ -2198,7 +2198,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1306",
       "id": "src_baked_pages_temp_path_for",
-      "community": 1,
+      "community": 0,
       "norm_label": "temp_path_for()"
     },
     {
@@ -2243,7 +2243,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1343",
       "id": "src_baked_pages_storage_name",
-      "community": 1,
+      "community": 0,
       "norm_label": "storage_name()"
     },
     {
@@ -2252,7 +2252,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1352",
       "id": "src_baked_pages_safe_key",
-      "community": 1,
+      "community": 0,
       "norm_label": "safe_key()"
     },
     {
@@ -2261,7 +2261,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1365",
       "id": "src_baked_pages_escape_html",
-      "community": 1,
+      "community": 0,
       "norm_label": "escape_html()"
     },
     {
@@ -2270,7 +2270,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1374",
       "id": "src_baked_pages_escape_attr",
-      "community": 1,
+      "community": 0,
       "norm_label": "escape_attr()"
     },
     {
@@ -2288,7 +2288,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1385",
       "id": "src_baked_pages_unix_timestamp_nanos",
-      "community": 1,
+      "community": 0,
       "norm_label": "unix_timestamp_nanos()"
     },
     {
@@ -2297,7 +2297,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1393",
       "id": "src_baked_pages_pageshape",
-      "community": 1,
+      "community": 0,
       "norm_label": "pageshape"
     },
     {
@@ -2306,7 +2306,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1399",
       "id": "src_baked_pages_pageshape_page_key",
-      "community": 1,
+      "community": 0,
       "norm_label": ".page_key()"
     },
     {
@@ -2315,7 +2315,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1406",
       "id": "src_baked_pages_pageshape_route",
-      "community": 1,
+      "community": 0,
       "norm_label": ".route()"
     },
     {
@@ -2324,7 +2324,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1413",
       "id": "src_baked_pages_pageshape_from_page_key",
-      "community": 1,
+      "community": 0,
       "norm_label": ".from_page_key()"
     },
     {
@@ -2351,7 +2351,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1457",
       "id": "src_baked_pages_testroot_store",
-      "community": 0,
+      "community": 4,
       "norm_label": ".store()"
     },
     {
@@ -2369,7 +2369,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1472",
       "id": "src_baked_pages_response_header",
-      "community": 1,
+      "community": 0,
       "norm_label": "response_header()"
     },
     {
@@ -2378,7 +2378,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1482",
       "id": "src_baked_pages_miss_bakes_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "miss_bakes_page()"
     },
     {
@@ -2387,7 +2387,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1497",
       "id": "src_baked_pages_hit_skips_ssr_load",
-      "community": 1,
+      "community": 0,
       "norm_label": "hit_skips_ssr_load()"
     },
     {
@@ -2396,7 +2396,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1508",
       "id": "src_baked_pages_mutation_patches_one_page",
-      "community": 1,
+      "community": 0,
       "norm_label": "mutation_patches_one_page()"
     },
     {
@@ -2405,7 +2405,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1522",
       "id": "src_baked_pages_mutation_patches_two_pages",
-      "community": 1,
+      "community": 0,
       "norm_label": "mutation_patches_two_pages()"
     },
     {
@@ -2414,7 +2414,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1541",
       "id": "src_baked_pages_missing_marker_marks_stale_and_next_get_rebakes",
-      "community": 1,
+      "community": 0,
       "norm_label": "missing_marker_marks_stale_and_next_get_rebakes()"
     },
     {
@@ -2423,7 +2423,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1564",
       "id": "src_baked_pages_duplicate_marker_refuses_patch",
-      "community": 1,
+      "community": 0,
       "norm_label": "duplicate_marker_refuses_patch()"
     },
     {
@@ -2432,7 +2432,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1583",
       "id": "src_baked_pages_malformed_marker_order_refuses_patch",
-      "community": 1,
+      "community": 0,
       "norm_label": "malformed_marker_order_refuses_patch()"
     },
     {
@@ -2441,7 +2441,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1605",
       "id": "src_baked_pages_text_slot_escapes_html",
-      "community": 1,
+      "community": 0,
       "norm_label": "text_slot_escapes_html()"
     },
     {
@@ -2450,7 +2450,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1616",
       "id": "src_baked_pages_atomic_temp_file_is_not_served",
-      "community": 1,
+      "community": 0,
       "norm_label": "atomic_temp_file_is_not_served()"
     },
     {
@@ -2459,7 +2459,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1630",
       "id": "src_baked_pages_reverse_index_rebuilds_from_metadata_when_missing",
-      "community": 1,
+      "community": 0,
       "norm_label": "reverse_index_rebuilds_from_metadata_when_missing()"
     },
     {
@@ -2468,7 +2468,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1645",
       "id": "src_baked_pages_reverse_index_avoids_duplicate_entries",
-      "community": 1,
+      "community": 0,
       "norm_label": "reverse_index_avoids_duplicate_entries()"
     },
     {
@@ -2477,7 +2477,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1663",
       "id": "src_baked_pages_old_reverse_index_shape_rebuilds_instead_of_500",
-      "community": 1,
+      "community": 0,
       "norm_label": "old_reverse_index_shape_rebuilds_instead_of_500()"
     },
     {
@@ -2486,7 +2486,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1690",
       "id": "src_baked_pages_store_get_or_render_is_reusable_boundary",
-      "community": 0,
+      "community": 4,
       "norm_label": "store_get_or_render_is_reusable_boundary()"
     },
     {
@@ -2495,7 +2495,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1715",
       "id": "src_baked_pages_declaration_layer_declares_lazy_text_slot_dep_and_recompute",
-      "community": 0,
+      "community": 4,
       "norm_label": "declaration_layer_declares_lazy_text_slot_dep_and_recompute()"
     },
     {
@@ -2504,7 +2504,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1759",
       "id": "src_baked_pages_declaration_defaults_to_full_page_and_can_make_mode_explicit",
-      "community": 1,
+      "community": 4,
       "norm_label": "declaration_defaults_to_full_page_and_can_make_mode_explicit()"
     },
     {
@@ -2513,7 +2513,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1771",
       "id": "src_baked_pages_declaration_can_select_fragment_composed_layout",
-      "community": 0,
+      "community": 4,
       "norm_label": "declaration_can_select_fragment_composed_layout()"
     },
     {
@@ -2522,7 +2522,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1784",
       "id": "src_baked_pages_declared_fragment_composed_route_uses_layout_and_body_strategy",
-      "community": 0,
+      "community": 4,
       "norm_label": "declared_fragment_composed_route_uses_layout_and_body_strategy()"
     },
     {
@@ -2531,7 +2531,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1871",
       "id": "src_baked_pages_build_time_declaration_prebakes_before_request",
-      "community": 0,
+      "community": 4,
       "norm_label": "build_time_declaration_prebakes_before_request()"
     },
     {
@@ -2540,7 +2540,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1910",
       "id": "src_baked_pages_build_time_prebaked_first_get_is_hit_and_skips_ssr_load",
-      "community": 0,
+      "community": 4,
       "norm_label": "build_time_prebaked_first_get_is_hit_and_skips_ssr_load()"
     },
     {
@@ -2549,7 +2549,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1937",
       "id": "src_baked_pages_dependency_patching_updates_build_time_baked_page",
-      "community": 0,
+      "community": 4,
       "norm_label": "dependency_patching_updates_build_time_baked_page()"
     },
     {
@@ -2558,7 +2558,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L1970",
       "id": "src_baked_pages_build_time_fragment_composed_prebakes_body_and_serves_composed_hit",
-      "community": 0,
+      "community": 4,
       "norm_label": "build_time_fragment_composed_prebakes_body_and_serves_composed_hit()"
     },
     {
@@ -2567,7 +2567,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L2072",
       "id": "src_baked_pages_fragment_composed_page_uses_shared_layout_without_rebaking_body",
-      "community": 0,
+      "community": 4,
       "norm_label": "fragment_composed_page_uses_shared_layout_without_rebaking_body()"
     },
     {
@@ -2576,7 +2576,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L2151",
       "id": "src_baked_pages_never_bake_refuses_prebake_and_baked_serving",
-      "community": 0,
+      "community": 4,
       "norm_label": "never_bake_refuses_prebake_and_baked_serving()"
     },
     {
@@ -2585,7 +2585,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L2186",
       "id": "src_baked_pages_declaration_layer_supports_policy_and_trusted_html_declarations",
-      "community": 0,
+      "community": 4,
       "norm_label": "declaration_layer_supports_policy_and_trusted_html_declarations()"
     },
     {
@@ -2594,7 +2594,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L2204",
       "id": "src_baked_pages_patch_registry_recomputes_explicit_slot",
-      "community": 0,
+      "community": 4,
       "norm_label": "patch_registry_recomputes_explicit_slot()"
     },
     {
@@ -2603,7 +2603,7 @@
       "source_file": "demo/src/baked_pages.rs",
       "source_location": "L2232",
       "id": "src_baked_pages_trusted_html_requires_explicit_wrapper",
-      "community": 1,
+      "community": 4,
       "norm_label": "trusted_html_requires_explicit_wrapper()"
     },
     {
@@ -3129,58 +3129,22 @@
       "norm_label": "agents.md"
     },
     {
-      "label": "OpenCode / Agent Instructions",
+      "label": "Agent Instructions",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L1",
-      "id": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "source_location": "L2",
+      "id": "pilcrow_silcrow_agents_agent_instructions",
       "community": 7,
-      "norm_label": "opencode / agent instructions"
+      "norm_label": "agent instructions"
     },
     {
-      "label": "First rule",
+      "label": "graphify",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L3",
-      "id": "pilcrow_silcrow_agents_first_rule",
+      "source_location": "L12",
+      "id": "pilcrow_silcrow_agents_graphify",
       "community": 7,
-      "norm_label": "first rule"
-    },
-    {
-      "label": "Workspace",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": "L14",
-      "id": "pilcrow_silcrow_agents_workspace",
-      "community": 7,
-      "norm_label": "workspace"
-    },
-    {
-      "label": "Graphify first",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": "L23",
-      "id": "pilcrow_silcrow_agents_graphify_first",
-      "community": 7,
-      "norm_label": "graphify first"
-    },
-    {
-      "label": "Pilcrow / Silcrow relationship",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": "L38",
-      "id": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship",
-      "community": 7,
-      "norm_label": "pilcrow / silcrow relationship"
-    },
-    {
-      "label": "Work style",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": "L51",
-      "id": "pilcrow_silcrow_agents_work_style",
-      "community": 7,
-      "norm_label": "work style"
+      "norm_label": "graphify"
     },
     {
       "label": "CLAUDE.md",
@@ -3836,7 +3800,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L1",
       "id": "docs_superpowers_specs_2026_05_12_demo_app_consolidation_design_md",
-      "community": 11,
+      "community": 10,
       "norm_label": "2026-05-12-demo-app-consolidation-design.md"
     },
     {
@@ -3845,7 +3809,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L1",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_app_consolidation_design",
-      "community": 11,
+      "community": 10,
       "norm_label": "demo app consolidation design"
     },
     {
@@ -3854,7 +3818,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L7",
       "id": "specs_2026_05_12_demo_app_consolidation_design_overview",
-      "community": 11,
+      "community": 10,
       "norm_label": "overview"
     },
     {
@@ -3863,7 +3827,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L11",
       "id": "specs_2026_05_12_demo_app_consolidation_design_motivation",
-      "community": 11,
+      "community": 10,
       "norm_label": "motivation"
     },
     {
@@ -3872,7 +3836,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L17",
       "id": "specs_2026_05_12_demo_app_consolidation_design_app_identity",
-      "community": 11,
+      "community": 10,
       "norm_label": "app identity"
     },
     {
@@ -3881,7 +3845,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L28",
       "id": "specs_2026_05_12_demo_app_consolidation_design_page_inventory",
-      "community": 11,
+      "community": 10,
       "norm_label": "page inventory"
     },
     {
@@ -3890,7 +3854,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L30",
       "id": "specs_2026_05_12_demo_app_consolidation_design_kept_from_sandbox_unchanged",
-      "community": 11,
+      "community": 10,
       "norm_label": "kept (from sandbox, unchanged)"
     },
     {
@@ -3899,7 +3863,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L42",
       "id": "specs_2026_05_12_demo_app_consolidation_design_deleted_from_pilcrow_demos_not_migrated",
-      "community": 11,
+      "community": 10,
       "norm_label": "deleted (from pilcrow-demos, not migrated)"
     },
     {
@@ -3908,7 +3872,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L46",
       "id": "specs_2026_05_12_demo_app_consolidation_design_added",
-      "community": 11,
+      "community": 10,
       "norm_label": "added"
     },
     {
@@ -3917,7 +3881,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L53",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_fsr_page_design",
-      "community": 11,
+      "community": 10,
       "norm_label": "`/demo/fsr` page design"
     },
     {
@@ -3926,7 +3890,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L72",
       "id": "specs_2026_05_12_demo_app_consolidation_design_demo_react_island_page_design",
-      "community": 11,
+      "community": 10,
       "norm_label": "`/demo/react-island` page design"
     },
     {
@@ -3935,7 +3899,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L91",
       "id": "specs_2026_05_12_demo_app_consolidation_design_nav_layout",
-      "community": 11,
+      "community": 10,
       "norm_label": "nav & layout"
     },
     {
@@ -3944,7 +3908,7 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L101",
       "id": "specs_2026_05_12_demo_app_consolidation_design_out_of_scope",
-      "community": 11,
+      "community": 10,
       "norm_label": "out of scope"
     },
     {
@@ -3953,8 +3917,62 @@
       "source_file": "docs/superpowers/specs/2026-05-12-demo-app-consolidation-design.md",
       "source_location": "L106",
       "id": "specs_2026_05_12_demo_app_consolidation_design_file_operations_summary",
-      "community": 11,
+      "community": 10,
       "norm_label": "file operations summary"
+    },
+    {
+      "label": "OpenCode / Agent Instructions",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L1",
+      "community": 7,
+      "norm_label": "opencode / agent instructions",
+      "id": "pilcrow_silcrow_agents_opencode_agent_instructions"
+    },
+    {
+      "label": "First rule",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L3",
+      "community": 7,
+      "norm_label": "first rule",
+      "id": "pilcrow_silcrow_agents_first_rule"
+    },
+    {
+      "label": "Workspace",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L14",
+      "community": 7,
+      "norm_label": "workspace",
+      "id": "pilcrow_silcrow_agents_workspace"
+    },
+    {
+      "label": "Graphify first",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L23",
+      "community": 7,
+      "norm_label": "graphify first",
+      "id": "pilcrow_silcrow_agents_graphify_first"
+    },
+    {
+      "label": "Pilcrow / Silcrow relationship",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L38",
+      "community": 7,
+      "norm_label": "pilcrow / silcrow relationship",
+      "id": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship"
+    },
+    {
+      "label": "Work style",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L51",
+      "community": 7,
+      "norm_label": "work style",
+      "id": "pilcrow_silcrow_agents_work_style"
     },
     {
       "label": "build.rs",
@@ -3979,7 +3997,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L1",
-      "community": 28,
+      "community": 30,
       "norm_label": "hooks.rs",
       "id": "pilcrow_demos_hooks_rs"
     },
@@ -3988,7 +4006,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L3",
-      "community": 28,
+      "community": 30,
       "norm_label": "handle()",
       "id": "pilcrow_demos_hooks_handle"
     },
@@ -3997,7 +4015,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L7",
-      "community": 28,
+      "community": 30,
       "norm_label": "handle_error()",
       "id": "pilcrow_demos_hooks_handle_error"
     },
@@ -4006,7 +4024,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/hooks.rs",
       "source_location": "L12",
-      "community": 28,
+      "community": 30,
       "norm_label": "init()",
       "id": "pilcrow_demos_hooks_init"
     },
@@ -4024,7 +4042,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L1",
-      "community": 10,
+      "community": 23,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_isr_ssg_index_rs"
     },
@@ -4033,7 +4051,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L7",
-      "community": 10,
+      "community": 23,
       "norm_label": "props",
       "id": "isr_ssg_index_props"
     },
@@ -4042,7 +4060,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L14",
-      "community": 10,
+      "community": 23,
       "norm_label": "load()",
       "id": "isr_ssg_index_load"
     },
@@ -4051,7 +4069,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L23",
-      "community": 10,
+      "community": 23,
       "norm_label": "bust()",
       "id": "isr_ssg_index_bust"
     },
@@ -4060,7 +4078,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/isr-ssg/index.rs",
       "source_location": "L28",
-      "community": 10,
+      "community": 23,
       "norm_label": "now_utc()",
       "id": "isr_ssg_index_now_utc"
     },
@@ -4114,7 +4132,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L1",
-      "community": 24,
+      "community": 25,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_deferred_index_rs"
     },
@@ -4123,7 +4141,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L12",
-      "community": 24,
+      "community": 25,
       "norm_label": "props",
       "id": "deferred_index_props"
     },
@@ -4132,7 +4150,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L20",
-      "community": 24,
+      "community": 25,
       "norm_label": "load()",
       "id": "deferred_index_load"
     },
@@ -4141,7 +4159,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L37",
-      "community": 24,
+      "community": 25,
       "norm_label": "render_posts()",
       "id": "deferred_index_render_posts"
     },
@@ -4150,7 +4168,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/deferred/index.rs",
       "source_location": "L57",
-      "community": 24,
+      "community": 25,
       "norm_label": "now_utc()",
       "id": "deferred_index_now_utc"
     },
@@ -4159,7 +4177,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L1",
-      "community": 31,
+      "community": 32,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_streaming_index_rs"
     },
@@ -4168,7 +4186,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L7",
-      "community": 31,
+      "community": 32,
       "norm_label": "props",
       "id": "streaming_index_props"
     },
@@ -4186,7 +4204,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L27",
-      "community": 31,
+      "community": 32,
       "norm_label": "load()",
       "id": "streaming_index_load"
     },
@@ -4195,7 +4213,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/streaming/index.rs",
       "source_location": "L38",
-      "community": 31,
+      "community": 32,
       "norm_label": "now_utc()",
       "id": "streaming_index_now_utc"
     },
@@ -4204,7 +4222,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L1",
-      "community": 10,
+      "community": 11,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssg_index_rs"
     },
@@ -4213,7 +4231,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L6",
-      "community": 10,
+      "community": 11,
       "norm_label": "props",
       "id": "ssg_index_props"
     },
@@ -4222,7 +4240,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L13",
-      "community": 10,
+      "community": 11,
       "norm_label": "load()",
       "id": "ssg_index_load"
     },
@@ -4231,7 +4249,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssg/index.rs",
       "source_location": "L22",
-      "community": 10,
+      "community": 11,
       "norm_label": "now_utc()",
       "id": "ssg_index_now_utc"
     },
@@ -4240,7 +4258,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L1",
-      "community": 30,
+      "community": 11,
       "norm_label": "index.rs",
       "id": "pilcrow_demos_pages_ssr_index_rs"
     },
@@ -4249,7 +4267,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L4",
-      "community": 30,
+      "community": 11,
       "norm_label": "props",
       "id": "ssr_index_props"
     },
@@ -4258,7 +4276,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L11",
-      "community": 30,
+      "community": 11,
       "norm_label": "load()",
       "id": "ssr_index_load"
     },
@@ -4267,7 +4285,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/pages/ssr/index.rs",
       "source_location": "L20",
-      "community": 30,
+      "community": 11,
       "norm_label": "chrono_now()",
       "id": "ssr_index_chrono_now"
     },
@@ -4285,7 +4303,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L1",
-      "community": 10,
+      "community": 11,
       "norm_label": "counter.rs",
       "id": "pilcrow_demos_src_data_counter_rs"
     },
@@ -4294,7 +4312,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L6",
-      "community": 10,
+      "community": 11,
       "norm_label": "increment()",
       "id": "data_counter_increment"
     },
@@ -4303,7 +4321,7 @@
       "file_type": "code",
       "source_file": "pilcrow-demos/src/data/counter.rs",
       "source_location": "L10",
-      "community": 10,
+      "community": 11,
       "norm_label": "current()",
       "id": "data_counter_current"
     },
@@ -4335,15 +4353,6 @@
       "id": "pilcrow_silcrow_agents_claude_md_pilcrow_silcrow_workspace"
     },
     {
-      "label": "graphify",
-      "file_type": "document",
-      "source_file": "AGENTS.md",
-      "source_location": "L10",
-      "community": 7,
-      "norm_label": "graphify",
-      "id": "pilcrow_silcrow_agents_graphify"
-    },
-    {
       "label": "build.rs",
       "file_type": "code",
       "source_file": "sandbox/build.rs",
@@ -4366,7 +4375,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L1",
-      "community": 32,
+      "community": 33,
       "norm_label": "hooks.rs",
       "id": "sandbox_hooks_rs"
     },
@@ -4375,7 +4384,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L7",
-      "community": 32,
+      "community": 33,
       "norm_label": "handle()",
       "id": "sandbox_hooks_handle"
     },
@@ -4384,7 +4393,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L20",
-      "community": 32,
+      "community": 33,
       "norm_label": "handle_error()",
       "id": "sandbox_hooks_handle_error"
     },
@@ -4393,7 +4402,7 @@
       "file_type": "code",
       "source_file": "sandbox/hooks.rs",
       "source_location": "L28",
-      "community": 32,
+      "community": 33,
       "norm_label": "init()",
       "id": "sandbox_hooks_init"
     },
@@ -4411,7 +4420,7 @@
       "file_type": "code",
       "source_file": "sandbox/solid/Counter.tsx",
       "source_location": "L1",
-      "community": 3,
+      "community": 2,
       "norm_label": "counter.tsx",
       "id": "sandbox_solid_counter_tsx"
     },
@@ -4465,7 +4474,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/about/index.rs",
       "source_location": "L1",
-      "community": 33,
+      "community": 29,
       "norm_label": "index.rs",
       "id": "sandbox_pages_about_index_rs"
     },
@@ -4474,7 +4483,7 @@
       "file_type": "code",
       "source_file": "sandbox/pages/live/index.rs",
       "source_location": "L1",
-      "community": 23,
+      "community": 24,
       "norm_label": "index.rs",
       "id": "sandbox_pages_live_index_rs"
     },
@@ -4483,7 +4492,7 @@
       "file_type": "code",
       "source_file": "sandbox/react/silcrow-react.ts",
       "source_location": "L1",
-      "community": 3,
+      "community": 2,
       "norm_label": "silcrow-react.ts",
       "id": "sandbox_react_silcrow_react_ts"
     },
@@ -4492,7 +4501,7 @@
       "file_type": "code",
       "source_file": "sandbox/react/FragmentGrid.tsx",
       "source_location": "L1",
-      "community": 3,
+      "community": 2,
       "norm_label": "fragmentgrid.tsx",
       "id": "sandbox_react_fragmentgrid_tsx"
     },
@@ -4501,7 +4510,7 @@
       "file_type": "code",
       "source_file": "sandbox/react/Counter.tsx",
       "source_location": "L1",
-      "community": 3,
+      "community": 2,
       "norm_label": "counter.tsx",
       "id": "sandbox_react_counter_tsx"
     },
@@ -4510,7 +4519,7 @@
       "file_type": "code",
       "source_file": "sandbox/react/Greeting.tsx",
       "source_location": "L1",
-      "community": 29,
+      "community": 31,
       "norm_label": "greeting.tsx",
       "id": "sandbox_react_greeting_tsx"
     },
@@ -4546,7 +4555,7 @@
       "file_type": "code",
       "source_file": "sandbox/src/baked_pages.rs",
       "source_location": "L1",
-      "community": 1,
+      "community": 0,
       "norm_label": "baked_pages.rs",
       "id": "sandbox_src_baked_pages_rs"
     },
@@ -4603,7 +4612,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 45,
+      "community": 47,
       "norm_label": "pilcrow-demos hooks.rs",
       "id": "pilcrow_demos_hooks"
     },
@@ -4711,7 +4720,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 45,
       "norm_label": "pilcrow-demos src/main.rs",
       "id": "pilcrow_demos_main"
     },
@@ -4724,7 +4733,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 46,
+      "community": 45,
       "norm_label": "pilcrow_web::pilcrow_app! macro",
       "id": "pilcrow_web_pilcrow_app_macro"
     },
@@ -4737,7 +4746,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 46,
       "norm_label": "pilcrow-demos src/data/counter.rs",
       "id": "pilcrow_demos_data_counter"
     },
@@ -4763,7 +4772,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 47,
+      "community": 46,
       "norm_label": "pilcrow-demos src/data/mod.rs",
       "id": "pilcrow_demos_data_mod"
     },
@@ -4789,7 +4798,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 45,
+      "community": 47,
       "norm_label": "sandbox hooks.rs",
       "id": "sandbox_hooks"
     },
@@ -4802,7 +4811,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "sandbox solid/silcrow-solid.ts",
       "id": "sandbox_solid_silcrow_solid"
     },
@@ -4815,7 +4824,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "silcrow.subscribe api",
       "id": "silcrow_subscribe_api"
     },
@@ -4828,7 +4837,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "silcrow.snapshot api",
       "id": "silcrow_snapshot_api"
     },
@@ -4842,7 +4851,7 @@
       "author": null,
       "contributor": null,
       "rationale": "Bridges Silcrow's network-owned atom scopes into SolidJS reactive stores. Seeds from snapshot for SSR-hydrated data sync, then subscribes for live patches. This ensures the component never fetches data itself \u2014 Silcrow owns the network layer.",
-      "community": 25,
+      "community": 26,
       "norm_label": "createsilcrowstore \u2014 solidjs store bound to silcrow atom scope",
       "id": "create_silcrow_store_pattern"
     },
@@ -4855,7 +4864,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 25,
+      "community": 26,
       "norm_label": "sandbox solid/counter.tsx",
       "id": "sandbox_solid_counter"
     },
@@ -5488,7 +5497,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L1",
-      "community": 2,
+      "community": 1,
       "norm_label": "baking.rs",
       "id": "pilcrow_crates_runtime_src_live_props_baking_rs"
     },
@@ -5497,7 +5506,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L6",
-      "community": 2,
+      "community": 1,
       "norm_label": "inject_live_slots()",
       "id": "live_props_baking_inject_live_slots"
     },
@@ -5506,7 +5515,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L34",
-      "community": 2,
+      "community": 1,
       "norm_label": "find_live_field_content_range()",
       "id": "live_props_baking_find_live_field_content_range"
     },
@@ -5515,7 +5524,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L44",
-      "community": 2,
+      "community": 1,
       "norm_label": "escape_html()",
       "id": "live_props_baking_escape_html"
     },
@@ -5524,7 +5533,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L57",
-      "community": 2,
+      "community": 1,
       "norm_label": "replaces_single_slot()",
       "id": "live_props_baking_replaces_single_slot"
     },
@@ -5533,7 +5542,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L65",
-      "community": 2,
+      "community": 1,
       "norm_label": "escapes_html_in_value()",
       "id": "live_props_baking_escapes_html_in_value"
     },
@@ -5542,7 +5551,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L74",
-      "community": 2,
+      "community": 1,
       "norm_label": "missing_slot_leaves_content_unchanged()",
       "id": "live_props_baking_missing_slot_leaves_content_unchanged"
     },
@@ -5551,7 +5560,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L82",
-      "community": 2,
+      "community": 1,
       "norm_label": "replaces_multiple_slots_in_one_pass()",
       "id": "live_props_baking_replaces_multiple_slots_in_one_pass"
     },
@@ -5560,7 +5569,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/baking.rs",
       "source_location": "L94",
-      "community": 2,
+      "community": 1,
       "norm_label": "null_value_clears_slot_content()",
       "id": "live_props_baking_null_value_clears_slot_content"
     },
@@ -5569,7 +5578,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L1",
-      "community": 2,
+      "community": 1,
       "norm_label": "broadcast.rs",
       "id": "pilcrow_crates_runtime_src_live_props_broadcast_rs"
     },
@@ -5578,7 +5587,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L10",
-      "community": 2,
+      "community": 1,
       "norm_label": "invalidationevent",
       "id": "live_props_broadcast_invalidationevent"
     },
@@ -5587,7 +5596,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L55",
-      "community": 2,
+      "community": 1,
       "norm_label": "livebroadcast",
       "id": "live_props_broadcast_livebroadcast"
     },
@@ -5596,7 +5605,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L60",
-      "community": 2,
+      "community": 1,
       "norm_label": ".new()",
       "id": "live_props_broadcast_livebroadcast_new"
     },
@@ -5605,7 +5614,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L67",
-      "community": 2,
+      "community": 1,
       "norm_label": ".send()",
       "id": "live_props_broadcast_livebroadcast_send"
     },
@@ -5614,7 +5623,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L71",
-      "community": 2,
+      "community": 1,
       "norm_label": ".subscribe()",
       "id": "live_props_broadcast_livebroadcast_subscribe"
     },
@@ -5623,7 +5632,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L83",
-      "community": 2,
+      "community": 1,
       "norm_label": "subscriber_receives_sent_event()",
       "id": "live_props_broadcast_subscriber_receives_sent_event"
     },
@@ -5632,7 +5641,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L96",
-      "community": 2,
+      "community": 1,
       "norm_label": "no_subscribers_send_does_not_panic()",
       "id": "live_props_broadcast_no_subscribers_send_does_not_panic"
     },
@@ -5641,7 +5650,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L105",
-      "community": 2,
+      "community": 1,
       "norm_label": "multiple_subscribers_all_receive_event()",
       "id": "live_props_broadcast_multiple_subscribers_all_receive_event"
     },
@@ -5650,7 +5659,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/broadcast.rs",
       "source_location": "L118",
-      "community": 2,
+      "community": 1,
       "norm_label": "clone_shares_same_channel()",
       "id": "live_props_broadcast_clone_shares_same_channel"
     },
@@ -5695,7 +5704,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L1",
-      "community": 2,
+      "community": 1,
       "norm_label": "model.rs",
       "id": "pilcrow_crates_runtime_src_live_props_model_rs"
     },
@@ -5704,7 +5713,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L11",
-      "community": 2,
+      "community": 1,
       "norm_label": "liveprops",
       "id": "live_props_model_liveprops"
     },
@@ -5713,7 +5722,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L18",
-      "community": 2,
+      "community": 1,
       "norm_label": "liveprops<t>",
       "id": "live_props_model_liveprops_t"
     },
@@ -5722,7 +5731,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L19",
-      "community": 2,
+      "community": 1,
       "norm_label": ".new()",
       "id": "live_props_model_liveprops_t_new"
     },
@@ -5731,7 +5740,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L23",
-      "community": 2,
+      "community": 1,
       "norm_label": ".promote_after()",
       "id": "live_props_model_liveprops_t_promote_after"
     },
@@ -5740,7 +5749,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L28",
-      "community": 2,
+      "community": 1,
       "norm_label": ".patch_debounce()",
       "id": "live_props_model_liveprops_t_patch_debounce"
     },
@@ -5749,7 +5758,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L33",
-      "community": 2,
+      "community": 1,
       "norm_label": ".to_field_data()",
       "id": "live_props_model_liveprops_t_to_field_data"
     },
@@ -5758,7 +5767,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L48",
-      "community": 2,
+      "community": 1,
       "norm_label": "livefielddata",
       "id": "live_props_model_livefielddata"
     },
@@ -5767,7 +5776,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L62",
-      "community": 2,
+      "community": 1,
       "norm_label": "livepropsextract",
       "id": "live_props_model_livepropsextract"
     },
@@ -5776,7 +5785,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L73",
-      "community": 2,
+      "community": 1,
       "norm_label": "live_props_new_stores_value_and_deps()",
       "id": "live_props_model_live_props_new_stores_value_and_deps"
     },
@@ -5785,7 +5794,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L83",
-      "community": 2,
+      "community": 1,
       "norm_label": "live_props_builder_sets_options()",
       "id": "live_props_model_live_props_builder_sets_options"
     },
@@ -5794,7 +5803,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L90",
-      "community": 2,
+      "community": 1,
       "norm_label": "live_field_data_from_live_props()",
       "id": "live_props_model_live_field_data_from_live_props"
     },
@@ -5803,7 +5812,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/model.rs",
       "source_location": "L102",
-      "community": 2,
+      "community": 1,
       "norm_label": "multiple_deps_stored()",
       "id": "live_props_model_multiple_deps_stored"
     },
@@ -5821,7 +5830,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L1",
-      "community": 2,
+      "community": 1,
       "norm_label": "store.rs",
       "id": "pilcrow_crates_runtime_src_live_props_store_rs"
     },
@@ -5830,7 +5839,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L7",
-      "community": 2,
+      "community": 1,
       "norm_label": "livepagestore",
       "id": "live_props_store_livepagestore"
     },
@@ -5839,7 +5848,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L12",
-      "community": 2,
+      "community": 1,
       "norm_label": ".new()",
       "id": "live_props_store_livepagestore_new"
     },
@@ -5848,7 +5857,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L16",
-      "community": 2,
+      "community": 1,
       "norm_label": ".pool()",
       "id": "live_props_store_livepagestore_pool"
     },
@@ -5857,7 +5866,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L23",
-      "community": 2,
+      "community": 1,
       "norm_label": ".write_live_fields()",
       "id": "live_props_store_livepagestore_write_live_fields"
     },
@@ -5866,7 +5875,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L62",
-      "community": 2,
+      "community": 1,
       "norm_label": ".read_live_slots()",
       "id": "live_props_store_livepagestore_read_live_slots"
     },
@@ -5875,7 +5884,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L81",
-      "community": 2,
+      "community": 1,
       "norm_label": ".invalidate_dep_key()",
       "id": "live_props_store_livepagestore_invalidate_dep_key"
     },
@@ -5884,7 +5893,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L106",
-      "community": 2,
+      "community": 1,
       "norm_label": ".increment_hit()",
       "id": "live_props_store_livepagestore_increment_hit"
     },
@@ -5893,7 +5902,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L150",
-      "community": 2,
+      "community": 1,
       "norm_label": "test_pool()",
       "id": "live_props_store_test_pool"
     },
@@ -5902,7 +5911,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L156",
-      "community": 2,
+      "community": 1,
       "norm_label": "make_status_field()",
       "id": "live_props_store_make_status_field"
     },
@@ -5911,7 +5920,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L168",
-      "community": 2,
+      "community": 1,
       "norm_label": "write_and_read_live_fields()",
       "id": "live_props_store_write_and_read_live_fields"
     },
@@ -5920,7 +5929,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L187",
-      "community": 2,
+      "community": 1,
       "norm_label": "invalidate_dep_key_marks_rows_stale()",
       "id": "live_props_store_invalidate_dep_key_marks_rows_stale"
     },
@@ -5929,7 +5938,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/live_props/store.rs",
       "source_location": "L218",
-      "community": 2,
+      "community": 1,
       "norm_label": "increment_hit_promotes_at_threshold()",
       "id": "live_props_store_increment_hit_promotes_at_threshold"
     },
@@ -6145,7 +6154,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L1",
-      "community": 26,
+      "community": 27,
       "norm_label": "live_props_derive.rs",
       "id": "pilcrow_crates_macros_src_live_props_derive_rs"
     },
@@ -6154,7 +6163,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L6",
-      "community": 26,
+      "community": 27,
       "norm_label": "expand()",
       "id": "src_live_props_derive_expand"
     },
@@ -6163,7 +6172,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L37",
-      "community": 26,
+      "community": 27,
       "norm_label": "extract_live_fields()",
       "id": "src_live_props_derive_extract_live_fields"
     },
@@ -6172,7 +6181,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L74",
-      "community": 26,
+      "community": 27,
       "norm_label": "is_live_props_type()",
       "id": "src_live_props_derive_is_live_props_type"
     },
@@ -6181,7 +6190,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/macros/src/live_props_derive.rs",
       "source_location": "L83",
-      "community": 26,
+      "community": 27,
       "norm_label": "find_u32_attr()",
       "id": "src_live_props_derive_find_u32_attr"
     },
@@ -6190,7 +6199,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L1",
-      "community": 4,
+      "community": 3,
       "norm_label": "config.rs",
       "id": "pilcrow_crates_core_src_config_config_rs"
     },
@@ -6199,7 +6208,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L8",
-      "community": 4,
+      "community": 3,
       "norm_label": "pilcrowconfig",
       "id": "config_config_pilcrowconfig"
     },
@@ -6208,7 +6217,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L31",
-      "community": 4,
+      "community": 3,
       "norm_label": "liveconfig",
       "id": "config_config_liveconfig"
     },
@@ -6217,7 +6226,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L42",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_liveconfig_default"
     },
@@ -6226,7 +6235,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L53",
-      "community": 4,
+      "community": 3,
       "norm_label": "clientruntimeconfig",
       "id": "config_config_clientruntimeconfig"
     },
@@ -6235,7 +6244,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L66",
-      "community": 4,
+      "community": 3,
       "norm_label": "reactruntimeconfig",
       "id": "config_config_reactruntimeconfig"
     },
@@ -6244,7 +6253,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L76",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_reactruntimeconfig_default"
     },
@@ -6253,7 +6262,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L84",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_node_bin()",
       "id": "config_config_default_node_bin"
     },
@@ -6262,7 +6271,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L105",
-      "community": 4,
+      "community": 3,
       "norm_label": "imageconfig",
       "id": "config_config_imageconfig"
     },
@@ -6271,7 +6280,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L134",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_imageconfig_default"
     },
@@ -6280,7 +6289,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L161",
-      "community": 4,
+      "community": 3,
       "norm_label": "i18nconfig",
       "id": "config_config_i18nconfig"
     },
@@ -6289,7 +6298,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L174",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_i18nconfig_default"
     },
@@ -6298,7 +6307,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L184",
-      "community": 4,
+      "community": 3,
       "norm_label": "serviceworkerconfig",
       "id": "config_config_serviceworkerconfig"
     },
@@ -6307,7 +6316,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L204",
-      "community": 4,
+      "community": 3,
       "norm_label": "swstrategy",
       "id": "config_config_swstrategy"
     },
@@ -6316,7 +6325,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L215",
-      "community": 4,
+      "community": 3,
       "norm_label": "cacheconfig",
       "id": "config_config_cacheconfig"
     },
@@ -6325,7 +6334,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L231",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_cacheconfig_default"
     },
@@ -6334,7 +6343,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L245",
-      "community": 4,
+      "community": 3,
       "norm_label": "cacheprovider",
       "id": "config_config_cacheprovider"
     },
@@ -6343,7 +6352,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L259",
-      "community": 4,
+      "community": 3,
       "norm_label": "webconfig",
       "id": "config_config_webconfig"
     },
@@ -6352,7 +6361,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L269",
-      "community": 4,
+      "community": 3,
       "norm_label": "backendconfig",
       "id": "config_config_backendconfig"
     },
@@ -6361,7 +6370,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L277",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_webconfig_default"
     },
@@ -6370,7 +6379,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L287",
-      "community": 4,
+      "community": 3,
       "norm_label": ".default()",
       "id": "config_config_backendconfig_default"
     },
@@ -6379,7 +6388,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L296",
-      "community": 4,
+      "community": 3,
       "norm_label": ".load_from()",
       "id": "config_config_pilcrowconfig_load_from"
     },
@@ -6388,7 +6397,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L314",
-      "community": 4,
+      "community": 3,
       "norm_label": ".load_from_current_dir()",
       "id": "config_config_pilcrowconfig_load_from_current_dir"
     },
@@ -6397,7 +6406,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L319",
-      "community": 4,
+      "community": 3,
       "norm_label": ".web_bind_addr()",
       "id": "config_config_pilcrowconfig_web_bind_addr"
     },
@@ -6406,7 +6415,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L323",
-      "community": 4,
+      "community": 3,
       "norm_label": ".backend_bind_addr()",
       "id": "config_config_pilcrowconfig_backend_bind_addr"
     },
@@ -6415,7 +6424,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L327",
-      "community": 4,
+      "community": 3,
       "norm_label": ".apply_env_overrides()",
       "id": "config_config_pilcrowconfig_apply_env_overrides"
     },
@@ -6424,7 +6433,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L347",
-      "community": 4,
+      "community": 3,
       "norm_label": "find_config_path()",
       "id": "config_config_find_config_path"
     },
@@ -6433,7 +6442,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L359",
-      "community": 4,
+      "community": 3,
       "norm_label": "get_env()",
       "id": "config_config_get_env"
     },
@@ -6442,7 +6451,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L370",
-      "community": 4,
+      "community": 3,
       "norm_label": "get_env_u16()",
       "id": "config_config_get_env_u16"
     },
@@ -6451,7 +6460,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L382",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_locale_str()",
       "id": "config_config_default_locale_str"
     },
@@ -6460,7 +6469,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L386",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_locales_dir()",
       "id": "config_config_default_locales_dir"
     },
@@ -6469,7 +6478,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L390",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_revalidate_timeout_secs()",
       "id": "config_config_default_revalidate_timeout_secs"
     },
@@ -6478,7 +6487,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L394",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_web_host()",
       "id": "config_config_default_web_host"
     },
@@ -6487,7 +6496,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L398",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_web_port()",
       "id": "config_config_default_web_port"
     },
@@ -6496,7 +6505,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L402",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_backend_url()",
       "id": "config_config_default_backend_url"
     },
@@ -6505,7 +6514,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L406",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_backend_host()",
       "id": "config_config_default_backend_host"
     },
@@ -6514,7 +6523,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L410",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_backend_port()",
       "id": "config_config_default_backend_port"
     },
@@ -6523,7 +6532,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L414",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_image_cache_dir()",
       "id": "config_config_default_image_cache_dir"
     },
@@ -6532,7 +6541,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L418",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_max_image_dimension()",
       "id": "config_config_default_max_image_dimension"
     },
@@ -6541,7 +6550,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L422",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_image_quality()",
       "id": "config_config_default_image_quality"
     },
@@ -6550,7 +6559,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L426",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_image_formats()",
       "id": "config_config_default_image_formats"
     },
@@ -6559,7 +6568,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/core/src/config/config.rs",
       "source_location": "L430",
-      "community": 4,
+      "community": 3,
       "norm_label": "default_image_concurrency()",
       "id": "config_config_default_image_concurrency"
     },
@@ -6568,7 +6577,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L1",
-      "community": 4,
+      "community": 3,
       "norm_label": "start.rs",
       "id": "pilcrow_crates_runtime_src_start_rs"
     },
@@ -6577,7 +6586,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L30",
-      "community": 4,
+      "community": 3,
       "norm_label": "start()",
       "id": "src_start_start"
     },
@@ -6586,7 +6595,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L36",
-      "community": 4,
+      "community": 3,
       "norm_label": "start_with_prerender()",
       "id": "src_start_start_with_prerender"
     },
@@ -6595,7 +6604,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L52",
-      "community": 4,
+      "community": 3,
       "norm_label": "start_with_adapter()",
       "id": "src_start_start_with_adapter"
     },
@@ -6604,7 +6613,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L235",
-      "community": 4,
+      "community": 3,
       "norm_label": "island_ssr_middleware()",
       "id": "src_start_island_ssr_middleware"
     },
@@ -6613,7 +6622,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L282",
-      "community": 4,
+      "community": 3,
       "norm_label": "load_config_or_exit()",
       "id": "src_start_load_config_or_exit"
     },
@@ -6622,7 +6631,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L302",
-      "community": 4,
+      "community": 3,
       "norm_label": "export()",
       "id": "src_start_export"
     },
@@ -6631,7 +6640,7 @@
       "file_type": "code",
       "source_file": "pilcrow/crates/runtime/src/start.rs",
       "source_location": "L330",
-      "community": 4,
+      "community": 3,
       "norm_label": "isr_inspect_handler()",
       "id": "src_start_isr_inspect_handler"
     },
@@ -6644,7 +6653,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "dep! macro",
       "id": "live_props_dep_dep_macro"
     },
@@ -6657,7 +6666,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "live_props module",
       "id": "live_props_mod_live_props_module"
     },
@@ -6670,7 +6679,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "livepagestore::write_live_fields",
       "id": "live_props_store_write_live_fields"
     },
@@ -6683,7 +6692,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "livepagestore::read_live_slots",
       "id": "live_props_store_read_live_slots"
     },
@@ -6696,7 +6705,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "livepagestore::invalidate_dep_key",
       "id": "live_props_store_invalidate_dep_key"
     },
@@ -6709,7 +6718,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "livepagestore::increment_hit",
       "id": "live_props_store_increment_hit"
     },
@@ -6722,7 +6731,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "handler::expand",
       "id": "macros_handler_expand"
     },
@@ -6748,7 +6757,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "handler proc_macro_attribute",
       "id": "macros_lib_handler_proc_macro"
     },
@@ -6761,7 +6770,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "derive(pilcrowprops) proc_macro",
       "id": "macros_lib_derive_pilcrow_props"
     },
@@ -6774,7 +6783,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "invalidate! proc_macro",
       "id": "macros_lib_invalidate_proc_macro"
     },
@@ -6787,7 +6796,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "invalidate_macro::expand",
       "id": "macros_invalidate_macro_expand"
     },
@@ -6800,7 +6809,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "live_props_derive::expand",
       "id": "macros_live_props_derive_expand"
     },
@@ -6813,7 +6822,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "liveconfig",
       "id": "config_liveconfig"
     },
@@ -6826,7 +6835,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "pilcrowconfig",
       "id": "config_pilcrowconfig"
     },
@@ -6839,7 +6848,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "pilcrow_cache table schema",
       "id": "migration_001_pilcrow_cache"
     },
@@ -6852,7 +6861,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "pilcrow_routes table schema",
       "id": "migration_001_pilcrow_routes"
     },
@@ -6865,7 +6874,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "gin index on depends_on for fast invalidation",
       "id": "migration_002_gin_index"
     },
@@ -6878,7 +6887,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "partial index on stale=false for read_live_slots",
       "id": "migration_002_stale_index"
     },
@@ -6891,7 +6900,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "start_with_adapter",
       "id": "runtime_start_start_with_adapter"
     },
@@ -6904,7 +6913,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 2,
+      "community": 1,
       "norm_label": "live-props feature gate: broadcast + store registration",
       "id": "runtime_start_live_props_registration"
     }
@@ -17072,6 +17081,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "agents_md",
+      "target": "pilcrow_silcrow_agents_agent_instructions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
       "source_location": "L1",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -17102,51 +17121,21 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L3",
+      "source_location": "L12",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_first_rule"
+      "source": "pilcrow_silcrow_agents_agent_instructions",
+      "target": "pilcrow_silcrow_agents_graphify"
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L14",
+      "source_location": "L10",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_workspace"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "AGENTS.md",
-      "source_location": "L23",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_graphify_first"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "AGENTS.md",
-      "source_location": "L38",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "AGENTS.md",
-      "source_location": "L51",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
-      "target": "pilcrow_silcrow_agents_work_style"
+      "source": "pilcrow_silcrow_agents_read_claude_md_at_workspace_root",
+      "target": "pilcrow_silcrow_agents_graphify"
     },
     {
       "relation": "contains",
@@ -18161,6 +18150,56 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "target": "pilcrow_silcrow_agents_first_rule"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "target": "pilcrow_silcrow_agents_workspace"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "target": "pilcrow_silcrow_agents_graphify_first"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L38",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "target": "pilcrow_silcrow_agents_pilcrow_silcrow_relationship"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L51",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "pilcrow_silcrow_agents_opencode_agent_instructions",
+      "target": "pilcrow_silcrow_agents_work_style"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "pilcrow-demos/build.rs",
       "source_location": "L1",
       "weight": 1.0,
@@ -18742,16 +18781,6 @@
       "confidence_score": 1.0,
       "source": "pilcrow_silcrow_agents_read_claude_md_at_workspace_root",
       "target": "pilcrow_silcrow_agents_claude_md_pilcrow_silcrow_workspace"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "AGENTS.md",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "pilcrow_silcrow_agents_read_claude_md_at_workspace_root",
-      "target": "pilcrow_silcrow_agents_graphify"
     },
     {
       "relation": "contains",
@@ -21798,5 +21827,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "ba5de4d4ed2b84958ac86501f56757de18301cb1"
+  "built_at_commit": "408edcfb728639da844e350bb562355f7e19760e"
 }

@@ -1,16 +1,16 @@
 # Graph Report - pilcrow-silcrow  (2026-05-12)
 
 ## Corpus Check
-- 31 files · ~17,316 words
+- 31 files · ~17,237 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 718 nodes · 1430 edges · 61 communities (39 shown, 22 thin omitted)
+- 719 nodes · 1432 edges · 61 communities (39 shown, 22 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ba5de4d4`
+- Built from commit: `408edcfb`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -42,10 +42,10 @@
 - [[_COMMUNITY_App Lifecycle Hooks B|App Lifecycle Hooks B]]
 - [[_COMMUNITY_Counter Page Handler|Counter Page Handler]]
 - [[_COMMUNITY_Timestamp Page Handler|Timestamp Page Handler]]
+- [[_COMMUNITY_SSG Page Handler|SSG Page Handler]]
 - [[_COMMUNITY_invalidate! Macro|invalidate! Macro]]
-- [[_COMMUNITY_Static Page Handler|Static Page Handler]]
 - [[_COMMUNITY_Codegen Build Scripts|Codegen Build Scripts]]
-- [[_COMMUNITY_Error & Fallback Pages|Error & Fallback Pages]]
+- [[_COMMUNITY_App Shell & Navigation|App Shell & Navigation]]
 - [[_COMMUNITY_SolidJS Store|SolidJS Store]]
 - [[_COMMUNITY_Path Param Matching|Path Param Matching]]
 - [[_COMMUNITY_App Hooks|App Hooks]]
@@ -102,24 +102,24 @@
 ## Communities (61 total, 22 thin omitted)
 
 ### Community 0 - "Baked Pages Store Engine"
-Cohesion: 0.09
-Nodes (28): add_reverse_index_entry(), baked_root(), BakedPage, BakedPageStore, BakedPatchRegistry, BakedRouteDeclaration, build_time_declaration_prebakes_before_request(), build_time_fragment_composed_prebakes_body_and_serves_composed_hit() (+20 more)
+Cohesion: 0.06
+Nodes (72): add_index_slot(), add_reverse_index_entry(), atomic_temp_file_is_not_served(), baked_html_response(), baked_root(), BakedArtifactMode, BakedFragment, BakedLayout (+64 more)
 
 ### Community 1 - "Baked Pages Request Handling"
-Cohesion: 0.07
-Nodes (63): add_index_slot(), atomic_temp_file_is_not_served(), baked_html_response(), BakedArtifactMode, BakedFragment, BakedLayout, BakedSlot, BakedSlotKind (+55 more)
-
-### Community 2 - "Config & Cache Settings"
 Cohesion: 0.06
 Nodes (47): LiveConfig, PilcrowConfig, escape_html(), escapes_html_in_value(), find_live_field_content_range(), inject_live_slots(), missing_slot_leaves_content_unchanged(), null_value_clears_slot_content() (+39 more)
 
-### Community 3 - "Live Props Core & HTML Injection"
+### Community 2 - "Config & Cache Settings"
 Cohesion: 0.1
 Nodes (45): CartAtom, CartBadge(), CartClearButton(), cartFormSchema, CartFormValues, Counter(), CreateState, DirectAddToCartForm() (+37 more)
 
-### Community 4 - "Sandbox E-commerce UI"
+### Community 3 - "Live Props Core & HTML Injection"
 Cohesion: 0.06
 Nodes (33): BackendConfig, CacheConfig, CacheProvider, ClientRuntimeConfig, default_backend_host(), default_backend_port(), default_backend_url(), default_image_cache_dir() (+25 more)
+
+### Community 4 - "Sandbox E-commerce UI"
+Cohesion: 0.11
+Nodes (19): BakedPatchRegistry, BakedRouteDeclaration, BakedSlot, build_time_declaration_prebakes_before_request(), build_time_fragment_composed_prebakes_body_and_serves_composed_hit(), build_time_prebaked_first_get_is_hit_and_skips_ssr_load(), declaration_can_select_fragment_composed_layout(), declaration_defaults_to_full_page_and_can_make_mode_explicit() (+11 more)
 
 ### Community 5 - "Agent Context Docs"
 Cohesion: 0.04
@@ -131,7 +131,7 @@ Nodes (39): code:bash (git mv sandbox demo), code:bash (mkdir -p demo/pages/demo
 
 ### Community 7 - "Live & React Island Demos"
 Cohesion: 0.08
-Nodes (34): CLAUDE.md — pilcrow-silcrow workspace, First rule, graphify, Graphify first, OpenCode / Agent Instructions, Pilcrow / Silcrow relationship, Read Claude.md at workspace root., Work style (+26 more)
+Nodes (35): Agent Instructions, CLAUDE.md — pilcrow-silcrow workspace, First rule, graphify, Graphify first, OpenCode / Agent Instructions, Pilcrow / Silcrow relationship, Read Claude.md at workspace root. (+27 more)
 
 ### Community 8 - "Live Props DB Store"
 Cohesion: 0.13
@@ -142,12 +142,12 @@ Cohesion: 0.14
 Nodes (16): Counter React Component (all hook demos), FragmentGrid React Component, Live Page Handler (SSE counter), LiveProp Pattern — tokio watch channel for live SSE props, Product Grid Widget Handler, <react> custom element for mounting React islands with strategy attribute, React Islands Example README, code:toml ([routing]) (+8 more)
 
 ### Community 10 - "ISR/SSG Pages"
-Cohesion: 0.16
-Nodes (10): current(), increment(), load(), now_utc(), Props, Counter(), Props, load() (+2 more)
-
-### Community 11 - "Handler Macro Logic"
 Cohesion: 0.14
 Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Demo App Consolidation Design, `/demo/fsr` Page Design, `/demo/react-island` Page Design, File Operations Summary, Kept (from sandbox, unchanged) (+5 more)
+
+### Community 11 - "Handler Macro Logic"
+Cohesion: 0.18
+Nodes (10): current(), increment(), Counter(), Props, load(), now_utc(), Props, chrono_now() (+2 more)
 
 ### Community 12 - "API Route Handlers"
 Cohesion: 0.23
@@ -186,26 +186,26 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 23 - "App Lifecycle Hooks A"
+Cohesion: 0.5
+Nodes (3): load(), now_utc(), Props
+
+### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.7
 Nodes (3): counter_tx(), load(), Props
 
-### Community 24 - "App Lifecycle Hooks B"
+### Community 25 - "Counter Page Handler"
 Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
 
-### Community 25 - "Counter Page Handler"
+### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
 Nodes (5): createSilcrowStore — SolidJS store bound to Silcrow atom scope, sandbox solid/Counter.tsx, sandbox solid/silcrow-solid.ts, Silcrow.snapshot API, Silcrow.subscribe API
 
-### Community 26 - "Timestamp Page Handler"
+### Community 27 - "SSG Page Handler"
 Cohesion: 0.7
 Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type()
 
-### Community 30 - "Static Page Handler"
-Cohesion: 0.67
-Nodes (3): chrono_now(), load(), Props
-
-### Community 31 - "Codegen Build Scripts"
+### Community 32 - "App Shell & Navigation"
 Cohesion: 0.67
 Nodes (3): load(), now_utc(), Props
 
@@ -226,7 +226,7 @@ Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
   pilcrow-demos/pages/ssg/index.html · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **144 isolated node(s):** `Props`, `Props`, `Architecture`, `Integration`, `Build Rule` (+139 more)
+- **143 isolated node(s):** `Props`, `Props`, `Architecture`, `Integration`, `Build Rule` (+138 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -235,15 +235,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Props` connect `API Route Handlers` to `Baked Pages Store Engine`, `SSG Page Handlers`, `Live Props Core & HTML Injection`, `invalidate! Macro`?**
+- **Why does `Props` connect `API Route Handlers` to `Baked Pages Store Engine`, `Config & Cache Settings`, `SSG Page Handlers`, `Codegen Build Scripts`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
-- **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Baked Pages Request Handling`?**
+- **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Sandbox E-commerce UI`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Request Handling`, `API Route Handlers`, `Counter Feature`?**
+- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Store Engine`, `API Route Handlers`, `Counter Feature`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Architecture` to the rest of the system?**
-  _144 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _143 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Baked Pages Store Engine` be split into smaller, more focused modules?**
-  _Cohesion score 0.09 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Baked Pages Request Handling` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
