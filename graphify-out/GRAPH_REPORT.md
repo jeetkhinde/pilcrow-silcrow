@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `82e13ee6`
+- Built from commit: `c14929b8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -146,24 +146,24 @@ Cohesion: 0.14
 Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Demo App Consolidation Design, `/demo/fsr` Page Design, `/demo/react-island` Page Design, File Operations Summary, Kept (from sandbox, unchanged) (+5 more)
 
 ### Community 11 - "Handler Macro Logic"
-Cohesion: 0.18
-Nodes (10): current(), increment(), Counter(), Props, load(), now_utc(), Props, load() (+2 more)
-
-### Community 12 - "API Route Handlers"
 Cohesion: 0.23
 Nodes (8): bust(), load(), now_utc(), Props, load(), Props, load(), Props
+
+### Community 12 - "API Route Handlers"
+Cohesion: 0.18
+Nodes (10): current(), increment(), Counter(), Props, load(), now_utc(), Props, load() (+2 more)
 
 ### Community 13 - "Proc-macro Entry Points"
 Cohesion: 0.24
 Nodes (4): body_uses_client(), ClientVisitor, expand(), is_live_attr()
 
 ### Community 14 - "Counter Feature"
-Cohesion: 0.39
-Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
-
-### Community 15 - "Baked Pages Architecture Docs"
 Cohesion: 0.44
 Nodes (7): ApiResponse, escape(), get(), Params, Product, render_cards(), router()
+
+### Community 15 - "Baked Pages Architecture Docs"
+Cohesion: 0.39
+Nodes (7): ApiResponse, Category, CategoryInfo, load(), Product, ProductView, Props
 
 ### Community 17 - "Page Templates"
 Cohesion: 0.57
@@ -186,16 +186,16 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 23 - "App Lifecycle Hooks A"
+Cohesion: 0.5
+Nodes (3): load(), now_utc(), Props
+
+### Community 24 - "App Lifecycle Hooks B"
 Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, render_posts()
 
-### Community 24 - "App Lifecycle Hooks B"
+### Community 25 - "Counter Page Handler"
 Cohesion: 0.7
 Nodes (3): counter_tx(), load(), Props
-
-### Community 25 - "Counter Page Handler"
-Cohesion: 0.5
-Nodes (3): load(), now_utc(), Props
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.4
@@ -235,11 +235,11 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `SSG PRERENDER constant pattern` and `Route groups with parentheses strip URL prefix but apply nested layout`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `Props` connect `API Route Handlers` to `Baked Pages Store Engine`, `SSG Page Handlers`, `Config & Cache Settings`, `App Shell & Navigation`?**
+- **Why does `Props` connect `Handler Macro Logic` to `Baked Pages Store Engine`, `SSG Page Handlers`, `Config & Cache Settings`, `App Shell & Navigation`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Why does `BakedPageStore` connect `Baked Pages Store Engine` to `Sandbox E-commerce UI`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `get()` connect `Baked Pages Architecture Docs` to `Baked Pages Store Engine`, `API Route Handlers`, `Counter Feature`?**
+- **Why does `get()` connect `Counter Feature` to `Baked Pages Store Engine`, `Handler Macro Logic`, `Baked Pages Architecture Docs`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `Props`, `Props`, `Architecture` to the rest of the system?**
   _143 weakly-connected nodes found - possible documentation gaps or missing edges._
