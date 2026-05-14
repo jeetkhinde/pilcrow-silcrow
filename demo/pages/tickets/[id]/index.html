@@ -1,0 +1,118 @@
+---
+---
+<pilcrow:head>
+  <title>Ticket #{{ id }} — {{ title }}</title>
+  <style>
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem 2rem; max-width: 560px; }
+    .field { margin-bottom: 1.25rem; }
+    .field label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.3rem; }
+    .live-val { font-size: 1.1rem; font-weight: 600; color: #0f172a; }
+    .edit-form { margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; }
+    .edit-form h2 { font-size: 1rem; margin-bottom: 1rem; }
+    .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-end; }
+    .form-row label { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.25rem; }
+    select { padding: 0.45rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; background: #fff; }
+    .btn-save { padding: 0.5rem 1.25rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .btn-save:hover { background: #1d4ed8; }
+    .back { margin-bottom: 1rem; display: inline-block; color: #2563eb; text-decoration: none; font-size: 0.875rem; }
+    .back:hover { text-decoration: underline; }
+    .note { margin-top: 2rem; padding: 1rem 1.25rem; background: #f0f9ff; border-left: 4px solid #38bdf8; border-radius: 4px; font-size: 0.875rem; color: #0c4a6e; }
+    code { font-family: monospace; background: #e0f2fe; padding: 0.1em 0.3em; border-radius: 3px; }
+    #save-msg { margin-left: 1rem; font-size: 0.85rem; color: #16a34a; display: none; }
+    .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; }
+    .badge-open      { background: #fef9c3; color: #854d0e; }
+    .badge-closed    { background: #dcfce7; color: #166534; }
+    .badge-normal    { background: #f1f5f9; color: #475569; }
+    .badge-high      { background: #fef3c7; color: #92400e; }
+    .badge-very_high { background: #ffedd5; color: #c2410c; }
+    .badge-critical  { background: #fee2e2; color: #991b1b; }
+    .type-label { font-size: 0.7rem; color: #94a3b8; font-weight: 500; margin-left: 0.4rem; font-style: italic; }
+  </style>
+</pilcrow:head>
+
+<a class="back" href="/tickets">← All Tickets</a>
+
+<div class="card">
+  <div class="field">
+    <label>Title</label>
+    <span class="live-val">{{ title }}</span>
+  </div>
+
+  <!--
+    LiveProp<TicketStatus> — ENUM (scalar path)
+    TicketStatus is a unit enum; serde serialises it to a JSON string ("open"/"closed").
+    FSR treats JSON strings as scalars and patches the s-live slot via textContent.
+  -->
+  <div class="field">
+    <label>Status <span class="type-label">LiveProp&lt;TicketStatus&gt; — enum → scalar</span></label>
+    <span class="badge badge-{{ live.status.value }}" s-live="status">{{ live.status.value }}</span>
+  </div>
+
+  <!--
+    LiveProp<PriorityBadge> — STRUCT (object path)
+    PriorityBadge serialises to a JSON object { text, class, raw }.
+    FSR publishes it to the Silcrow scopeAtom "fsr.priority".
+    s-use="fsr.priority" on the span watches that atom; when it updates,
+    Silcrow spreads each key: text → textContent, class → className.
+  -->
+  <div class="field">
+    <label>Priority <span class="type-label">LiveProp&lt;PriorityBadge&gt; — struct → object</span></label>
+    <span class="{{ live.priority.value.class }}" s-use="fsr.priority">{{ live.priority.value.text }}</span>
+  </div>
+
+  <div class="edit-form">
+    <h2>Edit Ticket</h2>
+    <div class="form-row">
+      <div>
+        <label for="sel-status">Status</label>
+        <select id="sel-status">
+          <option value="open"   {% if live.status.value.to_string() == "open"   %}selected{% endif %}>Open</option>
+          <option value="closed" {% if live.status.value.to_string() == "closed" %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
+      <div>
+        <label for="sel-priority">Priority</label>
+        <select id="sel-priority">
+          <option value="normal"    {% if live.priority.value.raw == "normal"    %}selected{% endif %}>Normal</option>
+          <option value="high"      {% if live.priority.value.raw == "high"      %}selected{% endif %}>High</option>
+          <option value="very_high" {% if live.priority.value.raw == "very_high" %}selected{% endif %}>Very High</option>
+          <option value="critical"  {% if live.priority.value.raw == "critical"  %}selected{% endif %}>Critical</option>
+        </select>
+      </div>
+      <button class="btn-save" id="btn-save">Save</button>
+      <span id="save-msg">Saved!</span>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Two LiveProp patterns on one page:</strong><br>
+  <strong>Enum (scalar):</strong> <code>LiveProp&lt;TicketStatus&gt;</code> — serde serialises the enum to
+  <code>"open"</code> or <code>"closed"</code>. FSR patches the <code>s-live</code> slot via
+  <code>textContent</code> on each SSE event.<br><br>
+  <strong>Struct (object):</strong> <code>LiveProp&lt;PriorityBadge&gt;</code> — serde serialises the struct
+  to <code>{ text, class, raw }</code>. FSR calls
+  <code>Silcrow.publish("fsr.priority", obj)</code>; <code>s-use="fsr.priority"</code> spreads
+  <code>text → textContent</code> and <code>class → className</code> onto the badge span.
+</div>
+
+<script>
+  document.getElementById('btn-save').addEventListener('click', async function() {
+    var status   = document.getElementById('sel-status').value;
+    var priority = document.getElementById('sel-priority').value;
+    var msg = document.getElementById('save-msg');
+    try {
+      var res = await fetch('/api/tickets/{{ id }}', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status, priority: priority })
+      });
+      if (res.ok) {
+        msg.style.display = 'inline';
+        setTimeout(function() { msg.style.display = 'none'; }, 2000);
+      }
+    } catch (e) {
+      console.error('save failed', e);
+    }
+  });
+</script>
