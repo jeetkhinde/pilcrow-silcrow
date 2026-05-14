@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 922 nodes · 1630 edges · 81 communities (59 shown, 22 thin omitted)
+- 922 nodes · 1630 edges · 81 communities (58 shown, 23 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 54 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a299ba6e`
+- Built from commit: `7630ab75`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -72,7 +72,7 @@
 - [[_COMMUNITY_Community 58|Community 58]]
 - [[_COMMUNITY_Community 59|Community 59]]
 - [[_COMMUNITY_Community 60|Community 60]]
-- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 63|Community 63]]
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
@@ -119,7 +119,7 @@
 - **DB schema: pilcrow_cache + pilcrow_routes tables + GIN + stale indexes** — migration_001_pilcrow_cache, migration_001_pilcrow_routes, migration_002_gin_index, migration_002_stale_index [EXTRACTED 1.00]
 - **Startup registration: start_with_adapter registers LiveBroadcast + LivePageStore as Axum extensions** — runtime_start_start_with_adapter, runtime_start_live_props_registration, live_props_broadcast_livebroadcast, live_props_store_livepagestore [EXTRACTED 1.00]
 
-## Communities (81 total, 22 thin omitted)
+## Communities (81 total, 23 thin omitted)
 
 ### Community 0 - "Baked Pages Store Engine"
 Cohesion: 0.05
@@ -190,8 +190,8 @@ Cohesion: 0.14
 Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Demo App Consolidation Design, `/demo/fsr` Page Design, `/demo/react-island` Page Design, File Operations Summary, Kept (from sandbox, unchanged) (+5 more)
 
 ### Community 17 - "Page Templates"
-Cohesion: 0.17
-Nodes (10): Background, code:block1 (promote_after = 0 or absent  → SSG  (bake at startup, surgic), code:block31 (live.rs), code:block32 (Phase 1   DB migration), code:rust (/// Implement this on any `Live` struct defined in a route's), Complete developer surface (nothing else needed), FSR — Field-Selective Rendering: Implementation Plan, Implementation order (+2 more)
+Cohesion: 0.15
+Nodes (11): Background, code:block1 (promote_after = 0 or absent  → SSG  (bake at startup, surgic), code:block2 (crates/core         — AppError, AppResult, PilcrowConfig), code:block3 (crates/runtime/src/fsr/          — LiveProp, DependencyKey, ), code:block31 (live.rs), code:block32 (Phase 1   DB migration), Complete developer surface (nothing else needed), Crate / file map (existing, do not change) (+3 more)
 
 ### Community 18 - "App Entry Points"
 Cohesion: 0.24
@@ -223,23 +223,23 @@ Nodes (3): Live, PriorityBadge, TicketStatus
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.33
-Nodes (6): code:rust (use axum::Router;), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (#[derive(Debug, Deserialize)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 6: Update `fsr_hub_handler` with limit, TTL, lag resync, configurable keepalive
+Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (use axum::{), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 3: New types in `hub.rs` — `FsrHubConfig`, `FsrConnectionCounter`, `ConnectionGuard`, `GuardedStream`
 
 ### Community 27 - "SSG Page Handler"
 Cohesion: 0.33
-Nodes (6): code:rust (#[tokio::test]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Handler for `GET /__pilcrow/fsr/snapshot?route=...&slots), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 5: Add `fsr_snapshot_handler` to `hub.rs`
+Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Fetch all slot rows for a route for use by the snapshot ), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), code:bash (git add pilcrow/crates/runtime/src/fsr/store.rs), Task 4: Add `fetch_slots_for_snapshot` to `FsrStore`
 
 ### Community 28 - "dep! Macro"
 Cohesion: 0.33
-Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Fetch all slot rows for a route for use by the snapshot ), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), code:bash (git add pilcrow/crates/runtime/src/fsr/store.rs), Task 4: Add `fetch_slots_for_snapshot` to `FsrStore`
+Nodes (6): code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-rou), code:bash (cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Car), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add -p), Task 11: Full test suite verification
 
 ### Community 29 - "invalidate! Macro"
 Cohesion: 0.33
-Nodes (6): code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-rou), code:bash (cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Car), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add -p), Task 11: Full test suite verification
+Nodes (6): code:rust (use axum::Router;), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (#[derive(Debug, Deserialize)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 6: Update `fsr_hub_handler` with limit, TTL, lag resync, configurable keepalive
 
 ### Community 30 - "Static Page Handler"
 Cohesion: 0.33
-Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (use axum::{), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 3: New types in `hub.rs` — `FsrHubConfig`, `FsrConnectionCounter`, `ConnectionGuard`, `GuardedStream`
+Nodes (6): code:rust (#[tokio::test]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Handler for `GET /__pilcrow/fsr/snapshot?route=...&slots), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 5: Add `fsr_snapshot_handler` to `hub.rs`
 
 ### Community 32 - "App Shell & Navigation"
 Cohesion: 0.33
@@ -259,11 +259,11 @@ Nodes (5): code:rust (/// A field whose value is tracked, cached, and live-patch
 
 ### Community 36 - "Path Param Matching"
 Cohesion: 0.4
-Nodes (3): code:bash (git add pilcrow/crates/runtime/src/fsr/watcher.rs), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), Task 2: Expose `execute_with_params` in watcher.rs
+Nodes (5): code:rust (#[cfg(feature = "live-props")]), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add pilcrow/crates/runtime/src/start.rs), Task 9: Wire everything in `start.rs`
 
 ### Community 37 - "App Hooks"
 Cohesion: 0.4
-Nodes (5): code:rust (#[cfg(feature = "live-props")]), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add pilcrow/crates/runtime/src/start.rs), Task 9: Wire everything in `start.rs`
+Nodes (3): code:bash (git add pilcrow/crates/runtime/src/fsr/watcher.rs), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), Task 2: Expose `execute_with_params` in watcher.rs
 
 ### Community 38 - "App Entry & Macro"
 Cohesion: 0.4
@@ -283,7 +283,7 @@ Nodes (4): code:block21 (App loads), code:json ({ "ticket_status": "In Progress"
 
 ### Community 44 - "User Card Handler"
 Cohesion: 0.5
-Nodes (4): code:rust (// Targeted — by dependency key), code:sql (UPDATE pilcrow_fsr), code:sql (UPDATE pilcrow_fsr), Phase 6 — Invalidation
+Nodes (4): code:rust (#[derive(Debug, Clone, PartialEq, Eq, Default)]), code:rust (pub const FSR_JSON: bool = true;   // in page.rs — opt in to), code:block26 (FSR_JSON = true  +  STREAMING = true   → build error (incomp), Phase 9 — `page_options.rs` integration
 
 ### Community 45 - "Sandbox Entry Point"
 Cohesion: 0.5
@@ -291,7 +291,7 @@ Nodes (4): code:rust (use pilcrow::live::*;), code:rust (pub struct Props {), co
 
 ### Community 46 - "Card UI Component"
 Cohesion: 0.5
-Nodes (4): code:rust (#[derive(Debug, Clone, PartialEq, Eq, Default)]), code:rust (pub const FSR_JSON: bool = true;   // in page.rs — opt in to), code:block26 (FSR_JSON = true  +  STREAMING = true   → build error (incomp), Phase 9 — `page_options.rs` integration
+Nodes (4): code:rust (// Targeted — by dependency key), code:sql (UPDATE pilcrow_fsr), code:sql (UPDATE pilcrow_fsr), Phase 6 — Invalidation
 
 ### Community 55 - "Community 55"
 Cohesion: 0.67
@@ -306,18 +306,14 @@ Cohesion: 0.67
 Nodes (3): code:toml ([fsr]), code:block20 (LOOP every poll_interval_ms:), Phase 7 — Watcher process
 
 ### Community 58 - "Community 58"
-Cohesion: 0.67
-Nodes (3): code:block2 (crates/core         — AppError, AppResult, PilcrowConfig), code:block3 (crates/runtime/src/fsr/          — LiveProp, DependencyKey, ), Crate / file map (existing, do not change)
-
-### Community 59 - "Community 59"
 Cohesion: 1.0
 Nodes (3): pilcrow-demos build.rs, routekit::compile_current_crate_sources, sandbox build.rs
 
-### Community 60 - "Community 60"
+### Community 59 - "Community 59"
 Cohesion: 0.67
 Nodes (3): Sandbox Root Layout, Nav UI Component, s-boost Silcrow directive for SPA navigation
 
-### Community 61 - "Community 61"
+### Community 60 - "Community 60"
 Cohesion: 0.67
 Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 
@@ -328,7 +324,7 @@ Nodes (3): Error Page, Loading Skeleton Page, 404 Not Found Page
 ## Knowledge Gaps
 - **267 isolated node(s):** `TicketUpdate`, `Props`, `Props`, `Ticket`, `Props` (+262 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

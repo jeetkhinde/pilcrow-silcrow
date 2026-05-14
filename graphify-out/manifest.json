@@ -24,7 +24,7 @@
     "hash": "95ebdda59957ac9baf7aa26eb29603e3"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/api/tickets.rs": {
-    "mtime": 1778697614.6867833,
+    "mtime": 1778767641.1678042,
     "hash": "7df28566405fcebe61b42f502608cdf3"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/index.rs": {
@@ -40,7 +40,7 @@
     "hash": "42dbb81131c28b6cf9a9eb0c6100e0ae"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/index.rs": {
-    "mtime": 1778723029.40532,
+    "mtime": 1778767641.168791,
     "hash": "f2eac0f8581ff2be0ca1a891d0e38052"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/live.rs": {
@@ -48,7 +48,7 @@
     "hash": "f22ccc656569b06513955b1a12bdcb69"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/[id]/index.rs": {
-    "mtime": 1778723033.3871639,
+    "mtime": 1778767641.1682103,
     "hash": "23adc0336d423870843df45244dfd185"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/tickets/[id]/live.rs": {
@@ -96,19 +96,19 @@
     "hash": "f55a7956069968bf8ebfabda828ffdd0"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/src/db.rs": {
-    "mtime": 1778697520.8270571,
+    "mtime": 1778767641.1699483,
     "hash": "04b0882787f0f949f692ca10d12d3c7b"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/src/main.rs": {
-    "mtime": 1778697517.7701647,
+    "mtime": 1778767641.1704082,
     "hash": "9afe3b9ec873c6ca0f0d52109b0f41a6"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/src/baked_pages.rs": {
-    "mtime": 1778700258.314138,
+    "mtime": 1778767641.1696227,
     "hash": "2ba26c5320c25dad4b8cb9422d4fadab"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_DESIGN_DECISIONS.md": {
-    "mtime": 1778721606.7995098,
+    "mtime": 1778767641.1650732,
     "hash": "610951ed17a06570034c7380f13473e9"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
@@ -116,7 +116,7 @@
     "hash": "251b81994a650448b3714b324e0b060f"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_IMPLEMENTATION_PLAN.md": {
-    "mtime": 1778711607.8308976,
+    "mtime": 1778767641.1654692,
     "hash": "d7be36b072f0ebcaa31a29f85adf029b"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/GEMINI.md": {
@@ -132,7 +132,7 @@
     "hash": "5ba724bfe8ac8ff576c4e7b078bdec91"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_AUDIT_REPORT.md": {
-    "mtime": 1778721032.8157973,
+    "mtime": 1778767641.1647098,
     "hash": "f652b945bcab88cd74b87374cfbdcaf5"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Card.html": {
@@ -240,7 +240,7 @@
     "hash": "fc713c4f9613cdedcd85cbac43597507"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/specs/2026-05-13-live-prop-column-mapping-design.md": {
-    "mtime": 1778717468.7035582,
+    "mtime": 1778767641.1709552,
     "hash": "c327b5dc2c3e512e8fe36fe983799d43"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/specs/2026-05-13-fsr-silcrow-atom-bridge-design.md": {
