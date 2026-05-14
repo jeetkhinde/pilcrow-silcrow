@@ -994,8 +994,8 @@ struct UpdateResult {
 
 pub fn router() -> Router {
     Router::new()
-        .route("/tickets/:id", get(ticket_page))
-        .route("/tickets/:id/summary", get(ticket_summary_page))
+        .route("/__poc/tickets/:id", get(ticket_page))
+        .route("/__poc/tickets/:id/summary", get(ticket_summary_page))
         .route("/__poc/tickets/:id/status", post(update_ticket_status))
 }
 
@@ -1115,7 +1115,7 @@ fn render_ticket_page(shape: PageShape, ticket_id: &str) -> String {
     };
 
     format!(
-        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><title>{}</title></head><body><nav><a href=\"/\">Home</a> <a href=\"/tickets/123\">Ticket POC</a> <a href=\"/tickets/123/summary\">Ticket Summary</a></nav><main>{}</main></body></html>",
+        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><title>{}</title></head><body><nav><a href=\"/\">Home</a> <a href=\"/__poc/tickets/123\">Ticket POC</a> <a href=\"/__poc/tickets/123/summary\">Ticket Summary</a></nav><main>{}</main></body></html>",
         escape_html(&title),
         body
     )

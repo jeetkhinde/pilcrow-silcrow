@@ -11,7 +11,7 @@ FSR is Pilcrow's original rendering paradigm. It extends the existing
 SSR / ISR / SSG / Streaming pipeline with **field-level granularity**:
 
 - Static fields are baked directly into HTML — never tracked
-- Watched fields (`LiveProps<T>`) get a shell slot in HTML, a DB cache row, and live SSE updates
+- Watched fields (`LiveProp<T>`) get a shell slot in HTML, a DB cache row, and live SSE updates
 - One integer (`promote_after`) controls the full rendering lifecycle
 
 ```
@@ -38,7 +38,7 @@ crates/web          — pilcrow_web facade
 New code lives in:
 
 ```
-crates/runtime/src/fsr/          — LiveProps, DependencyKey, PilcrowLive trait, watcher
+crates/runtime/src/fsr/          — LiveProp, DependencyKey, PilcrowLive trait, watcher
 crates/runtime/migrations/       — SQLx migration for pilcrow_fsr table
 crates/routekit/src/fsr/         — live.rs discovery, FsrOpts codegen
 ```
@@ -88,7 +88,7 @@ CREATE INDEX IF NOT EXISTS pilcrow_fsr_depends_on_idx
 
 ---
 
-## Phase 2 — `LiveProps<T>` type and `DependencyKey`
+## Phase 2 — `LiveProp<T>` type and `DependencyKey`
 
 **File:** `crates/runtime/src/fsr/live_props.rs`
 
@@ -96,7 +96,7 @@ CREATE INDEX IF NOT EXISTS pilcrow_fsr_depends_on_idx
 /// A field whose value is tracked, cached, and live-patched by Pilcrow.
 ///
 /// `T` must implement `serde::Serialize + serde::de::DeserializeOwned`.
-pub struct LiveProps<T> {
+pub struct LiveProp<T> {
     pub value: T,
     pub depends_on: Vec<DependencyKey>,
     /// Override framework default (`pilcrow.toml → [fsr] promote_after_hits`).
@@ -124,8 +124,10 @@ impl std::fmt::Display for DependencyKey {
 **`dep!` macro** — in `crates/macros/src/dep.rs`:
 
 ```rust
-/// dep!(tickets, id, ticket_id)
-/// → DependencyKey { table: "tickets", column: "id", value: ticket_id.to_string() }
+/// dep!(tickets, id, params.id)
+/// → DependencyKey { table: "tickets", column: "id", value: params.id.to_string() }
+///
+/// Arguments are: table, column, runtime value.
 #[macro_export]
 macro_rules! dep {
     ($table:ident, $col:ident, $val:expr) => {
@@ -143,8 +145,8 @@ macro_rules! dep {
 ```rust
 #[pilcrow::promote_after(50)]
 #[pilcrow::patch_debounce(30)]
-#[pilcrow::depends_on(dep!(tickets, id, id))]
-pub ticket_status: LiveProps<String>,
+#[pilcrow::depends_on(dep!(tickets, id, params.id))]
+pub ticket_status: LiveProp<String>,
 ```
 
 **STOP — review types before Phase 3.**
@@ -158,7 +160,7 @@ pub ticket_status: LiveProps<String>,
 ```rust
 /// Implement this on any `Live` struct defined in a route's `live.rs`.
 pub trait PilcrowLive: Sized {
-    /// Returns the SQL query and bound params used to populate all LiveProps fields.
+    /// Returns the SQL query and bound params used to populate all LiveProp fields.
     fn query(params: &RouteParams) -> LiveQuery;
 
     /// Extract field values from a query result row.
@@ -183,7 +185,7 @@ macro_rules! live_query {
 }
 ```
 
-**Deduplication rule:** if two `LiveProps` fields share the same `sql` + `params`, the query
+**Deduplication rule:** if two `LiveProp` fields share the same `sql` + `params`, the query
 executes once and both fields are populated from the single result row.
 
 **STOP — review trait before Phase 4.**
@@ -210,14 +212,16 @@ pages/
 ```rust
 use pilcrow::live::*;
 
+#[pilcrow::live(
+    promote_after = 50,
+    patch_debounce = 30
+)]
+#[pilcrow::depends_on_route(tickets, id)]
 pub struct Live {
-    #[pilcrow::promote_after(50)]
-    #[pilcrow::patch_debounce(30)]
-    #[pilcrow::depends_on(dep!(tickets, id, id))]
-    pub ticket_status: LiveProps<String>,
+    pub ticket_status: LiveProp<String>,
 
-    #[pilcrow::depends_on(dep!(tickets, id, id))]
-    pub ticket_priority: LiveProps<String>,
+    #[pilcrow::patch_debounce(5)] // Field-level attributes override struct defaults.
+    pub ticket_priority: LiveProp<String>,
 }
 
 impl PilcrowLive for Live {
@@ -230,10 +234,16 @@ impl PilcrowLive for Live {
 }
 ```
 
+Struct-level `#[pilcrow::live(...)]` defaults apply to all `LiveProp<T>` fields.
+Field-level attributes keep working and override struct-level defaults for that slot.
+`#[pilcrow::depends_on_route(tickets, id)]` is shorthand for
+`#[pilcrow::depends_on(dep!(tickets, id, params.id))]` and requires an `id` route param.
+Use the explicit `depends_on(dep!(...))` form when the dependency value is not a route param.
+
 **routekit codegen tasks for `live.rs`:**
 
 1. Detect presence of `live.rs` in route directory → set `FsrOpts { has_live_file: true }`
-2. Parse `Live` struct fields, extract attributes (`promote_after`, `patch_debounce`, `depends_on`)
+2. Parse `Live` struct fields, extract attributes (`promote_after`, `patch_debounce`, `depends_on`, `depends_on_route`)
 3. Strip all `#[pilcrow::*]` attributes before emitting — they never reach Rust compiler
 4. Generate `from_row()` impl on `Live` (maps SQL columns → struct fields by name)
 5. Detect `pub const FSR_JSON: bool = true` in `page.rs` → set `FsrOpts { json: true }`
@@ -305,7 +315,7 @@ Dev can override with `#[pilcrow::slot("custom_name")]`.
 
 **JSON opt-in (`FSR_JSON = true`):**
 
-Baked JSON at `json_path` contains only `LiveProps` fields:
+Baked JSON at `json_path` contains only `LiveProp` fields:
 
 ```json
 {
@@ -468,7 +478,7 @@ FSR_JSON = true  +  STREAMING = true   → build error (incompatible)
 live.rs present  +  STREAMING = true   → build error (incompatible)
 live.rs present  +  REVALIDATE         → valid (ISR + field-level live)
 live.rs present  +  PRERENDER = true   → valid (treated as promote_after = 0)
-promote_after absent on LiveProps      → treated as 0, baked at startup
+promote_after absent on LiveProp      → treated as 0, baked at startup
 ```
 
 **STOP — review page_options before Phase 10.**
@@ -516,7 +526,7 @@ All three modes (SSG/ISR/FSR) receive surgical patch on dep change — no except
 
 ```rust
 pub use pilcrow_runtime::fsr::{
-    LiveProps,
+    LiveProp,
     DependencyKey,
     PilcrowLive,
     LiveQuery,
@@ -536,7 +546,7 @@ use pilcrow::live::*;
 
 ```
 live.rs
-  pub struct Live { ... }              — LiveProps fields with attribute annotations
+  pub struct Live { ... }              — LiveProp fields with attribute annotations
   impl PilcrowLive for Live { ... }    — one query, one impl block
 
 page.rs
@@ -551,7 +561,8 @@ pilcrow.toml
   [fsr] section                        — framework defaults only, all optional
 
 Macros
-  dep!(table, col, val)                — typed dependency key
+  #[pilcrow::depends_on_route(table, param)] — shorthand for dep!(table, param, params.param)
+  dep!(table, column, runtime_value)   — typed dependency key; args mean table, column, runtime value
   pilcrow::invalidate!(dep!(...))      — targeted invalidation
   pilcrow::invalidate!(route = "...")  — route-level invalidation
 ```
@@ -562,7 +573,7 @@ Macros
 
 ```
 Phase 1   DB migration
-Phase 2   LiveProps<T> + DependencyKey + dep! macro
+Phase 2   LiveProp<T> + DependencyKey + dep! macro
 Phase 3   PilcrowLive trait + live_query! macro
 Phase 4   live.rs discovery + routekit codegen
 Phase 5   HTML baking + s-live shell slots
