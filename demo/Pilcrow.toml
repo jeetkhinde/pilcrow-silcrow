@@ -45,6 +45,10 @@ default_locale = "en"
 locales        = ["en", "de"]
 locales_dir    = "locales"
 
+[fsr]
+poll_interval_ms = 200
+promote_after_hits = 10
+
 [images]
 enabled     = true
 cache_dir   = ".pilcrow-image-cache"
