@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7630ab75`
+- Built from commit: `dbdaeaea`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -191,7 +191,7 @@ Nodes (13): Added, App Identity, Deleted (from pilcrow-demos, not migrated), Dem
 
 ### Community 17 - "Page Templates"
 Cohesion: 0.15
-Nodes (11): Background, code:block1 (promote_after = 0 or absent  → SSG  (bake at startup, surgic), code:block2 (crates/core         — AppError, AppResult, PilcrowConfig), code:block3 (crates/runtime/src/fsr/          — LiveProp, DependencyKey, ), code:block31 (live.rs), code:block32 (Phase 1   DB migration), Complete developer surface (nothing else needed), Crate / file map (existing, do not change) (+3 more)
+Nodes (11): Background, code:block1 (promote_after = 0 or absent  → SSG  (bake at startup, surgic), code:toml ([fsr]), code:block20 (LOOP every poll_interval_ms:), code:block31 (live.rs), code:block32 (Phase 1   DB migration), Complete developer surface (nothing else needed), FSR — Field-Selective Rendering: Implementation Plan (+3 more)
 
 ### Community 18 - "App Entry Points"
 Cohesion: 0.24
@@ -223,7 +223,7 @@ Nodes (3): Live, PriorityBadge, TicketStatus
 
 ### Community 26 - "Timestamp Page Handler"
 Cohesion: 0.33
-Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (use axum::{), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 3: New types in `hub.rs` — `FsrHubConfig`, `FsrConnectionCounter`, `ConnectionGuard`, `GuardedStream`
+Nodes (6): code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-rou), code:bash (cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Car), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add -p), Task 11: Full test suite verification
 
 ### Community 27 - "SSG Page Handler"
 Cohesion: 0.33
@@ -231,15 +231,15 @@ Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcr
 
 ### Community 28 - "dep! Macro"
 Cohesion: 0.33
-Nodes (6): code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-rou), code:bash (cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Car), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add -p), Task 11: Full test suite verification
+Nodes (6): code:rust (#[tokio::test]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Handler for `GET /__pilcrow/fsr/snapshot?route=...&slots), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 5: Add `fsr_snapshot_handler` to `hub.rs`
 
 ### Community 29 - "invalidate! Macro"
 Cohesion: 0.33
-Nodes (6): code:rust (use axum::Router;), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (#[derive(Debug, Deserialize)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 6: Update `fsr_hub_handler` with limit, TTL, lag resync, configurable keepalive
+Nodes (6): code:rust (#[cfg(test)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (use axum::{), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 3: New types in `hub.rs` — `FsrHubConfig`, `FsrConnectionCounter`, `ConnectionGuard`, `GuardedStream`
 
 ### Community 30 - "Static Page Handler"
 Cohesion: 0.33
-Nodes (6): code:rust (#[tokio::test]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (/// Handler for `GET /__pilcrow/fsr/snapshot?route=...&slots), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 5: Add `fsr_snapshot_handler` to `hub.rs`
+Nodes (6): code:rust (use axum::Router;), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:rust (#[derive(Debug, Deserialize)]), code:bash (cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-run), code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs), Task 6: Update `fsr_hub_handler` with limit, TTL, lag resync, configurable keepalive
 
 ### Community 32 - "App Shell & Navigation"
 Cohesion: 0.33
@@ -250,12 +250,12 @@ Cohesion: 0.6
 Nodes (4): load(), now_utc(), Props, tick_tx()
 
 ### Community 34 - "Sandbox Main"
-Cohesion: 0.4
-Nodes (5): code:html (<!-- Static field — baked directly, no slot -->), code:block13 (ticket_list__42__status), code:html (<span s-live="ticket_list__42__status">Open</span>), code:json ({), Phase 5 — HTML baking and `s-live` shell slots
-
-### Community 35 - "SolidJS Store"
 Cohesion: 0.6
 Nodes (5): code:rust (/// A field whose value is tracked, cached, and live-patched), code:rust (/// dep!(tickets, id, params.id)), code:rust (#[pilcrow::promote_after(50)]), Phase 2 — `LiveProp<T>` type and `DependencyKey`, Phase 2 — `LiveProps<T>` type and `DependencyKey`
+
+### Community 35 - "SolidJS Store"
+Cohesion: 0.4
+Nodes (5): code:html (<!-- Static field — baked directly, no slot -->), code:block13 (ticket_list__42__status), code:html (<span s-live="ticket_list__42__status">Open</span>), code:json ({), Phase 5 — HTML baking and `s-live` shell slots
 
 ### Community 36 - "Path Param Matching"
 Cohesion: 0.4
@@ -263,11 +263,11 @@ Nodes (5): code:rust (#[cfg(feature = "live-props")]), code:bash (cargo build --
 
 ### Community 37 - "App Hooks"
 Cohesion: 0.4
-Nodes (3): code:bash (git add pilcrow/crates/runtime/src/fsr/watcher.rs), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), Task 2: Expose `execute_with_params` in watcher.rs
+Nodes (5): code:rust (const FSR_PATCH_SCRIPT: &str = "(function(){window.__fsr_rou), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ro), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add pilcrow/crates/routekit/src/templating/codegen/app_m), Task 10: Update `FSR_PATCH_SCRIPT` in `app_module.rs`
 
 ### Community 38 - "App Entry & Macro"
 Cohesion: 0.4
-Nodes (5): code:rust (const FSR_PATCH_SCRIPT: &str = "(function(){window.__fsr_rou), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ro), code:bash (cargo build --manifest-path demo/Cargo.toml 2>&1), code:bash (git add pilcrow/crates/routekit/src/templating/codegen/app_m), Task 10: Update `FSR_PATCH_SCRIPT` in `app_module.rs`
+Nodes (3): code:bash (git add pilcrow/crates/runtime/src/fsr/watcher.rs), code:bash (cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-ru), Task 2: Expose `execute_with_params` in watcher.rs
 
 ### Community 39 - "Counter Data Layer"
 Cohesion: 0.4
@@ -279,11 +279,11 @@ Nodes (4): expand(), extract_live_fields(), find_u32_attr(), is_live_props_type(
 
 ### Community 43 - "Greeting React Island"
 Cohesion: 0.5
-Nodes (4): code:block21 (App loads), code:json ({ "ticket_status": "In Progress" }), code:json ({ "ticket_list__42__status": "Closed" }), Phase 8 — SSE push via Silcrow.js
+Nodes (4): code:rust (// Targeted — by dependency key), code:sql (UPDATE pilcrow_fsr), code:sql (UPDATE pilcrow_fsr), Phase 6 — Invalidation
 
 ### Community 44 - "User Card Handler"
 Cohesion: 0.5
-Nodes (4): code:rust (#[derive(Debug, Clone, PartialEq, Eq, Default)]), code:rust (pub const FSR_JSON: bool = true;   // in page.rs — opt in to), code:block26 (FSR_JSON = true  +  STREAMING = true   → build error (incomp), Phase 9 — `page_options.rs` integration
+Nodes (4): code:block21 (App loads), code:json ({ "ticket_status": "In Progress" }), code:json ({ "ticket_list__42__status": "Closed" }), Phase 8 — SSE push via Silcrow.js
 
 ### Community 45 - "Sandbox Entry Point"
 Cohesion: 0.5
@@ -291,11 +291,11 @@ Nodes (4): code:rust (use pilcrow::live::*;), code:rust (pub struct Props {), co
 
 ### Community 46 - "Card UI Component"
 Cohesion: 0.5
-Nodes (4): code:rust (// Targeted — by dependency key), code:sql (UPDATE pilcrow_fsr), code:sql (UPDATE pilcrow_fsr), Phase 6 — Invalidation
+Nodes (4): code:rust (#[derive(Debug, Clone, PartialEq, Eq, Default)]), code:rust (pub const FSR_JSON: bool = true;   // in page.rs — opt in to), code:block26 (FSR_JSON = true  +  STREAMING = true   → build error (incomp), Phase 9 — `page_options.rs` integration
 
 ### Community 55 - "Community 55"
 Cohesion: 0.67
-Nodes (3): code:rust (pub use pilcrow_runtime::fsr::{), code:rust (use pilcrow::live::*;), Phase 11 — re-exports and developer surface
+Nodes (3): code:block2 (crates/core         — AppError, AppResult, PilcrowConfig), code:block3 (crates/runtime/src/fsr/          — LiveProp, DependencyKey, ), Crate / file map (existing, do not change)
 
 ### Community 56 - "Community 56"
 Cohesion: 0.67
@@ -303,7 +303,7 @@ Nodes (3): code:sql (UPDATE pilcrow_fsr), code:sql (UPDATE pilcrow_fsr), Phase 1
 
 ### Community 57 - "Community 57"
 Cohesion: 0.67
-Nodes (3): code:toml ([fsr]), code:block20 (LOOP every poll_interval_ms:), Phase 7 — Watcher process
+Nodes (3): code:rust (pub use pilcrow_runtime::fsr::{), code:rust (use pilcrow::live::*;), Phase 11 — re-exports and developer surface
 
 ### Community 58 - "Community 58"
 Cohesion: 1.0

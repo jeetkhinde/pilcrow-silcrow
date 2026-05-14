@@ -3224,7 +3224,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L27",
       "id": "pilcrow_silcrow_fsr_implementation_plan_crate_file_map_existing_do_not_change",
-      "community": 17,
+      "community": 55,
       "norm_label": "crate / file map (existing, do not change)"
     },
     {
@@ -3233,7 +3233,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L29",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_2",
-      "community": 17,
+      "community": 55,
       "norm_label": "code:block2 (crates/core         \u2014 apperror, appresult, pilcrowconfig)"
     },
     {
@@ -3242,7 +3242,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L40",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_3",
-      "community": 17,
+      "community": 55,
       "norm_label": "code:block3 (crates/runtime/src/fsr/          \u2014 liveprop, dependencykey, )"
     },
     {
@@ -3269,7 +3269,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L91",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_2_liveprop_t_type_and_dependencykey",
-      "community": 35,
+      "community": 34,
       "norm_label": "phase 2 \u2014 `liveprop<t>` type and `dependencykey`"
     },
     {
@@ -3278,7 +3278,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L95",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_5",
-      "community": 35,
+      "community": 34,
       "norm_label": "code:rust (/// a field whose value is tracked, cached, and live-patched)"
     },
     {
@@ -3287,7 +3287,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L126",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_6",
-      "community": 35,
+      "community": 34,
       "norm_label": "code:rust (/// dep!(tickets, id, params.id))"
     },
     {
@@ -3296,7 +3296,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L145",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_7",
-      "community": 35,
+      "community": 34,
       "norm_label": "code:rust (#[pilcrow::promote_after(50)])"
     },
     {
@@ -3359,7 +3359,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L277",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_5_html_baking_and_s_live_shell_slots",
-      "community": 34,
+      "community": 35,
       "norm_label": "phase 5 \u2014 html baking and `s-live` shell slots"
     },
     {
@@ -3368,7 +3368,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L281",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_12",
-      "community": 34,
+      "community": 35,
       "norm_label": "code:html (<!-- static field \u2014 baked directly, no slot -->)"
     },
     {
@@ -3377,7 +3377,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L292",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_13",
-      "community": 34,
+      "community": 35,
       "norm_label": "code:block13 (ticket_list__42__status)"
     },
     {
@@ -3386,7 +3386,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L297",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_14",
-      "community": 34,
+      "community": 35,
       "norm_label": "code:html (<span s-live=\"ticket_list__42__status\">open</span>)"
     },
     {
@@ -3395,7 +3395,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L320",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_15",
-      "community": 34,
+      "community": 35,
       "norm_label": "code:json ({)"
     },
     {
@@ -3404,7 +3404,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L333",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_6_invalidation",
-      "community": 46,
+      "community": 43,
       "norm_label": "phase 6 \u2014 invalidation"
     },
     {
@@ -3413,7 +3413,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L337",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_16",
-      "community": 46,
+      "community": 43,
       "norm_label": "code:rust (// targeted \u2014 by dependency key)"
     },
     {
@@ -3422,7 +3422,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L347",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_17",
-      "community": 46,
+      "community": 43,
       "norm_label": "code:sql (update pilcrow_fsr)"
     },
     {
@@ -3431,7 +3431,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L356",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_18",
-      "community": 46,
+      "community": 43,
       "norm_label": "code:sql (update pilcrow_fsr)"
     },
     {
@@ -3440,7 +3440,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L372",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_7_watcher_process",
-      "community": 57,
+      "community": 17,
       "norm_label": "phase 7 \u2014 watcher process"
     },
     {
@@ -3449,7 +3449,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L376",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_19",
-      "community": 57,
+      "community": 17,
       "norm_label": "code:toml ([fsr])"
     },
     {
@@ -3458,7 +3458,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L387",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_20",
-      "community": 57,
+      "community": 17,
       "norm_label": "code:block20 (loop every poll_interval_ms:)"
     },
     {
@@ -3467,7 +3467,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L413",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_8_sse_push_via_silcrow_js",
-      "community": 43,
+      "community": 44,
       "norm_label": "phase 8 \u2014 sse push via silcrow.js"
     },
     {
@@ -3476,7 +3476,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L423",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_21",
-      "community": 43,
+      "community": 44,
       "norm_label": "code:block21 (app loads)"
     },
     {
@@ -3485,7 +3485,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L437",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_22",
-      "community": 43,
+      "community": 44,
       "norm_label": "code:json ({ \"ticket_status\": \"in progress\" })"
     },
     {
@@ -3494,7 +3494,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L442",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_23",
-      "community": 43,
+      "community": 44,
       "norm_label": "code:json ({ \"ticket_list__42__status\": \"closed\" })"
     },
     {
@@ -3503,7 +3503,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L454",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_9_page_options_rs_integration",
-      "community": 44,
+      "community": 46,
       "norm_label": "phase 9 \u2014 `page_options.rs` integration"
     },
     {
@@ -3512,7 +3512,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L458",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_24",
-      "community": 44,
+      "community": 46,
       "norm_label": "code:rust (#[derive(debug, clone, partialeq, eq, default)])"
     },
     {
@@ -3521,7 +3521,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L470",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_25",
-      "community": 44,
+      "community": 46,
       "norm_label": "code:rust (pub const fsr_json: bool = true;   // in page.rs \u2014 opt in to)"
     },
     {
@@ -3530,7 +3530,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L476",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_26",
-      "community": 44,
+      "community": 46,
       "norm_label": "code:block26 (fsr_json = true  +  streaming = true   \u2192 build error (incomp)"
     },
     {
@@ -3566,7 +3566,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L523",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_11_re_exports_and_developer_surface",
-      "community": 55,
+      "community": 57,
       "norm_label": "phase 11 \u2014 re-exports and developer surface"
     },
     {
@@ -3575,7 +3575,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L527",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_29",
-      "community": 55,
+      "community": 57,
       "norm_label": "code:rust (pub use pilcrow_runtime::fsr::{)"
     },
     {
@@ -3584,7 +3584,7 @@
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L539",
       "id": "pilcrow_silcrow_fsr_implementation_plan_codeblock_30",
-      "community": 55,
+      "community": 57,
       "norm_label": "code:rust (use pilcrow::live::*;)"
     },
     {
@@ -4187,7 +4187,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L111",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_2_expose_execute_with_params_in_watcher_rs",
-      "community": 37,
+      "community": 38,
       "norm_label": "task 2: expose `execute_with_params` in watcher.rs"
     },
     {
@@ -4196,7 +4196,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L120",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_7",
-      "community": 37,
+      "community": 38,
       "norm_label": "code:rust (async fn execute_with_params()"
     },
     {
@@ -4205,7 +4205,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L126",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_8",
-      "community": 37,
+      "community": 38,
       "norm_label": "code:rust (pub(crate) async fn execute_with_params()"
     },
     {
@@ -4214,7 +4214,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L132",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_9",
-      "community": 37,
+      "community": 38,
       "norm_label": "code:bash (cargo build --manifest-path pilcrow/cargo.toml -p pilcrow-ru)"
     },
     {
@@ -4223,7 +4223,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L140",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_10",
-      "community": 37,
+      "community": 38,
       "norm_label": "code:bash (git add pilcrow/crates/runtime/src/fsr/watcher.rs)"
     },
     {
@@ -4232,7 +4232,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L147",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_3_new_types_in_hub_rs_fsrhubconfig_fsrconnectioncounter_connectionguard_guardedstream",
-      "community": 26,
+      "community": 29,
       "norm_label": "task 3: new types in `hub.rs` \u2014 `fsrhubconfig`, `fsrconnectioncounter`, `connectionguard`, `guardedstream`"
     },
     {
@@ -4241,7 +4241,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L156",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_11",
-      "community": 26,
+      "community": 29,
       "norm_label": "code:rust (#[cfg(test)])"
     },
     {
@@ -4250,7 +4250,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L184",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_12",
-      "community": 26,
+      "community": 29,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4259,7 +4259,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L194",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_13",
-      "community": 26,
+      "community": 29,
       "norm_label": "code:rust (use axum::{)"
     },
     {
@@ -4268,7 +4268,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L276",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_14",
-      "community": 26,
+      "community": 29,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4277,7 +4277,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L284",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_15",
-      "community": 26,
+      "community": 29,
       "norm_label": "code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs)"
     },
     {
@@ -4340,7 +4340,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L384",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_5_add_fsr_snapshot_handler_to_hub_rs",
-      "community": 30,
+      "community": 28,
       "norm_label": "task 5: add `fsr_snapshot_handler` to `hub.rs`"
     },
     {
@@ -4349,7 +4349,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L393",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_21",
-      "community": 30,
+      "community": 28,
       "norm_label": "code:rust (#[tokio::test])"
     },
     {
@@ -4358,7 +4358,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L407",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_22",
-      "community": 30,
+      "community": 28,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4367,7 +4367,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L417",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_23",
-      "community": 30,
+      "community": 28,
       "norm_label": "code:rust (/// handler for `get /__pilcrow/fsr/snapshot?route=...&slots)"
     },
     {
@@ -4376,7 +4376,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L476",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_24",
-      "community": 30,
+      "community": 28,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4385,7 +4385,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L484",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_25",
-      "community": 30,
+      "community": 28,
       "norm_label": "code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs)"
     },
     {
@@ -4394,7 +4394,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L491",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_6_update_fsr_hub_handler_with_limit_ttl_lag_resync_configurable_keepalive",
-      "community": 29,
+      "community": 30,
       "norm_label": "task 6: update `fsr_hub_handler` with limit, ttl, lag resync, configurable keepalive"
     },
     {
@@ -4403,7 +4403,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L500",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_26",
-      "community": 29,
+      "community": 30,
       "norm_label": "code:rust (use axum::router;)"
     },
     {
@@ -4412,7 +4412,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L566",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_27",
-      "community": 29,
+      "community": 30,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4421,7 +4421,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L576",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_28",
-      "community": 29,
+      "community": 30,
       "norm_label": "code:rust (#[derive(debug, deserialize)])"
     },
     {
@@ -4430,7 +4430,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L689",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_29",
-      "community": 29,
+      "community": 30,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4439,7 +4439,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L697",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_30",
-      "community": 29,
+      "community": 30,
       "norm_label": "code:bash (git add pilcrow/crates/runtime/src/fsr/hub.rs)"
     },
     {
@@ -4601,7 +4601,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L972",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_10_update_fsr_patch_script_in_app_module_rs",
-      "community": 38,
+      "community": 37,
       "norm_label": "task 10: update `fsr_patch_script` in `app_module.rs`"
     },
     {
@@ -4610,7 +4610,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L981",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_45",
-      "community": 38,
+      "community": 37,
       "norm_label": "code:rust (const fsr_patch_script: &str = \"(function(){window.__fsr_rou)"
     },
     {
@@ -4619,7 +4619,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1001",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_46",
-      "community": 38,
+      "community": 37,
       "norm_label": "code:bash (cargo build --manifest-path pilcrow/cargo.toml -p pilcrow-ro)"
     },
     {
@@ -4628,7 +4628,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1009",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_47",
-      "community": 38,
+      "community": 37,
       "norm_label": "code:bash (cargo build --manifest-path demo/cargo.toml 2>&1)"
     },
     {
@@ -4637,7 +4637,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1017",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_48",
-      "community": 38,
+      "community": 37,
       "norm_label": "code:bash (git add pilcrow/crates/routekit/src/templating/codegen/app_m)"
     },
     {
@@ -4646,7 +4646,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1024",
       "id": "plans_2026_05_14_fsr_sse_best_practices_task_11_full_test_suite_verification",
-      "community": 28,
+      "community": 26,
       "norm_label": "task 11: full test suite verification"
     },
     {
@@ -4655,7 +4655,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1028",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_49",
-      "community": 28,
+      "community": 26,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-run)"
     },
     {
@@ -4664,7 +4664,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1036",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_50",
-      "community": 28,
+      "community": 26,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/cargo.toml -p pilcrow-rou)"
     },
     {
@@ -4673,7 +4673,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1044",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_51",
-      "community": 28,
+      "community": 26,
       "norm_label": "code:bash (cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/car)"
     },
     {
@@ -4682,7 +4682,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1052",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_52",
-      "community": 28,
+      "community": 26,
       "norm_label": "code:bash (cargo build --manifest-path demo/cargo.toml 2>&1)"
     },
     {
@@ -4691,7 +4691,7 @@
       "source_file": "docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md",
       "source_location": "L1060",
       "id": "plans_2026_05_14_fsr_sse_best_practices_codeblock_53",
-      "community": 28,
+      "community": 26,
       "norm_label": "code:bash (git add -p)"
     },
     {
@@ -5707,7 +5707,7 @@
       "file_type": "document",
       "source_file": "FSR_IMPLEMENTATION_PLAN.md",
       "source_location": "L91",
-      "community": 35,
+      "community": 34,
       "norm_label": "phase 2 \u2014 `liveprops<t>` type and `dependencykey`",
       "id": "pilcrow_silcrow_fsr_implementation_plan_phase_2_liveprops_t_type_and_dependencykey"
     },
@@ -25637,5 +25637,5 @@
       "source_file": "pilcrow/crates/runtime/src/start.rs"
     }
   ],
-  "built_at_commit": "7630ab75404a0b01ad8953d7a5deccf6b7cbad6b"
+  "built_at_commit": "dbdaeaeaa5bf5325bc909ef19a5b42838ef13e94"
 }
