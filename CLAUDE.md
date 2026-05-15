@@ -75,7 +75,7 @@ cargo run   --manifest-path demo/Cargo.toml
 cd silcrow && npm run build
 
 # MCP server tests (run after any MCP file change)
-cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml
+cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml
 ```
 
 Use `/sync-check` to run the full chain in sequence with failure reporting.
@@ -125,7 +125,6 @@ but the two files above should answer all normal usage questions without reading
 | `scan_project_context` | SKIP (this file is loaded). Only on build failure or unknown file path. |
 | `list_features` | Freely — cheap read |
 | `explain_feature` | Before writing any feature-specific code |
-| `find_examples` | Before writing routekit or HTML template code |
 | `compare_patterns` | When choosing between two implementation approaches |
 | `validate_implementation` | Before scaffolding any planned/unstable syntax |
 | `diagnose_project` | Only when `cargo build` fails |
@@ -151,7 +150,7 @@ Use `/update-docs <feature-name>` to run this interactively.
 **After ANY Pilcrow framework behavior change:**
 1. `pilcrow/registry.toml` — add/update `[[features]]` entry (must have `id`, `domain`, `summary`)
 2. `pilcrow/tools/pilcrow-mcp/src/validation.rs` — remove resolved / add new error rules
-3. `pilcrow/tools/pilcrow-mcp/src/docs.rs` — add new `DocumentSpec` entries
+3. `pilcrow/tools/pilcrow-mcp/src/docs.rs` — corpus is 3 fixed `.md` docs only; no source-file entries. Only update if a doc file is renamed or a new prose doc is added.
 4. Run: `cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml`
    (`cargo check` is NOT sufficient — golden tests fail silently under check)
 
