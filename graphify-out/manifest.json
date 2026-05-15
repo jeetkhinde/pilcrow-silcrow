@@ -123,17 +123,9 @@
     "mtime": 1778767641.1696227,
     "hash": "2ba26c5320c25dad4b8cb9422d4fadab"
   },
-  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_DESIGN_DECISIONS.md": {
-    "mtime": 1778767641.1650732,
-    "hash": "610951ed17a06570034c7380f13473e9"
-  },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
     "mtime": 1778631458.2647712,
     "hash": "251b81994a650448b3714b324e0b060f"
-  },
-  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_IMPLEMENTATION_PLAN.md": {
-    "mtime": 1778767641.1654692,
-    "hash": "d7be36b072f0ebcaa31a29f85adf029b"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/GEMINI.md": {
     "mtime": 1778222191.3375974,
@@ -146,10 +138,6 @@
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CLAUDE.md": {
     "mtime": 1778631458.263828,
     "hash": "5ba724bfe8ac8ff576c4e7b078bdec91"
-  },
-  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/FSR_AUDIT_REPORT.md": {
-    "mtime": 1778767641.1647098,
-    "hash": "f652b945bcab88cd74b87374cfbdcaf5"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Card.html": {
     "mtime": 1778631458.2936394,
@@ -254,6 +242,14 @@
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/widgets/user-card.html": {
     "mtime": 1778631458.297738,
     "hash": "ef70f3299222efa6ee559c3d5ed41958"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/Redis Implementation/FSR_DESIGN_DECISIONS.md": {
+    "mtime": 1778862350.0,
+    "hash": "8e8a31f0c95858dd868ebca1f87e1262"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/Redis Implementation/FSR_IMPLEMENTATION_PLAN.md": {
+    "mtime": 1778862350.0,
+    "hash": "36d3b8fce9bfa760be9184e559d99d8b"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md": {
     "mtime": 1778759039.3189685,
