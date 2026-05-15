@@ -2346,9 +2346,12 @@ validation_rules = [
 ]
 scaffold_templates = []
 
-[feature.markdown_pages]
+[[features]]
+id = "markdown-pages"
 name = "Markdown Pages"
+domain = "pilcrow"
 status = "stable"
+summary = "`.md` and `.mdx` files in pages/ compile to routes at build time via markdown-rs."
 spec = """
 `.md` and `.mdx` files placed anywhere in `pages/` or a configured fragment directory
 become routes using the same conventions as `.html` files.
@@ -2391,8 +2394,11 @@ validation_rules = []
 scaffold_templates = []
 
 [[features]]
-status = "stable"
+id = "optimistic-mutations"
 name = "Optimistic Mutations"
+domain = "pilcrow"
+status = "stable"
+summary = "Client-side speculative UI updates via publishOptimistic/confirmOptimistic/revertOptimistic with server-echo confirmation through SSE, WS, or HTTP patch headers."
 spec = """
 Optimistic mutations let the client apply an instant UI update before the server
 round-trip completes, then confirm or revert based on the outcome.
