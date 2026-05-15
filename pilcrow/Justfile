@@ -38,7 +38,7 @@ cli:
 
 # Build the MCP server.
 mcp:
-    cargo check --manifest-path tools/mcp/pilcrow-mcp/Cargo.toml
+    cargo check --manifest-path tools/pilcrow-mcp/Cargo.toml
 
 # Run the core checks expected before touching sandbox behavior.
 check: build test sandbox cli mcp

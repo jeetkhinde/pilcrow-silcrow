@@ -7,7 +7,7 @@
         "run",
         "--quiet",
         "--manifest-path",
-        "/Users/jagjeet/Development/Pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml",
+        "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/Cargo.toml",
         "--"
       ],
       "env": {}

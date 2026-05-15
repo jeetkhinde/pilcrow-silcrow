@@ -13,8 +13,8 @@ SILCROW_ROOT = "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow"
 
 MCP_SYNC_FILES = {
     "registry.toml",
-    "tools/mcp/pilcrow-mcp/src/validation.rs",
-    "tools/mcp/pilcrow-mcp/src/docs.rs",
+    "tools/pilcrow-mcp/src/validation.rs",
+    "tools/pilcrow-mcp/src/docs.rs",
 }
 
 SILCROW_DOC_FILE = "docs/silcrow-api.md"
@@ -54,7 +54,7 @@ def main():
             missing_list = ", ".join(sorted(missing_sync))
             messages.append(
                 f"MCP sync incomplete. Framework files changed but not updated: {missing_list}. "
-                f"Run: cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml"
+                f"Run: cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml"
             )
 
     # --- Silcrow check ---

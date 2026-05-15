@@ -9,6 +9,20 @@
       "command": "/Users/jagjeet/.local/share/uv/tools/graphifyy/bin/python",
       "args": ["-m", "graphify.serve", "graphify-out/graph.json"],
       "type": "stdio"
+    },
+    "pilcrow-mcp": {
+      "type": "stdio",
+      "command": "cargo",
+      "args": [
+        "run",
+        "--quiet",
+        "--manifest-path",
+        "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/Cargo.toml",
+        "--"
+      ],
+      "env": {
+        "PILCROW_PROJECT_ROOT": "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow"
+      }
     }
   }
 }

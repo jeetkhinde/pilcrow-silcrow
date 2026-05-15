@@ -14,15 +14,15 @@ If `$ARGUMENTS` is empty, ask which feature or area changed before proceeding.
 **Step 1** — Read `pilcrow/registry.toml`. Find the feature matching `$ARGUMENTS`.
 Update stale fields: `status`, `spec`, `canonical_usage`, `constraints`, `source_refs`.
 
-**Step 2** — Read `pilcrow/tools/mcp/pilcrow-mcp/src/validation.rs`.
+**Step 2** — Read `pilcrow/tools/pilcrow-mcp/src/validation.rs`.
 Remove error rules that no longer apply. Add new validation rules for changed behavior.
 
-**Step 3** — Read `pilcrow/tools/mcp/pilcrow-mcp/src/docs.rs`.
+**Step 3** — Read `pilcrow/tools/pilcrow-mcp/src/docs.rs`.
 Add `DocumentSpec` entries for any new source files introduced by this change.
 
 **Step 4** — Run the MCP test suite:
 ```bash
-cargo test --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml
+cargo test --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/Cargo.toml
 ```
 All golden tests must pass. `cargo check` is NOT sufficient.
 

@@ -1042,7 +1042,7 @@ Expected: all tests pass.
 - [ ] **Step 3: Run MCP server tests**
 
 ```bash
-cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml 2>&1
+cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml 2>&1
 ```
 
 Expected: all tests pass.

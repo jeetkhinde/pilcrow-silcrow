@@ -14,7 +14,7 @@ Core structure:
 - `crates/client`: typed backend HTTP client injected into `load()`.
 - `crates/core`: config, errors, envelopes.
 - `tools/cli`: `new`, `dev`, `export`.
-- `tools/mcp/pilcrow-mcp`: MCP docs, inspection, diagnostics, validation, scaffolding.
+- `tools/pilcrow-mcp`: MCP docs, inspection, diagnostics, validation, scaffolding.
 - `sandbox/apps/web`: example app.
 
 Entry points:

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-pilcrow-web = { path = "../../../pilcrow/crates/web", features = ["live-props"] }
-pilcrow_runtime = { package = "pilcrow-runtime", path = "../../../pilcrow/crates/runtime", features = ["live-props"] }
+pilcrow-web = { path = "../pilcrow/crates/web", features = ["live-props"] }
+pilcrow_runtime = { package = "pilcrow-runtime", path = "../pilcrow/crates/runtime", features = ["live-props"] }
 sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -16,4 +16,4 @@ urlencoding = "2"
 dotenvy = "0.15"
 
 [build-dependencies]
-pilcrow-routekit = { path = "../../../pilcrow/crates/routekit" }
+pilcrow-routekit = { path = "../pilcrow/crates/routekit" }
