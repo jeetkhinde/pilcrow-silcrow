@@ -1,19 +1,9 @@
 # Compiled output
-demo/target
-demo/target/
-demo/node_modules
-demo/node_modules/
-demo/.pilcrow-baked
-
+core/target/
+core/public/
 target/
 public/
-pilcrow/target/
-silcrow/node_modules
-graphify-out/
 
-
-node_modules/
-.pilcrow-baked/
 
 # Cargo lock file (for libraries)
 /Cargo.lock
@@ -24,8 +14,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
-.venv
-.uv_cache
+
 # Database files
 *.db
 *.sqlite

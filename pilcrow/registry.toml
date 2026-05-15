@@ -1,0 +1,2391 @@
+registry_schema_version = 1
+framework_version = "0.1.0"
+
+[[features]]
+id = "ssr-pages"
+name = "SSR Pages"
+domain = "pilcrow"
+status = "stable"
+summary = "Server-rendered pages are discovered from pages/**/*.html with optional Rust code-behind."
+spec = "A page is an HTML template under pages. A sibling .rs file may declare Props and an async load(req: Req) -> AppResult<Props> function. Pages are registered by generated code through pilcrow_web::include_generated_app!()."
+canonical_usage = "Create pages/products/index.html and pages/products/index.rs. In index.rs: `pub struct Props { pub items: Vec<String> }` and `pub async fn load(_req: Req) -> AppResult<Props> { Ok(Props { items: vec![] }) }`. Access in template: `{{ items }}`."
+constraints = [
+  "Page .html files must live under pages/.",
+  "Code-behind load() must be async, return AppResult<Props>, and accept Req.",
+  "Props must be a public struct named Props.",
+  "Do not call pilcrow_web::include_generated_app!() manually — the pilcrow_app!() macro does it.",
+]
+invalid_examples = [
+  "fn load() -> Props — missing async, wrong return type",
+  "pub async fn load() -> AppResult<Props> — missing Req argument",
+  "Manually registering a page route in main.rs with .route()",
+]
+source_refs = [
+  "crates/routekit/src/templating/codegen/page_routes.rs",
+  "crates/routekit/src/templating/codegen/instrument.rs",
+  "crates/web/src/lib.rs",
+]
+test_refs = [
+  "crates/routekit/src/templating/codegen/tests.rs",
+  "sandbox/pages/index.rs",
+]
+validation_rules = [
+  "Pages should not manually register Axum routes.",
+  "Code-behind load functions should be async and return AppResult<Props>.",
+]
+scaffold_templates = ["route"]
+
+[[features]]
+id = "file-routing"
+name = "File Routing"
+domain = "pilcrow"
+status = "stable"
+summary = "Route paths are derived from files and directories under pages and api."
+spec = "index.html maps to its containing directory, dynamic segments use bracket syntax [param], route groups use parenthesized directories (group), and generated route helpers live in OUT_DIR."
+canonical_usage = "pages/index.html -> GET /. pages/products/index.html -> GET /products. pages/[id]/index.html -> GET /:id. pages/(admin)/dashboard.html -> GET /dashboard (group stripped). pages/[id=integer]/index.html -> GET /:id with integer constraint."
+constraints = [
+  "Page routes must live under pages.",
+  "API routes must live under api.",
+  "Dynamic params use [name] syntax; constraint matchers use [name=matcher] syntax.",
+  "Route groups use (name) syntax — strips the name from the URL.",
+  "index.html in a directory maps to the directory path.",
+]
+invalid_examples = [
+  "Registering routes in main.rs with .route() or Router::new()",
+  "Using :param syntax in file names — that is axum runtime notation; file names use [param]",
+  "Placing page files outside pages/",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs",
+  "crates/routekit/src/templating/codegen/app_module.rs",
+]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = [
+  "Do not hand-wire page routes in main.rs.",
+  "Keep routes under pages or api.",
+]
+scaffold_templates = ["route"]
+
+[[features]]
+id = "ignore-directories"
+name = "Glob-Based Ignore Directories"
+domain = "pilcrow"
+status = "stable"
+summary = "Exclude specific directories or path patterns from route discovery using globsets."
+spec = "In Pilcrow.toml under [routing] ignore_directories, specify glob patterns to ignore directories. Patterns without slashes (e.g., 'Cards') behave as recursive directory matchers ('**/Cards'). Patterns with slashes (e.g., 'pages/admin/**/components') evaluate as path-based globs relative to the src directory."
+canonical_usage = "In Pilcrow.toml: `[routing]\nignore_directories = [\"Cards\", \"pages/admin/**/components\"]`. This ignores any directory named 'Cards' anywhere, and specifically ignores 'components' directories nested inside 'pages/admin'."
+constraints = [
+  "Patterns without slashes are implicitly prefixed with **/. so they match recursively.",
+  "Patterns with slashes match paths relative to the src directory.",
+  "Directories matching the glob patterns are completely skipped during page, fragment, and API route discovery.",
+]
+invalid_examples = ["Using absolute paths like '/pages/Cards'"]
+source_refs = ["crates/routekit/src/routing/discovery.rs"]
+test_refs = []
+validation_rules = ["ignore_directories paths should be valid glob patterns."]
+scaffold_templates = []
+
+[[features]]
+id = "experimental-baked-pages"
+name = "Experimental Baked Pages"
+domain = "pilcrow"
+status = "experimental"
+summary = "Experimental baked-page declarations, durable artifact storage, build-time prebake, lazy serving helpers, and dependency-scoped slot patching."
+spec = """
+Baked pages are Pilcrow's experimental durable serving artifact model. Current
+runtime support exposes declaration types plus filesystem-backed artifact and
+metadata storage, marker-bounded slot patching, and a minimal library prebake
+API for BuildTime declarations. It also exposes an explicit opt-in lazy serving
+helper for route handlers that want baked serving without global router/codegen
+changes. It does not change route handling, codegen, or SSR/load rendering
+unless a route calls the helper itself.
+
+Route declarations choose a bake timing policy:
+- BuildTime
+- LazyOnFirstHit
+- NeverBake
+
+Route declarations also choose an artifact strategy:
+- FullPage
+- FragmentComposed with a layout key
+
+The experimental BakedPageStore can write FullPage artifacts, write
+FragmentComposed page bodies, persist metadata, rebuild the dependency reverse
+index from metadata, mark pages stale, read a fresh stored artifact, and patch
+slot content atomically. BakedPageStore::prebake_declared runs a caller-provided
+renderer for BuildTime declarations and writes the same durable artifacts as the
+store's lower-level artifact API. BakedPageStore::get_or_render_declared checks
+serve_if_fresh for LazyOnFirstHit declarations, runs the caller-provided renderer
+on miss, writes the baked artifact, and returns the response HTML. FragmentComposed
+responses are composed through the declared layout's page_body slot. BakedPatchRegistry
+finds affected pages through the reverse index, recomputes declared slots, and marks
+pages stale when recompute or marker validation fails. SSR/load remains the
+source-of-truth renderer. Future patches may connect these types to routekit codegen.
+"""
+canonical_usage = """
+// Cargo.toml
+pilcrow-web = { path = "...", features = ["experimental-baked-pages"] }
+
+use pilcrow_web::experimental::baked_pages::{
+    serve_baked_or_render, BakedPageStore, BakedPatchRegistry, BakedRenderedPage, BakedRoute,
+    BakedRouteDeclaration, DependencyKey, SlotValue,
+};
+
+let declaration = BakedRouteDeclaration::lazy_on_first_hit("/tickets/:id", "/tickets/123")
+    .full_page()
+    .text_slot("ticket_status", vec![DependencyKey::new("ticket:123")]);
+let store = BakedPageStore::new(".pilcrow-baked");
+let route = BakedRoute::new(store.clone(), declaration);
+let response = route.serve(|_decl| {
+    Ok(BakedRenderedPage::new("<html>...</html>", "render-v1"))
+})?;
+let response_without_wrapper = serve_baked_or_render(&store, route.declaration(), |_decl| {
+    Ok(BakedRenderedPage::new("<html>...</html>", "render-v1"))
+})?;
+let mut patches = BakedPatchRegistry::new(store.clone());
+patches.register_slot_recompute("ticket_status", |_key, _page| {
+    Ok(SlotValue::text("Closed"))
+});
+"""
+constraints = [
+  "This is an experimental library API; it is not wired into generated routes yet.",
+  "The API is available only with the experimental-baked-pages feature flag.",
+  "Do not replace existing SSR/load behavior broadly; routes must explicitly call the baked serving helper.",
+  "BuildTime behavior remains library/prebake-only for now; get_or_render_declared does not render BuildTime misses.",
+  "Prebake is library-only and accepts BuildTime declarations; no CLI or generated build hook exists yet.",
+  "BakedPageStore reads and writes local filesystem artifacts only; no production adapters exist yet.",
+  "Slot patching requires explicit dependency ownership through DependencyKey values.",
+  "Trusted HTML slot patches require an explicit TrustedHtml wrapper; text slot patches are escaped.",
+]
+invalid_examples = [
+  "Expecting BakedRouteDeclaration to automatically register a page route.",
+  "Calling prebake_declared on a NeverBake declaration.",
+  "Using FragmentComposed without later providing a compatible layout artifact containing a page_body slot.",
+  "Treating TrustedHtml slots as escaped text slots.",
+]
+source_refs = [
+  "docs/experimental-baked-pages.md",
+  "crates/web/examples/baked_prebake.rs",
+  "crates/web/examples/baked_ticket.rs",
+  "crates/runtime/src/baked_pages/model.rs",
+  "crates/runtime/src/baked_pages/store.rs",
+  "crates/runtime/src/baked_pages/patch.rs",
+  "crates/runtime/src/baked_pages/prebake.rs",
+  "crates/runtime/src/baked_pages/serving.rs",
+  "crates/runtime/src/baked_pages/mod.rs",
+  "crates/web/src/lib.rs",
+]
+test_refs = [
+  "crates/runtime/src/baked_pages/model.rs",
+  "crates/runtime/src/baked_pages/store.rs",
+  "crates/runtime/src/baked_pages/patch.rs",
+  "crates/runtime/src/baked_pages/prebake.rs",
+  "crates/runtime/src/baked_pages/serving.rs",
+  "crates/web/src/lib.rs",
+]
+validation_rules = [
+  "No routekit syntax validation exists yet because this API is not parsed from page codegen.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "layouts"
+name = "Layouts"
+domain = "pilcrow"
+status = "stable"
+summary = "Layouts are HTML templates named _layout.html and compose around nested pages."
+spec = "A _layout.html file applies to pages in its directory subtree. A route group may provide its own _layout.html without adding a URL segment. Layouts may have a .rs code-behind with their own Props and load()."
+canonical_usage = "Create pages/_layout.html with `{{ content }}` slot. Optionally create pages/_layout.rs with `pub struct Props { pub user: Option<String> }` and `pub async fn load(req: Req) -> AppResult<Props> { ... }`. The layout Props fields are merged into page Props as __MergedProps."
+constraints = [
+  "Layout files must be named _layout.html.",
+  "Layout code-behind load() must return AppResult<Props> — same convention as pages.",
+  "Layouts cannot define named actions — only load() is permitted.",
+  "Prop field names must not collide between layout and page Props (build error if they do).",
+  "Layout LAYOUT=none opt-out is set in the page code-behind, not the layout itself.",
+]
+invalid_examples = [
+  "Naming a layout file layout.html instead of _layout.html",
+  "Defining pub async fn create(req: Req) -> ActionResult in a layout code-behind",
+  "Having a field named 'title' in both _layout.rs Props and the page's Props",
+]
+source_refs = [
+  "crates/routekit/src/templating/codegen/templates.rs",
+  "crates/routekit/src/templating/codegen/types.rs",
+]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = [
+  "Use _layout.html for shared shells instead of duplicating page chrome.",
+]
+scaffold_templates = ["route"]
+
+[[features]]
+id = "route-groups"
+name = "Route Groups"
+domain = "pilcrow"
+status = "stable"
+summary = "Parenthesized page directories organize routes without contributing URL segments."
+spec = "Directories like pages/(admin) may contain pages and layouts. The group name is for organization and layout scoping only. The URL does not include the group directory name."
+canonical_usage = "Create pages/(admin)/_layout.html for an admin shell. Place pages/(admin)/dashboard.html for GET /dashboard. The (admin) group applies the layout without adding /admin to the URL."
+constraints = [
+  "Route group directories must stay inside pages.",
+  "Group names must be wrapped in parentheses: (name).",
+  "Groups may nest but the group name never appears in the generated URL.",
+]
+invalid_examples = [
+  "Using a plain directory 'admin' when you want a group — that creates a /admin URL prefix.",
+]
+source_refs = ["crates/routekit/src/templating/pipeline.rs"]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = ["Route group directories must stay inside pages."]
+scaffold_templates = ["route"]
+
+[[features]]
+id = "fragments"
+name = "Fragments"
+domain = "pilcrow"
+status = "stable"
+summary = "Configured fragment directories expose HTML fragments as addressable server-rendered endpoints."
+spec = "Pilcrow.toml [[fragments]] entries point to directories relative to project root. Fragment HTML files are scanned and generated as URL-accessible fragment routes. No layout wrapping is applied. Code-behind files work exactly as with pages: Props, load(), and named actions are supported."
+canonical_usage = "In Pilcrow.toml: `[[fragments]]\\ndir = \"widgets\"`. Create widgets/user-card.html -> GET /widgets/user-card. Optionally create widgets/user-card.rs with Props, load(), and `pub async fn refresh(req: Req) -> ActionResult`; POST /widgets/user-card?/refresh invokes the action. Fragment modules are auto-available as `fragments::widgets::user_card`."
+constraints = [
+  "Fragment dirs are configured in Pilcrow.toml [[fragments]] — not auto-discovered.",
+  "No layout is applied to fragment routes.",
+  "Fragment URLs default to the dir name; override with url = \"prefix\".",
+  "Module names are frag_{url_prefix}_{snake_path}.",
+  "Fragment dirs may import ui/ components.",
+]
+invalid_examples = [
+  "Placing fragment files under pages/ — those would be treated as regular routes with layout wrapping",
+  "Referencing a fragment dir without adding it to Pilcrow.toml [[fragments]]",
+]
+source_refs = [
+  "crates/routekit/src/templating/build_config.rs",
+  "crates/routekit/src/templating/pipeline.rs",
+]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = [
+  "Fragment scaffolds must respect Pilcrow.toml [[fragments]].",
+]
+scaffold_templates = ["fragment"]
+
+[[features]]
+id = "api-routes"
+name = "API Routes"
+domain = "pilcrow"
+status = "stable"
+summary = "Rust API routes are discovered from api/**/*.rs."
+spec = "API route files export a `pub fn router() -> axum::Router` function. Routekit discovers these files and mounts them into the generated application router via the generated_api_mods.rs file."
+canonical_usage = "Create api/products.rs. Export `pub fn router() -> axum::Router { Router::new().route(\"/api/products\", get(list)) }`. The router is automatically mounted by the build pipeline."
+constraints = [
+  "API route files must live under api/.",
+  "Each file must export `pub fn router() -> axum::Router`.",
+  "Do not mount API routers manually in main.rs — the build pipeline does it.",
+]
+invalid_examples = [
+  "An API file without pub fn router()",
+  "Mounting the API router in main.rs with .merge()",
+]
+source_refs = ["crates/routekit/src/templating/codegen/api_routes.rs"]
+test_refs = ["sandbox/api/products.rs"]
+validation_rules = [
+  "API files should expose router() rather than registering from main.rs.",
+]
+scaffold_templates = ["api"]
+
+[[features]]
+id = "actions"
+name = "Named Actions"
+domain = "pilcrow"
+status = "stable"
+summary = "Page and fragment code-behind files can declare named action handlers for enhanced and plain form posts."
+spec = "Named actions are public functions other than load that return ActionResult, commonly `pub async fn create(req: Req) -> ActionResult`. The client invokes them with ?/name URL fragment (POST only) on the page or fragment URL. Unknown action names return AppError::NotFound. Use `ok()` to return a 200 with no body, `redirect(path)` for a 303. Both return ActionResult and support chaining via ActionResultExt: `.with_toast(msg, level)`, `.with_header(key, val)`, `.trigger_event(name)`, `.no_cache()`, `.retarget(sel)`, `.push_history(url)`. All these helpers plus ActionResultExt and ToastLevel are auto-imported in every page module."
+canonical_usage = "In products/index.rs: `pub async fn create(req: Req) -> ActionResult { let name = req.form.get(\"name\").unwrap_or(\"\"); redirect(\"/products\").with_toast(\"Created!\", ToastLevel::Success) }`. For mutations with no redirect: `pub async fn toggle(_req: Req) -> ActionResult { toggle_state(); ok().with_toast(\"Done\", ToastLevel::Success) }`. In template: `<form s-post=\"?/create\">`."
+constraints = [
+  "Action fns must return ActionResult (or Result<Response, AppError>).",
+  "Action fns must be POST-only — GET requests do not trigger actions.",
+  "Plain POST without ?/name fragment returns 404.",
+  "Layouts cannot define named actions.",
+  "UI components must not define named actions.",
+]
+invalid_examples = [
+  "pub async fn submit() -> ActionResult — missing Req argument",
+  "pub async fn submit(req: Req) -> Response — wrong return type",
+  "Using actions in a _layout.rs code-behind",
+]
+source_refs = [
+  "crates/routekit/src/templating/codegen/page_routes.rs",
+  "crates/routekit/src/templating/codegen/instrument.rs",
+  "crates/runtime/src/response/response.rs",
+]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = [
+  "Named action handlers should return ActionResult.",
+  "Actions should live next to the page template they serve.",
+  "Use ok() for 200 OK responses, not Ok(StatusCode::OK.into_response()).",
+  "Use redirect(path) or ok() — both chain .with_toast(), .with_header(), etc. via ActionResultExt.",
+]
+scaffold_templates = ["route", "silcrow-form"]
+
+[[features]]
+id = "server-hooks"
+name = "Server Hooks"
+domain = "pilcrow"
+status = "stable"
+summary = "Optional hooks.rs lifecycle hooks for global request handling, 5xx error shaping, and one-time startup init."
+spec = "When hooks.rs exists, Pilcrow detects and wires any of these async functions: `handle(req: Req, next: Next) -> Response`, `handle_error(error: &HookError, req: &Req) -> Option<Response>`, and `init()`. `handle` runs before route handlers, `handle_error` can replace 5xx responses, and `init` runs once before serving."
+canonical_usage = "Create hooks.rs with: `pub async fn handle(req: Req, next: Next) -> Response { req.locals.set(\"trace-id\"); next.run().await }`, `pub async fn handle_error(error: &HookError, req: &Req) -> Option<Response> { tracing::error!(\"{}\", error.message); None }`, and `pub async fn init() { tracing::info!(\"startup\"); }`."
+constraints = [
+  "Hook file must be hooks.rs at the app root.",
+  "Hook function signatures must match exactly (async, argument types, return type).",
+  "handle() should call next.run().await unless intentionally short-circuiting.",
+  "Use req.locals in hooks for cross-cutting request state shared with load()/actions.",
+]
+invalid_examples = [
+  "fn handle(req: Req, next: Next) -> Response — missing async",
+  "pub async fn handle_error(error: HookError, req: Req) -> Response — wrong references and return type",
+  "Placing hooks in hooks.rs expecting automatic lifecycle wiring",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs — hook detection",
+  "crates/routekit/src/templating/codegen/app_module.rs — generated hook shims and middleware wiring",
+  "sandbox/hooks.rs",
+]
+test_refs = ["crates/routekit/src/templating/pipeline.rs — detect_hook_flags tests"]
+validation_rules = [
+  "Prefer hooks.rs for global auth/session/request-id logic over duplicating in each load()/action.",
+]
+scaffold_templates = ["middleware"]
+
+[[features]]
+id = "silcrow-navigation"
+name = "Silcrow Enhanced Navigation"
+domain = "silcrow"
+status = "stable"
+summary = "s-boost and s-target provide server-backed SPA-style navigation."
+spec = "Use s-boost on anchors and s-target to choose the DOM target. Responses remain server-rendered HTML and should work as normal links without JavaScript."
+canonical_usage = "<a href=\"/products\" s-boost s-target=\"#content\">Products</a>. With s-boost, silcrow intercepts the click and fetches the page, swapping the #content element. Falls back to normal navigation without JS."
+constraints = [
+  "Silcrow directives belong in HTML templates, not Rust code.",
+  "Server responses must be valid HTML — silcrow swaps the target element.",
+  "Links must work without JS (progressive enhancement).",
+]
+invalid_examples = [
+  "Using s-boost in a .rs code-behind file",
+  "Returning JSON from a page handler that is targeted with s-boost",
+]
+source_refs = ["crates/runtime/assets/silcrow.js"]
+test_refs = []
+silcrow_boundary = "Exact s-boost/s-target behavior, DOM patching, cache, and navigation history are owned by silcrow-mcp. Pilcrow MCP validates server-side HTML shape and response headers."
+validation_rules = [
+  "Silcrow directives belong in HTML templates, not Rust code.",
+]
+scaffold_templates = ["silcrow-nav"]
+
+[[features]]
+id = "silcrow-forms"
+name = "Silcrow Enhanced Forms"
+domain = "silcrow"
+status = "stable"
+summary = "Enhanced forms post to server actions and patch the DOM from server responses."
+spec = "Use standard HTML forms with Silcrow attributes and Pilcrow named actions. Server handlers return ActionResult and may set response headers through Req response helpers. Enhanced and plain-browser fallback must both work."
+canonical_usage = "<form s-post=\"?/submit\" s-target=\"#result\"><input name=\"email\" /><button>Submit</button></form>. Server: `pub async fn submit(req: Req) -> ActionResult { if req.form.get(\"email\").is_none() { return req.fail(form_errors().error(\"email\", \"required\")); } redirect(\"/dashboard\") }`."
+constraints = [
+  "Forms must have a server action at the ?/name path.",
+  "Plain HTML POST fallback must work without JavaScript.",
+  "req.fail() returns JSON for enhanced requests, flash+redirect for plain POST.",
+]
+invalid_examples = [
+  "Using onclick= or onsubmit= handlers instead of Pilcrow named actions",
+  "Returning void or () from an action handler",
+]
+source_refs = [
+  "crates/runtime/src/context.rs",
+  "crates/runtime/assets/silcrow.js",
+]
+test_refs = ["crates/runtime/tests/response.rs"]
+silcrow_boundary = "Exact silcrow form patching, JSON response shape, and error binding are owned by silcrow-mcp. Pilcrow MCP validates action signatures, ActionResult return types, and server-side response helpers."
+validation_rules = [
+  "Enhanced forms must have a server action path.",
+  "Do not model Silcrow forms as standalone client-state islands.",
+]
+scaffold_templates = ["silcrow-form"]
+
+[[features]]
+id = "deferred-streams"
+name = "Deferred Streams"
+domain = "pilcrow"
+status = "stable"
+summary = "Deferred<T> and DeferredHtml stream late data or HTML patches after the shell response."
+spec = "Props may include Deferred<T> or DeferredHtml fields. Generated code emits a shell first and streams patches as futures resolve. Deferred<T>/AsyncValue<T> template interpolations become `data-pilcrow-async-value` text targets and resolved values stream as `window.__pilcrow_async_value(key, value)` scripts that set `textContent` directly. DeferredHtml/AsyncHtml template interpolations become `data-pilcrow-async-html` targets and resolved HTML streams as `window.__pilcrow_async_html(key, html)` scripts that replace target children. Streaming HTML responses include `silcrow-full-reload: true` so silcrow boosted top-level GET navigation falls back to browser navigation instead of buffering and sanitizing streamed script chunks."
+canonical_usage = "pub struct Props { pub title: String, pub count: Deferred<i32> }. pub async fn load(_req: Req) -> AppResult<Props> { Ok(Props { title: String::from(\"Hello\"), count: Deferred::spawn(async { expensive_db_call().await }) }) }. In template: {{ count }} (renders as empty string until resolved)."
+constraints = [
+  "Deferred<T> type T must implement Display for the initial shell render.",
+  "DeferredHtml requires a slot name and optional loading HTML.",
+  "Deferred fields must be declared in Props.",
+  "Deferred::ready(value) creates an already-resolved value with no streaming overhead.",
+  "Deferred pages require browser-level navigation for top-level page transitions; silcrow.js honors the streamed response header automatically.",
+  "AsyncValue<T> patches are Pilcrow-owned scalar text updates and do not require Silcrow patch bindings.",
+]
+invalid_examples = [
+  "Using Deferred<T> outside of a Props struct",
+  "Forgetting that Deferred<T> renders as empty string in the initial shell",
+]
+source_refs = [
+  "crates/runtime/src/deferred.rs",
+  "crates/routekit/src/templating/codegen/templates.rs",
+  "../silcrow/src/silcrow.js",
+]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = ["Deferred fields must be declared in Props."]
+scaffold_templates = []
+
+[[features]]
+id = "live-props"
+name = "Live Props"
+domain = "pilcrow"
+status = "stable"
+summary = "LiveProp<T> fields render an initial value in SSR HTML and automatically subscribe the browser to server-pushed SSE updates."
+spec = "Props fields typed LiveProp<T> opt in to persistent SSE subscriptions. Codegen wraps {{ field }} template expressions with <span :text=\"field\"> for DOM patching, injects a hidden <div s-sse=\"/__pilcrow/live{path}\"> into the response HTML, and generates a GET /__pilcrow/live{pattern} SSE route. The client subscribes via Silcrow's s-sse directive and receives SilcrowEvent::patch events. LiveTarget::Dom patches :text bindings; LiveTarget::DomAndStore also publishes to a Silcrow stream: atom; LiveTarget::Store publishes only to the atom with no DOM binding. All live fields on a page share one EventSource connection."
+canonical_usage = "pub struct Props { pub count: LiveProp<u64>, pub label: String }. pub async fn load(_req: Req) -> AppResult<Props> { let rx = COUNTER.subscribe(); Ok(Props { count: LiveProp::watch(rx).target(LiveTarget::Dom), label: String::from(\"counter\") }) }. In template: {{ count }} (auto-wrapped as <span :text=\"count\">{{ count }}</span>)."
+constraints = [
+  "LiveProp<T>: T must implement Display, Clone, Serialize, Send, Sync, and 'static.",
+  "LiveProp::watch(rx) clones the current watch value as the initial; requires T: Clone.",
+  "LiveProp::initial(v) creates a static field with no producer — useful as placeholder when live() is defined separately.",
+  "All live fields on a page share a single SSE connection at /__pilcrow/live{path}.",
+  "The SSE route re-calls load() (or live() if defined) on every new client connection — producers must be cheap to recreate.",
+  "{{ live_field }} in templates is automatically wrapped with :text span; no manual wrapping needed.",
+]
+invalid_examples = [
+  "Using LiveProp<T> where T does not implement Serialize or Sync",
+  "Manually writing <span :text=\"field\"> — the template compiler does this automatically",
+  "Assuming LiveProp fields share state across requests — each SSE connection re-calls load()",
+]
+source_refs = [
+  "crates/runtime/src/deferred.rs",
+  "crates/routekit/src/templating/codegen/app_module.rs",
+  "crates/routekit/src/templating/codegen/instrument.rs",
+  "crates/routekit/src/templating/compiler.rs",
+]
+test_refs = []
+validation_rules = [
+  "LiveProp<T> fields must be declared in Props.",
+  "T in LiveProp<T> must implement Display, Clone, Serialize, Send, Sync.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "fsr"
+name = "FSR (Field-Selective Rendering)"
+domain = "pilcrow"
+status = "stable"
+summary = "Field-Selective Rendering — live.rs convention, LiveProp<T>, watcher, s-live slots, SSE hub. Developer-facing surface via `use pilcrow::live::*;`."
+spec = "FSR enables per-field SSE-driven live updates. A route's live.rs exports a Live struct with LiveProp<T> fields. Routekit validates the sibling page.html template against live.rs at build time: every s-live=\"field\" slot must match a LiveProp field, every LiveProp field must have a matching s-live slot unless the field is marked #[pilcrow::allow_unused], and duplicate s-live slot names are rejected with a clear error. Struct-level #[pilcrow::live(...)] and #[pilcrow::depends_on_route(table, param)] defaults apply to every LiveProp field, and field-level attributes override those defaults. depends_on_route(tickets, id) expands conceptually to dep!(tickets, id, params.id) and is valid only when the route has an id param; explicit #[pilcrow::depends_on(dep!(...))] remains the escape hatch. LiveProp<T> fields are individually addressable over a shared SSE connection. The FSR watcher polls a LiveQuery and pushes SlotPatch events when values change. Routes opt in with `use pilcrow::live::*;` and the `live-props` Cargo feature. Redis (live-props-redis feature) adds a three-layer serve architecture: Redis is the hot path (pilcrow:html:<route>, pilcrow:slot:<route> HASH, pilcrow:json:<route>), Postgres is the truth layer (pilcrow_fsr table), and disk is async recovery. The watcher becomes pub/sub-driven: it subscribes to pilcrow:invalidate, re-executes stored queries, patches Redis, then publishes pilcrow:patch which is forwarded to connected SSE clients. Without Redis, the watcher falls back to 500ms polling. redis_url in [cache] of pilcrow.toml is required when using live-props-redis."
+canonical_usage = """
+# live.rs
+use pilcrow::live::*;
+
+#[pilcrow::live(
+    promote_after = 50,
+    patch_debounce = 30
+)]
+#[pilcrow::depends_on_route(tickets, id)]
+pub struct Live {
+    pub ticket_status: LiveProp<String>,
+    #[pilcrow::patch_debounce(5)]
+    pub ticket_priority: LiveProp<String>,
+}
+
+impl Live {
+    fn query(params: &serde_json::Map<String, serde_json::Value>) -> LiveQuery {
+        live_query!(
+            "SELECT status AS ticket_status, priority AS ticket_priority FROM tickets WHERE id = $1",
+            params.get("id").unwrap()
+        )
+    }
+}
+
+# page.rs
+pub struct Props { pub live: Live }
+pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live }) }
+
+# page.html
+<span s-live="ticket_status">{{ live.ticket_status.value }}</span>
+"""
+constraints = [
+  "Incompatible with STREAMING = true",
+  "FSR_JSON = true incompatible with STREAMING = true",
+  "live.rs + PRERENDER treated as promote_after = 0",
+  "promote_after absent = SSG (bake at startup)",
+  "Struct-level #[pilcrow::live(...)] defaults apply to all LiveProp<T> fields.",
+  "Struct-level #[pilcrow::depends_on_route(table, param)] defaults apply to all LiveProp<T> fields.",
+  "Field-level #[pilcrow::*] attributes override struct-level live defaults for that field.",
+  "Each s-live slot in page.html must match a LiveProp field in sibling live.rs.",
+  "Each LiveProp field in live.rs must have a matching s-live slot unless marked #[pilcrow::allow_unused].",
+  "Duplicate s-live slot names in a single template are build errors.",
+  "depends_on_route(table, param) requires `param` to exist in the route params.",
+  "dep! macro args mean table, column, runtime value.",
+  "Requires the `live-props` Cargo feature on pilcrow-web",
+]
+invalid_examples = [
+  "Using FSR with STREAMING = true",
+  "Using LiveProp<T> outside of a struct that implements PilcrowLive",
+  "Adding s-live=\"ticket_status\" in HTML while live.rs only declares `status`",
+  "Declaring a LiveProp field in live.rs without adding a matching s-live slot or #[pilcrow::allow_unused]",
+  "Repeating the same s-live slot name multiple times in one template",
+  "Forgetting to enable the live-props feature in Cargo.toml",
+]
+source_refs = [
+  "crates/runtime/src/fsr/",
+  "crates/runtime/src/fsr/cache.rs",
+  "crates/runtime/src/fsr/store.rs",
+  "crates/runtime/src/fsr/watcher.rs",
+  "crates/routekit/src/fsr.rs",
+  "crates/routekit/src/templating/codegen/templates.rs",
+  "crates/routekit/src/templating/page_options.rs",
+  "crates/runtime/migrations/0001_pilcrow_fsr.sql",
+  "crates/web/src/live.rs",
+]
+test_refs = []
+validation_rules = [
+  "FSR requires live-props Cargo feature.",
+  "LiveProp<T> fields must be in a struct implementing PilcrowLive.",
+  "Field-level FSR attributes override struct-level #[pilcrow::live(...)] defaults.",
+  "Routekit validates page.html s-live slots against sibling live.rs LiveProp fields at build time.",
+  "A LiveProp field can opt out of template-slot matching with #[pilcrow::allow_unused].",
+  "Duplicate s-live slot names are rejected.",
+  "depends_on_route(table, param) fails the build when `param` is missing from the route.",
+  "FSR is incompatible with STREAMING = true.",
+  "FSR_JSON = true is incompatible with STREAMING = true.",
+  "live-props-redis Cargo feature enables Redis caching and pub/sub-driven invalidation.",
+  "redis_url in [cache] block of pilcrow.toml is required when live-props-redis feature is enabled.",
+  "Without live-props-redis, the watcher uses 500ms polling fallback.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "middleware"
+name = "Middleware"
+domain = "pilcrow"
+status = "stable"
+summary = "hooks.rs can provide request middleware for generated routes."
+spec = "Middleware receives Req and Next, then returns a Response. It should call next.run().await when continuing to the route handler. req.locals and req.res set in middleware are shared with all downstream load() and action fns."
+canonical_usage = "pub async fn middleware(req: Req, next: Next) -> Response { let token = req.cookies.get(\"session\").map(|c| c.value().to_string()); match auth::verify(token).await { Ok(user) => req.locals.set(user), Err(_) if req.path.starts_with(\"/admin\") => return AppError::Unauthorized.into_response(), _ => {} } next.run().await }"
+constraints = [
+  "Middleware must live in hooks.rs — no other location is auto-detected.",
+  "Middleware function must be named `middleware` (pub async fn middleware).",
+  "next.run() forwards the entire request including body.",
+  "Returning a Response without calling next.run() short-circuits the request.",
+]
+invalid_examples = [
+  "Placing middleware in pages/middleware.rs — not auto-detected",
+  "Naming the function `handle` instead of `middleware`",
+]
+source_refs = [
+  "crates/runtime/src/middleware.rs",
+  "crates/routekit/src/templating/codegen/app_module.rs",
+]
+test_refs = ["crates/runtime/tests/context.rs"]
+validation_rules = ["Middleware should live in hooks.rs."]
+scaffold_templates = []
+
+[[features]]
+id = "env-config"
+name = "Typed Env Config"
+domain = "pilcrow"
+status = "stable"
+summary = "Pilcrow.toml [env] declarations generate typed Public and Private env structs with compile-time field names."
+spec = "Declare public and private env var names in Pilcrow.toml [env]. The build pipeline (env_codegen.rs) generates env::Public and env::Private structs in OUT_DIR/generated_env.rs, each with a load() -> Result<Self, VarError> constructor. Both are included in the crate root via pilcrow_app!(). PUBLIC_ prefixes are stripped from public field names."
+canonical_usage = """
+In Pilcrow.toml:
+  [env]
+  public  = ["PUBLIC_API_URL", "PUBLIC_APP_NAME"]
+  private = ["DATABASE_URL", "SECRET_KEY"]
+
+Generated: env::Public { api_url, app_name } and env::Private { database_url, secret_key }.
+
+Recommended: load once in hooks.rs and store in Locals to avoid repeated syscalls:
+  pub async fn middleware(req: Req, next: Next) -> Response {
+      let env = env::Private::load().expect("required env vars not set");
+      req.locals.set(env);
+      next.run().await
+  }
+
+In any load() or action fn:
+  pub async fn load(req: Req) -> AppResult<Props> {
+      let env = req.locals.require::<env::Private>()?;
+      let db = connect(&env.database_url).await?;
+      ...
+  }
+
+Never use std::env::var() directly — the generated helpers give compile-time field names,
+type safety, and a single failure point at startup rather than scattered panics at runtime.
+"""
+constraints = [
+  "Public env names should use PUBLIC_ prefix when client-visible.",
+  "Private env names must not start with PUBLIC_.",
+  "Generated env structs are in OUT_DIR/generated_env.rs, included by pilcrow_app!().",
+  "load() returns Result<Self, VarError> — call .expect() at startup or propagate with ?.",
+  "Recommended to call env::Private::load() once in middleware and store in req.locals.",
+]
+invalid_examples = [
+  "Using std::env::var(\"DATABASE_URL\") in load() — use env::Private::load() instead",
+  "Calling env::Private::load() inside every load() fn — call it once in middleware",
+]
+source_refs = [
+  "crates/routekit/src/templating/env_codegen.rs",
+  "crates/routekit/src/templating/build_config.rs",
+]
+test_refs = [
+  "crates/routekit/src/templating/env_codegen.rs — render_env_module_generates_public_and_private_structs",
+]
+validation_rules = [
+  "Public env names should use PUBLIC_ when intended for client-visible use.",
+  "Prefer env::Private::load() in middleware + Locals over direct std::env::var() calls.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "loading-skeletons"
+name = "Loading Skeletons"
+domain = "pilcrow"
+status = "stable"
+summary = "_loading.html templates provide scoped loading skeletons."
+spec = "A _loading.html template in a pages subtree is appended to rendered HTML for matching routes so Silcrow can show scoped pending UI during navigation. The _loading.html content is injected as a <template> element."
+canonical_usage = "Create pages/_loading.html with skeleton content. Silcrow will show this during navigation to routes in the same directory. Scoped to the directory — a _loading.html in (admin)/ applies to admin group routes only."
+constraints = [
+  "_loading.html applies to sibling and child routes, not parent routes.",
+  "Loading templates are injected as <template> elements — they are not rendered as routes.",
+]
+invalid_examples = [
+  "Using loading.html (without underscore) — not discovered as a loading skeleton",
+]
+source_refs = ["crates/routekit/src/templating/pipeline.rs"]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = ["Use _loading.html for route loading states."]
+scaffold_templates = ["route"]
+
+[[features]]
+id = "page-options"
+name = "Page Options"
+domain = "pilcrow"
+status = "stable"
+summary = "Page code-behind constants configure route-specific generation behavior."
+spec = "Routekit parses supported page option constants from code-behind and strips them from generated modules. Supported: TRAILING_SLASH (always|never|ignore) and LAYOUT (none)."
+canonical_usage = "pub const TRAILING_SLASH: &str = \"always\"; — adds a redirect from /path to /path/ for GET. pub const LAYOUT: &str = \"none\"; — opts out of all layout wrapping for this page."
+constraints = [
+  "TRAILING_SLASH and LAYOUT are configured here. ISR constants (REVALIDATE, etc.) and PRERENDER are separate features.",
+  "TRAILING_SLASH values: \"always\" (redirect to /path/), \"ignore\" (redirect to /path), \"never\" (default).",
+  "LAYOUT values: only \"none\" is supported.",
+  "Constants are stripped from the emitted module — they never reach the template.",
+]
+invalid_examples = [
+  "pub const TRAILING_SLASH: &str = \"redirect\" — invalid value",
+  "pub const LAYOUT: &str = \"minimal\" — only \"none\" is valid",
+]
+source_refs = ["crates/routekit/src/templating/page_options.rs"]
+test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
+validation_rules = [
+  "Unsupported page option constants should be rejected during validation.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "param-matchers"
+name = "Typed Param Matchers"
+domain = "pilcrow"
+status = "stable"
+summary = "Custom param matchers in params/ constrain dynamic route segments at request time."
+spec = "A file params/integer.rs exporting `pub fn match_param(value: &str) -> bool` is used when a route segment is named [id=integer]. The generated handler calls match_param at request time and returns 404 if it returns false."
+canonical_usage = "Create params/integer.rs: `pub fn match_param(value: &str) -> bool { value.parse::<i64>().is_ok() }`. Create pages/[id=integer]/index.html — only numeric :id values will match this route."
+constraints = [
+  "Matcher files must live in params/.",
+  "Each file must export `pub fn match_param(value: &str) -> bool`.",
+  "Matcher name in [id=name] must match the filename (without .rs).",
+]
+invalid_examples = [
+  "Using [id:int] syntax for custom matchers — that is built-in constraint syntax",
+  "Placing matcher files outside params/",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs",
+  "crates/routekit/src/constraint.rs",
+]
+test_refs = []
+validation_rules = [
+  "Param matcher files must export pub fn match_param(value: &str) -> bool.",
+]
+scaffold_templates = ["typed-param"]
+
+[[features]]
+id = "typed-routes"
+name = "Typed Route Helpers"
+domain = "pilcrow"
+status = "stable"
+summary = "Generated pub mod routes { ... } with one typed fn per page route. Static routes return &'static str; dynamic routes return String."
+spec = "pilcrow_app!() includes OUT_DIR/generated_typed_routes.rs which exposes a `pub mod routes` module. Each page gets one function derived from its module symbol (page_ prefix stripped). Static routes (no :param) return &'static str. Dynamic routes take one &str argument per param and return String. Function names follow the page module symbol naming, e.g. the page at pages/products/[id].html gets routes::products_id(id: &str) -> String."
+canonical_usage = """
+// pages/products/index.rs — static route /products
+pub async fn delete(req: Req) -> ActionResult {
+    db::delete(req.form.get("id").unwrap_or("")).await?;
+    redirect(routes::products())   // returns &'static str "/products"
+}
+
+// pages/products/[id]/index.rs — dynamic route /products/:id
+pub async fn load(req: Req) -> AppResult<Props> {
+    let id = req.params.get("id").unwrap();
+    // Build a canonical URL using the typed helper
+    let edit_url = routes::products_id_edit(id);   // returns String "/products/42/edit"
+    Ok(Props { edit_url })
+}
+
+// In action fns:
+redirect(routes::products())            // static — &'static str, zero allocation
+redirect(routes::products_id(&id))      // dynamic — String with id interpolated
+"""
+constraints = [
+  "routes:: is generated by pilcrow_app!() — it is not available until build.rs runs.",
+  "Function names are the page module symbol with the `page_` prefix removed.",
+  "Static routes (no :param segments) return &'static str — no allocation.",
+  "Dynamic routes take one &str per path param, in the order they appear in the pattern.",
+  "routes:: covers page routes only — API routes are not included.",
+]
+invalid_examples = [
+  "redirect(\"/products\") — prefer routes::products() for compile-time safety",
+  "redirect(&format!(\"/products/{}\", id)) — prefer routes::products_id(&id)",
+  "Using routes:: before pilcrow_app!() is called",
+]
+source_refs = [
+  "crates/routekit/src/templating/routes_codegen.rs",
+  "crates/web/src/lib.rs — pilcrow_app!() macro includes generated_typed_routes.rs",
+]
+test_refs = [
+  "crates/routekit/src/templating/routes_codegen.rs — render_typed_routes_static_returns_static_str",
+  "crates/routekit/src/templating/routes_codegen.rs — render_typed_routes_dynamic_returns_string",
+  "crates/routekit/src/templating/routes_codegen.rs — render_typed_routes_multi_param",
+]
+validation_rules = [
+  "Prefer routes:: helpers over string literal URLs in redirect() and navigate() calls.",
+  "Hard-coded URL strings in redirect() with non-root paths should use routes:: instead.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "csrf"
+name = "CSRF Protection"
+domain = "pilcrow"
+status = "stable"
+summary = "Always-on Origin-header CSRF middleware applied to all form submissions by the generated router."
+spec = "Pilcrow applies csrf_middleware as a tower layer inside build_router(). It validates Origin (falling back to Referer) against the request Host for all state-changing requests (POST/PUT/PATCH/DELETE) with a form Content-Type. Cross-origin JSON API requests are not checked — the browser same-origin policy and CORS preflight cover them. Missing Origin AND Referer rejects the request. No token needed — the check is header-based."
+canonical_usage = """
+CSRF protection is automatic — no setup required. The generated router in build_router()
+applies csrf_middleware to all routes via axum::middleware::from_fn.
+
+For testing: set the Origin header to match the Host header, or use s-post/s-get which
+Silcrow sets automatically via the silcrow-target header (Silcrow also sends Origin on
+same-origin requests, so enhanced requests pass automatically).
+
+For plain HTML forms: same-origin forms automatically send Origin or Referer, so
+standard browser forms work without any changes.
+
+For API clients / test scripts, set the Origin header:
+  curl -X POST http://localhost:3000/items?/create \
+    -H "Origin: http://localhost:3000" \
+    -d "name=widget"
+
+If you need to opt specific API routes out of CSRF (e.g. webhooks), handle that
+in hooks.rs by checking req.path and returning early:
+  pub async fn middleware(req: Req, next: Next) -> Response {
+      // Webhook endpoint bypasses CSRF (verified by signature instead)
+      if req.path.starts_with("/api/webhooks/") {
+          return next.run().await;
+      }
+      next.run().await
+  }
+Note: csrf_middleware still runs — the above illustrates hooks.rs flow.
+To truly bypass, add a separate axum layer before csrf in build_router() (advanced).
+"""
+constraints = [
+  "CSRF is always on — no opt-in constant required.",
+  "Only applies to POST/PUT/PATCH/DELETE with form Content-Type (not JSON APIs).",
+  "Origin is checked against Host; falls back to Referer if Origin is absent.",
+  "Both Origin and Referer absent → request rejected with 403.",
+  "Silcrow enhanced requests (s-post, etc.) pass automatically — Origin is sent by the browser.",
+]
+invalid_examples = [
+  "Adding a custom CSRF token check in middleware — built-in protection already handles it",
+  "Expecting CSRF to protect JSON API endpoints — those are covered by CORS instead",
+]
+source_refs = [
+  "crates/runtime/src/csrf.rs",
+  "crates/routekit/src/templating/codegen/app_module.rs — csrf layer in build_router()",
+  "crates/web/src/lib.rs — re-exported as pilcrow_web::__csrf_middleware",
+]
+test_refs = ["crates/runtime/src/csrf.rs — inline tests"]
+validation_rules = [
+  "Do not implement custom CSRF token middleware — built-in Origin-check covers form submissions.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "islands"
+name = "Islands"
+domain = "pilcrow"
+status = "stable"
+summary = "Server-driven islands via <island> template tag: deferred server-rendered HTML fetched by silcrow with load/visible/idle strategies. Co-located in pages/*/islands/ or shared via [[fragments]]."
+spec = """
+Islands are implemented as of 2026-04-27.
+
+The <island> self-closing tag compiles to a silcrow s-get + s-html deferred fetch:
+  <island src="./counter" strategy="visible" count="42" />
+
+Compiled output per tag:
+  1. Container: <div id="__pi_N" data-pilcrow-island>
+  2. Trigger: <a id="__pi_Nt" s-get="URL" s-html s-target="#__pi_N" s-skip-history style="display:none">
+  3. Strategy script:
+     - load (default) — calls .click() immediately
+     - visible — IntersectionObserver calls .click() when container enters viewport
+     - idle — requestIdleCallback (fallback: setTimeout 200ms) calls .click()
+
+Silcrow handles the s-get fetch and replaces the container div with the HTML response.
+While loading, silcrow adds class="silcrow-loading" aria-busy="true" to the container.
+
+URL resolution for src=:
+  - "./name" or bare "name" → {page_url_base}/islands/{name}
+  - "/absolute/path" → used as-is
+
+Extra attributes (beyond src and strategy) are forwarded as query params.
+Values may contain Askama expressions: count="{{ props.count }}" → ?count=<rendered_value>.
+
+Island files are ordinary fragment files (load(), actions, no layout wrapping).
+The island's load() reads params from req.query.
+
+Co-location (auto-detected, no Pilcrow.toml entry needed):
+  pages/dashboard/islands/counter.html  → GET /dashboard/islands/counter
+  pages/dashboard/islands/counter.rs    → load(), actions
+
+Shared cross-page islands use [[fragments]] in Pilcrow.toml as before.
+"""
+canonical_usage = """
+In a page template (pages/dashboard/index.html):
+  <island src="./counter" strategy="visible" initial="0" />
+  <island src="./user-card" strategy="idle" user-id="{{ props.user_id }}" />
+  <island src="/shared/global-nav" />
+
+Island file (pages/dashboard/islands/counter.html):
+  <div>Count: <span :text="count"></span></div>
+
+Island code-behind (pages/dashboard/islands/counter.rs):
+  pub struct Props { pub count: i32 }
+  pub async fn load(req: Req) -> AppResult<Props> {
+      let count = req.query.get("initial").unwrap_or("0").parse().unwrap_or(0);
+      Ok(Props { count })
+  }
+"""
+constraints = [
+  "src attribute must be a static string — Askama expressions in src are not supported.",
+  "strategy must be one of: load, visible, idle. Defaults to load.",
+  "Island HTML files live in pages/*/islands/ (co-located) or in a [[fragments]] dir (shared).",
+  "Island files receive no layout wrapping — they render as raw HTML fragments.",
+  "Dynamic values in extra attrs are passed through verbatim as Askama expressions in the URL.",
+  "<island> tags inside HTML comments are ignored and preserved as comments.",
+]
+invalid_examples = [
+  "<Island client:load> — wrong syntax, was planned API",
+  "client:idle on any element — wrong syntax",
+  "<island src=\"{{ dynamic_path }}\" /> — dynamic src is not supported",
+]
+source_refs = [
+  "crates/routekit/src/templating/compiler.rs",
+  "crates/routekit/src/templating/pipeline.rs",
+]
+test_refs = ["crates/routekit/src/templating/compiler.rs (island tests)"]
+validation_rules = [
+  "Scaffold island files under pages/*/islands/ (co-located) or a configured [[fragments]] dir.",
+  "Island code-behind follows the same rules as pages: async load, AppResult<Props>, Req arg.",
+]
+scaffold_templates = ["island"]
+
+[[features]]
+id = "react-islands"
+name = "React Islands"
+domain = "pilcrow"
+status = "stable"
+summary = "Client-only React widgets mounted with <react> tags, scoped to ignored react directories and lazy-loaded by strategy."
+spec = """
+React islands are client-only widgets. Pilcrow renders the page or fragment first;
+React mounts only inside explicit <react> containers.
+
+They are not the same thing as Pilcrow HTML islands/fragments: a React component
+does not currently get its own sibling `.rs` code-behind. Put server loading,
+actions, caching, auth, and response shaping in the containing page/fragment
+code-behind, then pass data to React through props, route JSON, Silcrow atoms,
+or Pilcrow named actions.
+
+Canonical tag:
+  <react src="./react/Counter.tsx" strategy="visible" count="{{ props.count }}" />
+
+Placement follows Pilcrow.toml folder rules:
+  pages/dashboard/react/Counter.tsx   — page-local widget
+  pages/dashboard/react/Counter.jsx   — page-local widget without TypeScript
+  widgets/react/FavoriteButton.tsx    — fragment-local widget
+  src/react/DataGrid.tsx                  — shared widget
+
+Required config:
+  [routing]
+  ignore_directories = ["react"]
+
+  [client.react]
+  enabled = true
+  dirs = ["react"]
+
+Routekit resolves relative src values from the containing page or fragment file.
+Root src values like /react/DataGrid.tsx resolve from src/react/DataGrid.tsx.
+Extra attributes are passed to the React component as string props, with kebab-case
+names converted to camelCase by the browser loader.
+
+The build runs Vite only when <react> tags are present. It emits hashed browser
+chunks under /_pilcrow/client/** and a tiny loader at /_pilcrow/react-islands.js.
+Silcrow fragment swaps trigger the loader to scan newly inserted HTML.
+
+react-islands.js loader behavior:
+- The loader scans the current document for [data-pilcrow-react] mount nodes.
+- data-strategy controls scheduling: load mounts immediately, visible mounts
+  through IntersectionObserver, idle mounts through requestIdleCallback or a
+  timeout fallback.
+- data-prop-* attributes become React props; kebab-case prop names become
+  camelCase.
+- data-css is a comma-separated list of generated CSS assets; each CSS URL is
+  loaded once into document.head.
+- data-src is dynamically imported. The generated Vite wrapper exports mount()
+  and also registers window.__pilcrowReactMounts[id] as a fallback.
+- The same mount node is only mounted once. If mounting fails, the node is made
+  mountable again for a later scan.
+- The loader listens for silcrow:patched and rescans inserted or patched HTML.
+
+React project dependencies:
+  package.json dependencies: react, react-dom
+  package.json devDependencies: vite, @vitejs/plugin-react
+  package.json devDependencies for TypeScript apps: typescript
+
+TypeScript is optional. Use .jsx React sources if the app wants to avoid
+TypeScript entirely. Use .tsx only when the component source itself uses
+TypeScript syntax. The generated Pilcrow wrapper is compiled by Vite.
+
+React 19 hook-first API patterns:
+- Import the built-in hook module from "pilcrow/react". It is a Vite alias
+  generated by Pilcrow for React island builds, not a separate npm package.
+- Built-in hooks: useSilcrowAtom(scope, initialValue),
+  useSilcrowPrefetch(path), useSilcrowRoute(path, initialValue),
+  useSilcrowAction(url, reducer, initialState, options), and
+  publishSilcrowAtom(scope, data).
+- Subscribe to Silcrow route, stream, or user-named atom scopes with
+  useSyncExternalStore over Silcrow.subscribe(scope, notify) and
+  Silcrow.snapshot(scope).
+- Read route JSON with React 19 use(Silcrow.prefetch(path)) inside Suspense.
+  Silcrow.prefetch(path) memoizes the Promise until mutation or error, so React
+  does not suspend-loop from promise churn.
+- Submit Pilcrow named actions from React with Silcrow.submit(url, body,
+  { method: "POST", scope }). Use this when React owns local form state;
+  prefer plain HTML forms with s-post for routine server forms.
+- Seed window.__silcrow_seed before silcrow.js loads when Pilcrow already has
+  the first route payload and the React island should avoid a duplicate request.
+- Non-GET Silcrow.submit calls clear cached route responses and prefetched
+  promises. Use invalidate_target for DOM binding-cache invalidation.
+"""
+canonical_usage = """
+// Pilcrow.toml
+[routing]
+ignore_directories = ["react"]
+
+[client.react]
+enabled = true
+dirs = ["react"]
+max_island_kb = 80
+max_page_react_kb = 220
+warn = true
+fail_on_budget = false
+
+<!-- pages/dashboard/index.html -->
+<react src="./react/Counter.jsx" strategy="visible" initial-count="{{ count }}" />
+
+// pages/dashboard/react/Counter.jsx
+export default function Counter({ initialCount = "0" }) {
+  return <button>{initialCount}</button>;
+}
+
+// React 19 route data with Suspense + use()
+import { Suspense, use, useMemo } from "react";
+import { useSilcrowAtom } from "pilcrow/react";
+
+function ProductRows({ promise }) {
+  const initial = use(promise);
+  const data = useSilcrowAtom("route:/products", initial);
+  return (
+    <ul>
+      {data.items.map((item) => (
+        <li key={item.id}>{item.name} - {item.price}</li>
+      ))}
+    </ul>
+  );
+}
+
+export function ProductPanel({ path = "/products" }) {
+  const promise = useMemo(() => window.Silcrow.prefetch(path), [path]);
+  return (
+    <Suspense fallback={<p>Loading products...</p>}>
+      <ProductRows promise={promise} />
+    </Suspense>
+  );
+}
+
+// React 19 action submission with useActionState
+import { useSilcrowAction } from "pilcrow/react";
+
+function normalizeCreateProduct(result) {
+  if (!result.ok) return result.data ?? { ok: false, message: `HTTP ${result.status}` };
+  return result.data ?? { ok: true, message: "Saved" };
+}
+
+export function ProductCreateForm() {
+  const [state, formAction, pending] = useSilcrowAction(
+    "?/create",
+    normalizeCreateProduct,
+    { ok: true },
+    { scope: "products:create" },
+  );
+  return (
+    <form action={formAction}>
+      <input name="name" aria-invalid={Boolean(state.errors?.name)} />
+      {state.errors?.name ? <p role="alert">{state.errors.name}</p> : null}
+      <button disabled={pending}>{pending ? "Saving..." : "Save"}</button>
+      {state.message ? <p>{state.message}</p> : null}
+    </form>
+  );
+}
+
+// Matching Pilcrow named action shape
+use pilcrow_web::{form_errors, json, ActionResult, Req};
+
+pub async fn create(req: Req) -> ActionResult {
+    let name = req.form.get("name").unwrap_or("").trim();
+    if name.is_empty() {
+        return req.fail(form_errors().error("name", "Name is required"));
+    }
+    req.res.invalidate_target("#products");
+    json(serde_json::json!({ "ok": true, "message": "Product created" }))
+}
+"""
+constraints = [
+  "V1 supports React only.",
+  "React islands can use load/visible/idle CSR strategies and shell/ssr hydration when [client.react].ssr = true.",
+  "React islands do not currently have their own .rs code-behind; use the containing page/fragment code-behind for server work.",
+  "Use json-* attributes for object/array initial props; regular attributes remain string props.",
+  "src and strategy are required on every <react> tag.",
+  "strategy must be one of: load, visible, idle.",
+  "React source must live under one of [client.react].dirs.",
+  "React source directories must also be covered by [routing].ignore_directories.",
+  "Apps using React islands need local npm dependencies for vite, react, and react-dom.",
+  "TypeScript is optional — .jsx sources are valid when the app wants no TypeScript.",
+  "The \"pilcrow/react\" hook module is only available inside React island Vite builds.",
+  "React route-data examples assume React 19 use() and Suspense.",
+  "Silcrow.submit from React should target the same Pilcrow named action URLs used by enhanced HTML forms.",
+  "<react> tags inside HTML comments are ignored and preserved as comments.",
+]
+invalid_examples = [
+  "<react src=\"./react/Counter.tsx\" /> — missing strategy",
+  "<react src=\"./Counter.tsx\" strategy=\"visible\" /> — source is not in a configured react dir",
+  "Putting TSX files under pages without ignore_directories = [\"react\"]",
+  "Expecting pages/dashboard/react/Counter.rs to run as React code-behind — React server work belongs to the page/fragment code-behind.",
+]
+source_refs = [
+  "crates/routekit/src/templating/react.rs",
+  "crates/routekit/src/templating/pipeline.rs",
+  "crates/runtime/assets/react-islands.js",
+  "crates/runtime/src/start.rs",
+]
+test_refs = [
+  "crates/routekit/src/templating/react.rs — react tag tests",
+  "crates/routekit/src/routing/discovery.rs — ignore_directories react tests",
+]
+validation_rules = [
+  "<react> tags require src and strategy.",
+  "Use strategy=\"visible\" for heavier widgets unless immediate interactivity is required.",
+  "Prefer Silcrow forms/actions over modeling routine server interactions as React state.",
+]
+scaffold_templates = ["react-island"]
+
+[[features]]
+id = "ssg"
+name = "Static Site Generation (SSG)"
+domain = "pilcrow"
+status = "stable"
+summary = "Startup-prerender SSG: pages with pub const PRERENDER: bool = true are rendered once at server startup and served from cache on all subsequent requests."
+spec = """
+SSG is implemented as of 2026-04-24 (startup-prerender model).
+
+When PRERENDER = true is declared in a code-behind file that also has load(), routekit generates:
+1. A handler that checks the ISR cache first (keyed by req.path). Cache hit → return immediately.
+   Cache miss (startup race) → run load chain, render, store with u64::MAX TTL, return response.
+2. A __pilcrow_prerender_all(cache) function called at server startup (before accepting connections)
+   that pre-warms the cache for every PRERENDER page.
+
+For dynamic routes (patterns with :param segments), an entries() function is required:
+  pub async fn entries() -> Vec<HashMap<String, String>>
+  Returns the list of path-param combinations to pre-render at startup.
+
+User API:
+  pub const PRERENDER: bool = true;                           — opt in
+  pub async fn entries() -> Vec<HashMap<String, String>> { } — required for dynamic routes
+
+Use pilcrow_start(pilcrow_router()).await instead of pilcrow_web::start(pilcrow_router()).await
+to trigger the startup prerender. pilcrow_start is generated by pilcrow_app!().
+
+PRERENDER and REVALIDATE may be combined for startup-warm ISR: prerender fills
+the cache before the server accepts traffic, then normal ISR TTL revalidation applies.
+PRERENDER is a no-op for pages without load() (already static via Props::default()).
+PRERENDER is a no-op for pages with Deferred<T> or DeferredHtml fields (streaming not supported).
+
+All PRERENDER constants are stripped from the emitted module — never appear in generated Rust.
+"""
+canonical_usage = """
+// Static route — pages/about.rs
+pub const PRERENDER: bool = true;
+pub struct Props { pub title: String }
+pub async fn load(_req: Req) -> AppResult<Props> {
+    Ok(Props { title: "About Us".to_string() })
+}
+
+// Dynamic route — pages/products/[id].rs
+pub const PRERENDER: bool = true;
+pub struct Props { pub product: Product }
+pub async fn entries() -> Vec<HashMap<String, String>> {
+    db::all_product_ids().await.into_iter()
+        .map(|id| [("id".to_string(), id.to_string())].into())
+        .collect()
+}
+pub async fn load(req: Req) -> AppResult<Props> {
+    let id = req.params.get("id").unwrap();
+    Ok(Props { product: db::find(id).await? })
+}
+
+// main.rs — use pilcrow_start instead of start
+pilcrow_app!();
+#[tokio::main]
+async fn main() {
+    pilcrow_start(pilcrow_router()).await
+}
+"""
+constraints = [
+  "PRERENDER requires a load() fn to do anything — pages without load() are already static.",
+  "PRERENDER can be combined with REVALIDATE for startup-warm ISR.",
+  "Dynamic routes (pattern contains :param) with PRERENDER require an entries() function — invalid config is reported as a structured build error.",
+  "PRERENDER is disabled for pages with Deferred<T> or DeferredHtml fields (streaming not supported for SSG).",
+  "Use pilcrow_start(pilcrow_router()).await (not pilcrow_web::start) to trigger startup prerendering.",
+]
+invalid_examples = [
+  "PRERENDER on a dynamic route without entries() fn — build error",
+]
+source_refs = [
+  "crates/routekit/src/templating/page_options.rs — SsgOpts struct",
+  "crates/routekit/src/templating/codegen/instrument.rs — PRERENDER and entries() detection",
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_ssg_handler / emit_prerender_all",
+  "crates/runtime/src/start.rs — start_with_prerender",
+  "crates/web/src/lib.rs — pilcrow_app! macro (pilcrow_start fn generation)",
+]
+test_refs = [
+  "crates/routekit/src/templating/codegen/tests.rs — ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map",
+  "crates/routekit/src/templating/codegen/tests.rs — entries_fn_is_detected_in_ssg_opts",
+]
+validation_rules = [
+  "PRERENDER on a dynamic route without entries() is a build error.",
+  "PRERENDER and REVALIDATE together are valid startup-warm ISR.",
+  "Layouts cannot use PRERENDER — it only applies to pages.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "incremental-ssr"
+name = "Incremental SSR (ISR)"
+domain = "pilcrow"
+status = "stable"
+summary = "Stale-while-revalidate page caching. Add pub const REVALIDATE: u64 = <secs>; to any code-behind with load() to opt in."
+spec = """
+ISR is implemented as of 2026-04-24. When REVALIDATE is declared in a code-behind file, routekit wraps the GET handler with a stale-while-revalidate cache layer. Three states: Fresh (return cached HTML), Stale (return stale HTML + spawn background revalidation), Miss (blocking render + cache store).
+
+Constants (all optional except REVALIDATE):
+  pub const REVALIDATE: u64 = 60;           — required to opt in; TTL in seconds
+  pub const MAX_STALE: u64 = 3600;          — max age before stale is treated as miss
+  pub const CACHE_TAGS: &[&str] = &["tag"]; — tags for tag-based invalidation
+  pub const CACHE_VARY: &[&str] = &["session", "accept-language"];  — vary by cookie or header value
+
+All constants are stripped from the emitted module — they never appear in generated Rust.
+ISR is incompatible with Deferred<T>/DeferredHtml fields; those pages fall through to normal SSR.
+
+Runtime types: IsrCache, IsrCacheState (Fresh/Stale/Miss), IsrHandle (req.cache).
+req.res.bypass_cache() skips both cache read and write (preview/admin mode).
+req.cache.revalidate_tag("tag") and req.cache.revalidate("/path") for manual invalidation.
+"""
+canonical_usage = """
+// pages/products/index.rs
+pub const REVALIDATE: u64 = 60;
+pub const CACHE_TAGS: &[&str] = &["products"];
+
+pub struct Props { pub items: Vec<Item> }
+pub async fn load(req: Req) -> AppResult<Props> { ... }
+"""
+constraints = [
+  "ISR requires a load() fn — static pages (no .rs file) are served directly without caching.",
+  "ISR is disabled for pages with Deferred<T> or DeferredHtml fields.",
+  "CACHE_VARY keys are resolved as cookie names first, then request header names. Missing keys produce an empty string segment so the key is still stable.",
+  "PRERENDER and REVALIDATE can be combined: page is warm-rendered at startup then ISR-revalidated on TTL expiry.",
+]
+invalid_examples = [
+  "pub const REVALIDATE: u64 = 60 without a load() fn — ISR only activates when load exists",
+]
+source_refs = [
+  "crates/runtime/src/isr.rs",
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_isr_handler / emit_isr_revalidation_body",
+  "crates/routekit/src/templating/codegen/instrument.rs — ISR constant detection and stripping",
+  "crates/routekit/src/templating/page_options.rs — IsrOpts struct",
+]
+test_refs = [
+  "crates/routekit/src/templating/codegen/tests.rs — isr_constants_are_stripped_from_emitted_module",
+  "crates/routekit/src/templating/codegen/tests.rs — non_isr_page_has_no_isr_config",
+]
+validation_rules = [
+  "REVALIDATE must be u64. MAX_STALE must be u64. CACHE_TAGS and CACHE_VARY must be &[&str] literals.",
+  "All ISR constants are stripped — never emit them in generated module source.",
+  "ISR activates only when load() exists and no Deferred fields are present.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "graceful-shutdown"
+name = "Graceful Shutdown"
+domain = "pilcrow"
+status = "stable"
+summary = "The server drains in-flight requests before exiting on SIGTERM or Ctrl+C."
+spec = """
+pilcrow_web::start() (and pilcrow_start() for SSG apps) registers both SIGTERM and SIGINT handlers.
+On either signal, axum's with_graceful_shutdown() stops accepting new connections and waits for
+active requests to complete. A tracing::info! log line is emitted when the signal is received.
+No application-level configuration is needed — this is always on.
+"""
+canonical_usage = """
+// main.rs — nothing to configure; graceful shutdown is automatic
+#[tokio::main]
+async fn main() {
+    pilcrow_web::start(pilcrow_router()).await;
+}
+"""
+constraints = [
+  "Graceful shutdown is always enabled — there is no opt-out.",
+  "In-flight requests are drained; no new connections are accepted after the signal.",
+]
+invalid_examples = []
+source_refs = ["crates/runtime/src/start.rs — shutdown_signal()"]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "request-timeout"
+name = "Request Timeout"
+domain = "pilcrow"
+status = "stable"
+summary = "Requests that exceed 30 seconds receive a 408 Request Timeout response automatically."
+spec = """
+tower::timeout::TimeoutLayer is applied to every route via ServiceBuilder in start().
+If a handler takes longer than REQUEST_TIMEOUT_SECS (30s), the layer cancels it and
+HandleErrorLayer converts the BoxError into StatusCode::REQUEST_TIMEOUT (408).
+No application-level configuration is needed.
+"""
+canonical_usage = """
+// This is automatic — no code needed in your app.
+// If a load() or action runs > 30s it returns HTTP 408.
+"""
+constraints = [
+  "Timeout is fixed at 30 seconds — not configurable per-route in v0.1.",
+  "Applies to all routes including SSE and WebSocket upgrade handshakes.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, TimeoutLayer, HandleErrorLayer",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "request-tracing"
+name = "Request Tracing"
+domain = "pilcrow"
+status = "stable"
+summary = "HTTP request/response tracing via tower-http TraceLayer, compatible with tracing-subscriber."
+spec = """
+tower_http::trace::TraceLayer::new_for_http() is installed by start() on every app.
+It emits structured tracing spans for each request (method, path, status, latency).
+Configure a subscriber (e.g. tracing-subscriber with EnvFilter) in main() to capture them.
+The framework itself uses tracing::info! for startup and shutdown messages, and the
+default TokioAdapter also prints the listening URL to stderr after a successful bind.
+"""
+canonical_usage = """
+// main.rs
+use tracing_subscriber::{EnvFilter, fmt};
+
+#[tokio::main]
+async fn main() {
+    fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    pilcrow_web::start(pilcrow_router()).await;
+}
+"""
+constraints = [
+  "TraceLayer is always installed — it emits no output unless a tracing subscriber is configured.",
+  "The successful-bind URL is printed by TokioAdapter even without a tracing subscriber.",
+  "Add tracing-subscriber to your app's Cargo.toml to see logs.",
+]
+invalid_examples = []
+source_refs = ["crates/runtime/src/start.rs — TraceLayer::new_for_http()"]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "form-parse"
+name = "Typed Form Deserialization"
+domain = "pilcrow"
+status = "stable"
+summary = "Deserialize req.form or req.query into any serde::Deserialize struct via .parse::<T>()."
+spec = """
+FormMap::parse::<T>() re-encodes the multi-value map as a urlencoded string and calls
+serde_urlencoded::from_str, returning Result<T, AppError::Validation>. The ? operator
+propagates the error in action fns and load() without any boilerplate.
+
+Repeated keys (e.g. multiple checkboxes) are preserved as multiple values; use Vec<T>
+fields to capture them. Absent keys return the field's Default if #[serde(default)] is set.
+"""
+canonical_usage = """
+// pages/items.rs
+#[derive(serde::Deserialize)]
+struct CreateInput {
+    name: String,
+    price: f64,
+    #[serde(default)]
+    active: bool,
+}
+
+pub async fn create(req: Req) -> ActionResult {
+    let input: CreateInput = req.form.parse()?;
+    // input.name, input.price, input.active available
+    redirect("/items")
+}
+"""
+constraints = [
+  "Returns AppError::Validation on parse failure — propagate with ? in action fns.",
+  "Boolean HTML checkbox fields arrive as \"on\" when checked, absent when unchecked — use #[serde(default)] for correct bool deserialization.",
+  "Works on both req.form (POST body) and req.query (GET query string).",
+]
+invalid_examples = [
+  "let name = req.form.get(\"name\").unwrap_or(\"\"); — verbose, use req.form.parse::<T>() instead",
+]
+source_refs = ["crates/runtime/src/context.rs — FormMap::parse"]
+test_refs = [
+  "crates/runtime/tests/context.rs — formmap_parse_basic_fields",
+  "crates/runtime/tests/context.rs — formmap_parse_returns_validation_error_on_type_mismatch",
+]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "req-for-test"
+name = "Test Request Builder"
+domain = "pilcrow"
+status = "stable"
+summary = "Build synthetic Req values for unit-testing load() and action fns without spinning up an HTTP server."
+spec = """
+Req::for_test() returns a ReqBuilder. Chain .param(), .query(), .form_field(), .cookie(),
+.path(), .enhanced() to configure it, then call .build() to get a Req.
+
+The resulting Req has empty Locals, a fresh Res, no-op IsrHandle, and is_enhanced=false by
+default. This enables direct unit tests of load() and action fns without axum test harness.
+"""
+canonical_usage = """
+// In a #[cfg(test)] block or tests/ file:
+#[tokio::test]
+async fn test_product_load() {
+    let req = Req::for_test()
+        .param("id", "42")
+        .build();
+    let props = load(req).await.unwrap();
+    assert_eq!(props.product.id, 42);
+}
+
+#[tokio::test]
+async fn test_create_action_validates_name() {
+    let req = Req::for_test()
+        .form_field("name", "")
+        .build();
+    let result = create(req).await;
+    // result should be Ok(Json(FormErrors { has_errors: true, ... }))
+}
+"""
+constraints = [
+  "Req::for_test() is for unit tests only — never use in production handlers.",
+  "Locals and Res are fresh (empty) on every builder call — middleware effects are not simulated.",
+]
+invalid_examples = []
+source_refs = ["crates/runtime/src/context.rs — Req::for_test, ReqBuilder"]
+test_refs = [
+  "crates/runtime/tests/context.rs — req_for_test_param_and_query",
+  "crates/runtime/tests/context.rs — req_for_test_drives_load_fn",
+]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "combined-prerender-isr"
+name = "Combined PRERENDER + REVALIDATE"
+domain = "pilcrow"
+status = "stable"
+summary = "Pre-render at server startup AND revalidate on a TTL — startup-warm ISR."
+spec = """
+When a page declares both PRERENDER = true and REVALIDATE = <secs>, routekit:
+1. Includes the page in __pilcrow_prerender_all() — rendered once at server startup,
+   stored in the ISR cache with the ISR TTL (not u64::MAX).
+2. The request handler is the full ISR stale-while-revalidate handler — Fresh/Stale/Miss
+   states apply as normal after the TTL expires.
+3. CACHE_TAGS and CACHE_VARY are respected in both startup prerendering and runtime.
+
+This is the recommended pattern for pages that need fast first-load AND fresh data over time.
+Requires pilcrow_start() in main.rs (same as PRERENDER-only).
+"""
+canonical_usage = """
+// pages/products/index.rs
+pub const PRERENDER: bool = true;
+pub const REVALIDATE: u64 = 60;
+pub const CACHE_TAGS: &[&str] = &["products"];
+
+pub struct Props { pub items: Vec<Item> }
+pub async fn load(_req: Req) -> AppResult<Props> {
+    Ok(Props { items: db_fetch().await? })
+}
+"""
+constraints = [
+  "Requires pilcrow_start() in main.rs — same as PRERENDER-only pages.",
+  "Dynamic routes with both flags still require entries() for startup prerendering.",
+  "CACHE_VARY is applied both at startup (synthetic request, so only vary on path) and at runtime.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_prerender_all, emit_isr_handler",
+]
+test_refs = []
+validation_rules = [
+  "Both PRERENDER = true and REVALIDATE must use correct types (bool and u64).",
+]
+scaffold_templates = []
+
+[[features]]
+id = "form-validator"
+name = "Form Validator"
+domain = "pilcrow"
+status = "stable"
+summary = "Fluent validation builder — accumulates field errors in one pass, returns FormErrors for req.fail()."
+spec = """
+Validator::new() chains .required(), .min_length(), .max_length(), .email(), and .custom() calls.
+Each rule automatically echoes the submitted value for form repopulation.
+.into_result() returns Ok(()) when all rules pass, or Err(FormErrors) to pass to req.fail().
+
+Reduces per-field error blocks to one chained expression.
+"""
+canonical_usage = """
+pub async fn create(req: Req) -> ActionResult {
+    let name  = req.form.get("name").unwrap_or("");
+    let email = req.form.get("email").unwrap_or("");
+
+    if let Err(errs) = Validator::new()
+        .required("name",  name)
+        .required("email", email)
+        .min_length("name", name, 2)
+        .email("email", email)
+        .into_result()
+    {
+        return req.fail(errs);
+    }
+    redirect("/dashboard")
+}
+"""
+constraints = [
+  "Validator::new() is available as pilcrow_web::Validator — no extra import needed.",
+  "Each rule echoes the submitted value automatically; no need to call .value() separately.",
+  ".into_result() returns Err(FormErrors) containing all accumulated errors, not just the first.",
+]
+invalid_examples = [
+  "if name.is_empty() { return req.fail(form_errors().error(...).value(...))} — use Validator instead",
+]
+source_refs = ["crates/runtime/src/validator.rs"]
+test_refs = [
+  "crates/runtime/src/validator.rs — required_passes_for_nonempty_value",
+  "crates/runtime/src/validator.rs — multiple_errors_accumulate",
+]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "env-singleton"
+name = "Env Singleton (global())"
+domain = "pilcrow"
+status = "stable"
+summary = "env::Private::global() and env::Public::global() return a process-wide singleton — load env vars once."
+spec = """
+The generated env module gains a global() -> &'static Self method on both Public and Private.
+The first call loads the env vars and panics with a clear message if any are missing.
+Subsequent calls return the cached reference — zero cost.
+
+Use global() in middleware where it is called on every request; use load() in main() or startup
+code where you want to handle VarError explicitly.
+"""
+canonical_usage = """
+// hooks.rs — call global() once per request at near-zero cost
+pub async fn middleware(req: Req, next: Next) -> Response {
+    let env = env::Private::global();
+    let user = verify_session(req.cookies.get("session"), &env.database_url).await;
+    // ...
+    next.run().await
+}
+"""
+constraints = [
+  "global() panics if required env vars are not set — suitable for fail-fast startup.",
+  "global() loads vars on first call; set env vars before the first request, not lazily during tests.",
+  "Use load() when you need Result<Self, VarError> (e.g. in main() to surface a helpful startup error).",
+]
+invalid_examples = [
+  "let env = env::Private::load().unwrap(); // called inside every load() fn — use global() instead",
+]
+source_refs = ["crates/routekit/src/templating/env_codegen.rs"]
+test_refs = [
+  "crates/routekit/src/templating/env_codegen.rs — render_env_module_generates_public_and_private_structs",
+]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "isr-inspect-endpoint"
+name = "ISR Cache Inspect Endpoint"
+domain = "pilcrow"
+status = "stable"
+summary = "GET /__pilcrow/isr returns a JSON snapshot of all ISR cache entries — useful for debugging."
+spec = """
+Available only when the app is started in dev mode (`PILCROW_DEV=1`, which `pilcrow dev`
+sets automatically). Returns a JSON array of CacheEntrySnapshot objects:
+  { key, age_secs, ttl_secs, is_fresh, revalidating, tags }
+
+Returns an empty array when no entries are cached. The route is not mounted in normal
+production startup, so cache keys and tags are not exposed by default.
+"""
+canonical_usage = """
+# Start in dev mode, then in your browser or curl:
+PILCROW_DEV=1 cargo run
+curl http://localhost:3000/__pilcrow/isr | jq .
+# Returns:
+# [
+#   { "key": "/products", "age_secs": 12, "ttl_secs": 60, "is_fresh": true,
+#     "revalidating": false, "tags": ["products"] }
+# ]
+"""
+constraints = [
+  "Mounted only when PILCROW_DEV is set.",
+  "No authentication is applied in dev mode.",
+  "The endpoint always returns the current in-memory state; filesystem-persisted entries that have been loaded are included.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/start.rs — isr_inspect_handler",
+  "crates/runtime/src/isr.rs — IsrCache::snapshot",
+]
+test_refs = ["crates/runtime/src/isr.rs — snapshot_reflects_stored_entries"]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "filesystem-isr-cache"
+name = "Filesystem ISR Cache"
+domain = "pilcrow"
+status = "stable"
+summary = "Persist ISR cache entries as JSON files — cache survives server restarts with zero external dependencies."
+spec = """
+Set provider = "filesystem" in [cache] in Pilcrow.toml. The cache reads all .json files from
+the configured directory at startup (warm start after restart) and writes a file on every
+cache store using a temp-file plus rename flow. Invalidation (by path or tag) also deletes
+the corresponding files and logs deletion failures.
+
+File names are based on a CRC32 hash of the cache key; the full key, HTML, TTL, and tags
+are stored in the file so the cache can be fully restored on reload.
+
+Combined PRERENDER + REVALIDATE pages are written to disk at startup, so the first request
+after a restart hits the cache (no cold start) while ISR revalidation is still in effect.
+"""
+canonical_usage = """
+# Pilcrow.toml
+[cache]
+provider = "filesystem"
+dir = ".pilcrow-cache"   # relative to the working directory
+"""
+constraints = [
+  "Single-node only. Redis/SQLite provider names are reserved but currently fail startup instead of silently falling back.",
+  "Filesystem writes happen outside the in-memory cache critical path, but this backend is still not a distributed cache.",
+  "The .pilcrow-cache directory should be added to .gitignore.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/isr.rs — IsrCache::with_persistence",
+  "crates/core/src/config/config.rs — CacheProvider::Filesystem",
+  "crates/runtime/src/start.rs — filesystem cache wiring",
+]
+test_refs = [
+  "crates/runtime/src/isr.rs — filesystem_persistence_survives_reload",
+]
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "pilcrow-export"
+name = "Static Export (pilcrow export)"
+domain = "pilcrow"
+status = "stable"
+summary = "Export all pre-rendered pages as static HTML files using `cargo run -- export <dir>` or `pilcrow export <dir>`."
+spec = """
+Pages with `pub const PRERENDER: bool = true` are rendered at export time and written to disk as
+`<dir><key>/index.html`. The root key `/` writes to `<dir>/index.html`.
+
+The `pilcrow_app!()` macro injects a `pilcrow_export(dir)` async fn. The scaffold `main.rs`
+template dispatches to it when the first CLI arg is `export`:
+
+    cargo run -- export dist      # writes to ./dist/
+    pilcrow export dist           # runs cargo run -- export dist in the project directory
+
+Dynamic routes with PRERENDER = true must also declare `entries()`.
+"""
+canonical_usage = """
+// pages/index.rs
+pub const PRERENDER: bool = true;
+
+pub struct Props { pub title: String }
+
+pub async fn load(_req: Req) -> AppResult<Props> {
+    Ok(Props { title: "Home".to_string() })
+}
+
+// cargo run -- export dist
+// pilcrow export dist
+"""
+constraints = [
+  "Only pages with PRERENDER = true are exported; pages without it are skipped.",
+  "Dynamic routes with PRERENDER must also declare `pub async fn entries() -> Vec<HashMap<String, String>>`.",
+  "Export does not start the HTTP server — it runs prerender_all then writes files and exits.",
+  "The export dir is created if it does not exist.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/start.rs — export fn",
+  "crates/runtime/src/isr.rs — IsrCache::export_entries",
+  "crates/web/src/lib.rs — pilcrow_export in pilcrow_app!()",
+  "tools/cli/src/export.rs",
+  "tools/cli/src/scaffold.rs — main.rs template",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "adapter-trait"
+name = "PilcrowAdapter Trait + Platform Adapters"
+domain = "pilcrow"
+status = "stable"
+summary = "Pluggable deployment adapter — built-in adapters for Lambda, Fly, Railway, Cloud Run, Render, Vercel, and bare metal."
+spec = """
+`PilcrowAdapter` is a single-method trait:
+
+    pub trait PilcrowAdapter: Send + 'static {
+        fn serve(self, bind_addr: &str, app: Router) -> AdapterFuture;
+    }
+
+where `AdapterFuture = Pin<Box<dyn Future<Output = ()>>>` (no Send required — adapters run from main()).
+
+The adapter receives the fully-wired `Router` (ISR extensions, middleware, timeout, TraceLayer all applied)
+and the bind address from Pilcrow.toml. It is responsible for binding the socket and serving.
+
+Use `start_with_adapter(router, prerender_fn, MyAdapter)` instead of `start(router)`.
+
+## Built-in adapters (all in `pilcrow_web::adapters`)
+
+| Adapter | Platform | Feature flag |
+|---|---|---|
+| `TokioAdapter` | Local / VPS / bare metal | default |
+| `PortEnvAdapter` (aliases: `FlyAdapter`, `RailwayAdapter`, `CloudRunAdapter`, `RenderAdapter`, `VercelAdapter`) | Any platform injecting `PORT` env var | default |
+| `LambdaAdapter` | AWS Lambda, Vercel Functions (Lambda-backed), Netlify | `lambda` |
+
+`PortEnvAdapter` reads `PORT` env var and binds to `0.0.0.0:{PORT}`; falls back to `Pilcrow.toml` address.
+`LambdaAdapter` requires `pilcrow-web = { features = ["lambda"] }` and converts axum bodies to/from lambda_http bodies per invocation.
+"""
+canonical_usage = """
+// Fly.io / Railway / Render / Cloud Run (reads PORT env var):
+use pilcrow_web::adapters::FlyAdapter;
+pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, FlyAdapter).await;
+
+// AWS Lambda (add features = ["lambda"] to pilcrow-web in Cargo.toml):
+use pilcrow_web::adapters::LambdaAdapter;
+pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, LambdaAdapter).await;
+
+// Custom adapter:
+use pilcrow_web::{PilcrowAdapter, AdapterFuture};
+struct MyAdapter;
+impl PilcrowAdapter for MyAdapter {
+    fn serve(self, bind_addr: &str, app: axum::Router) -> AdapterFuture {
+        Box::pin(async move { /* bind and serve */ })
+    }
+}
+"""
+constraints = [
+  "The adapter receives the fully-wired Router — do not re-apply middleware layers.",
+  "AdapterFuture does NOT require Send — adapters are always driven from main(), never spawned.",
+  "LambdaAdapter requires features = [\"lambda\"] on pilcrow-web in the app Cargo.toml.",
+  "PortEnvAdapter binds to 0.0.0.0:{PORT} when PORT is set — this is intentional for container platforms.",
+  "start() and start_with_prerender() both use TokioAdapter internally — no behaviour change.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/adapter.rs",
+  "crates/runtime/src/adapters/server.rs",
+  "crates/runtime/src/adapters/lambda.rs",
+  "crates/runtime/src/start.rs — start_with_adapter",
+  "crates/web/src/lib.rs — adapters module",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "scaffold-auth-postgres"
+name = "Scaffold flags: --with-auth and --with-postgres"
+domain = "pilcrow"
+status = "stable"
+summary = "`pilcrow new <dir> --with-auth --with-postgres` generates auth middleware, .env, and Pilcrow.toml env config."
+spec = """
+Pass one or both flags when creating a new project:
+
+  pilcrow new my-app --with-auth
+  pilcrow new my-app --with-postgres
+  pilcrow new my-app --with-auth --with-postgres
+
+--with-auth generates:
+  - hooks.rs with a session cookie auth skeleton
+    (reads `session` cookie, short-circuits /dashboard routes with 401)
+
+--with-postgres generates:
+  - .env with DATABASE_URL=postgres://user:password@localhost/myapp
+  - sqlx dependency in Cargo.toml
+  - [env.private] DATABASE_URL entry in Pilcrow.toml
+"""
+canonical_usage = """
+# Create project with both flags:
+pilcrow new my-app --with-auth --with-postgres
+
+# Generated hooks.rs:
+pub async fn middleware(req: Req, next: Next) -> Response {
+    let token = req.cookies.get("session").map(|c| c.value().to_string());
+    match token {
+        Some(_token) => next.run().await,
+        None if req.path.starts_with("/dashboard") => AppError::Unauthorized.into_response(),
+        _ => next.run().await,
+    }
+}
+"""
+constraints = [
+  "The middleware.rs skeleton requires the user to implement token verification (marked with TODO).",
+  "DATABASE_URL in .env must be updated before running cargo run.",
+  ".env is not committed — add it to .gitignore.",
+]
+invalid_examples = []
+source_refs = ["tools/cli/src/scaffold.rs"]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "dev-server"
+name = "Dev Server (pilcrow dev)"
+domain = "pilcrow"
+status = "stable"
+summary = "`pilcrow dev` starts the app in dev mode — live reload, CSS hot swap, and build status banner with zero config."
+spec = """
+Run `pilcrow dev` from your project root. The CLI sets `PILCROW_DEV=1` and starts cargo-watch
+(if installed) to restart the server on `.rs` and `.html` changes. CSS changes are excluded
+from restarts and handled in-process instead.
+
+The runtime detects `PILCROW_DEV=1` at startup and:
+  1. Adds `GET /__pilcrow/dev-reload` — SSE endpoint (DevReloadStream + DevState broadcast channel)
+  2. Adds `DevLayer` — Tower middleware that buffers `text/html` responses and injects DEV_INJECTION before `</body>`
+  3. Spawns a notify file watcher on `src/` for CSS changes
+
+If cargo-watch is not installed, `pilcrow dev` still runs `cargo run` with `PILCROW_DEV=1`
+(no automatic file watching, but live reload still works on manual restart).
+"""
+canonical_usage = """
+# Start dev server:
+pilcrow dev
+
+# Install cargo-watch for automatic reloads (recommended):
+cargo install cargo-watch
+"""
+constraints = [
+  "PILCROW_DEV=1 must be set — pilcrow dev does this automatically.",
+  "Dev mode buffers all text/html responses to inject the reload script — not suitable for production.",
+  "The notify CSS watcher watches src/ relative to the current working directory.",
+  "PILCROW_DEV is not checked in non-start code paths (export, test) — safe to leave set.",
+]
+invalid_examples = [
+  "PILCROW_DEV=1 cargo run --release  # do not use dev mode in release builds",
+]
+source_refs = [
+  "crates/runtime/src/dev.rs",
+  "crates/runtime/src/start.rs — dev_mode detection and wiring",
+  "tools/cli/src/dev.rs",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "css-hot-swap"
+name = "CSS Hot Swap"
+domain = "pilcrow"
+status = "stable"
+summary = "CSS file changes are reflected in the browser without a page reload — the matching `<link>` is reinjected with a cache-busted URL."
+spec = """
+Part of dev mode (requires PILCROW_DEV=1). When a `.css` file in `src/` is saved:
+  1. The notify watcher (OS thread) detects the change and broadcasts DevEvent::CssReload{filename}
+  2. All connected SSE clients receive: event: custom / data: {"event":"css-reload","data":{"path":"<filename>"}}
+  3. silcrow dispatches silcrow:sse:css-reload on document with detail = {path: "<filename>"}
+  4. The injected script finds the matching <link rel="stylesheet"> by filename, clones it with
+     a `?t=<timestamp>` cache-bust, inserts it after the original, and removes the original on load
+
+cargo-watch excludes *.css from triggering server restarts (-i "*.css"). CSS changes are handled
+entirely in-process — the server never restarts for a CSS-only change.
+
+Match is by filename only (e.g. "app.css") — URL path structure is not assumed.
+"""
+canonical_usage = """
+# Save any src/**/*.css file while pilcrow dev is running.
+# The browser swaps the stylesheet without reloading the page.
+"""
+constraints = [
+  "Matching is by filename — if you have two files named the same, both <link> elements are swapped.",
+  "The stylesheet must be loaded via a <link rel=\"stylesheet\"> element (not @import or inline <style>).",
+  "CSS files outside src/ are not watched.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/dev.rs — DevEvent::CssReload, spawn_css_watcher, DEV_INJECTION css handler",
+  "tools/cli/src/dev.rs — -i *.css cargo-watch flag",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "dev-build-banner"
+name = "Dev Build Status Banner"
+domain = "pilcrow"
+status = "stable"
+summary = "A 'building…' banner appears after 2 s of SSE disconnect (server restarting), clears on reconnect."
+spec = """
+Part of DEV_INJECTION. Uses silcrow:live:disconnect and silcrow:live:connect events on the
+hidden `#__pilcrow_dev` SSE element as build-start / build-end signals:
+
+  silcrow:live:disconnect → 2 s debounce → fixed bottom-right banner: "pilcrow: building…"
+  silcrow:live:connect    → clear timer + remove banner
+
+When a compile error prevents the server from starting, the connection stays down and the banner
+stays visible indefinitely — signalling the user to check the terminal.
+
+When the build succeeds, the server starts → SSE reconnects → banner clears → silcrow:sse:reload
+fires → location.reload().
+
+No server-side changes required — entirely client-driven via silcrow lifecycle events.
+"""
+canonical_usage = """
+# Automatic — visible in the browser when PILCROW_DEV=1 and a file is saved.
+# Banner appears 2s after save, disappears when server is back and page reloads.
+"""
+constraints = [
+  "The 2s debounce prevents flashing on fast builds (< 2s compile time).",
+  "Banner is a minimal fixed-position div with inline styles — no CSS dependency.",
+  "silcrow:live:disconnect fires immediately on connection drop; the 2s delay is client-side.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/dev.rs — DEV_INJECTION silcrow:live:disconnect handler",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "ssr-streaming"
+name = "SSR Streaming (STREAMING = true)"
+domain = "pilcrow"
+status = "stable"
+summary = "Pages opt into progressive SSR: layout loads complete first, page load() runs in the background, and the shell renders immediately. Resolved Props are streamed as a single Silcrow.patch() call."
+spec = """
+Declare `pub const STREAMING: bool = true;` in a page's code-behind to enable streaming mode.
+
+Execution flow:
+  1. Layout loads run sequentially (preserving req.locals propagation between layouts and page).
+  2. Page load() is spawned with tokio::spawn immediately after all layout loads complete.
+  3. The shell renders with layout data + default page Props values and is flushed to the client.
+  4. A `window.__ps` shim is injected before </head> in the shell HTML.
+  5. When page load() resolves, Props is serialized to JSON and streamed as:
+       <script>window.__ps({...props_json...})</script>
+     which calls `Silcrow.patch(props, document.body)` to update all reactive bindings.
+  6. Streaming HTML responses include `silcrow-full-reload: true` so silcrow boosted
+     top-level GET navigation falls back to browser navigation instead of buffering
+     the whole stream as fetch text.
+
+The `window.__ps` shim:
+  <script>window.__ps=function(v){Silcrow.patch(v,document.body)}</script>
+
+Page templates should use silcrow.js reactive bindings (:text, :value, etc.) for fields that
+should update after the shell renders. Askama {{ field }} interpolations render the default
+value in the shell and are NOT updated by the streaming patch.
+
+Constraints:
+- Props: all page Props fields used in reactive bindings must implement Default.
+  For no-layout pages, #[derive(Default)] is automatically injected on Props.
+  For layout pages, each page field is constructed with Default::default() individually.
+- STREAMING is incompatible with REVALIDATE (ISR) — use Deferred<T> for that case.
+- STREAMING is incompatible with PRERENDER (SSG) — pre-rendered pages are fully static.
+- STREAMING is incompatible with Deferred<T> / DeferredHtml fields — use one mechanism.
+- STREAMING does not support PilcrowClient in page load() — use Deferred<T> instead.
+- STREAMING without load() is a no-op (silently ignored).
+"""
+canonical_usage = """
+// pages/products.rs
+pub const STREAMING: bool = true;
+
+pub struct Props {
+    pub title: String,
+    pub items: Vec<Product>,
+}
+
+pub async fn load(_req: Req) -> AppResult<Props> {
+    let items = db::get_products().await?;
+    Ok(Props { title: "Products".into(), items })
+}
+
+// Template uses reactive bindings so the patch updates the DOM:
+// <h1 :text="title"></h1>
+// <template s-for="item in items" :key="item.id">...</template>
+"""
+constraints = [
+  "STREAMING = true is incompatible with REVALIDATE (structured build error).",
+  "STREAMING = true is incompatible with PRERENDER = true (structured build error).",
+  "STREAMING = true cannot be combined with Deferred<T> or DeferredHtml fields (structured build error).",
+  "STREAMING = true does not support PilcrowClient in load() (structured build error).",
+  "Page template should use :text/:value bindings for fields that change after shell renders.",
+  "Layout loads always run sequentially before the page spawn to preserve req.locals semantics.",
+  "__resp_handle.apply_to() is called on the streaming response — toasts and headers work.",
+]
+invalid_examples = [
+  "pub const STREAMING: bool = true; pub const REVALIDATE: u64 = 60; // incompatible",
+  "pub const STREAMING: bool = true; pub const PRERENDER: bool = true; // incompatible",
+  "pub const STREAMING: bool = true; // with Deferred<T> fields — incompatible",
+]
+source_refs = [
+  "crates/routekit/src/templating/page_options.rs — PageOptions.streaming field",
+  "crates/routekit/src/templating/codegen/instrument.rs — STREAMING const detection + Default injection",
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_streaming_handler()",
+  "crates/runtime/src/deferred.rs — __streaming_props_response(), __serialize_page_props()",
+]
+test_refs = [
+  "crates/routekit/src/templating/codegen/tests.rs — streaming_constant_is_stripped_and_recorded_in_page_options",
+  "crates/routekit/src/templating/codegen/tests.rs — streaming_handler_emits_spawn_and_patch_script",
+]
+validation_rules = [
+  "STREAMING = true is invalid on a page that also declares REVALIDATE.",
+  "STREAMING = true is invalid on a page that also declares PRERENDER = true.",
+  "STREAMING = true is invalid when the page's Props declares Deferred<T> or DeferredHtml fields.",
+  "STREAMING = true is invalid when load() takes PilcrowClient as a parameter.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "service-worker"
+name = "Service Worker"
+domain = "pilcrow"
+status = "stable"
+since = "0.1.0"
+summary = "Runtime-generated `/sw.js` with configurable caching strategy, precaching, and offline fallback. Disabled in dev mode."
+spec = """
+Configure in `Pilcrow.toml` under `[service_worker]`:
+
+```toml
+[service_worker]
+enabled = true
+strategy = "network-first"   # "network-first" | "cache-first" | "stale-while-revalidate"
+precache = ["/", "/about"]   # URLs cached on SW install (silcrow.js always included)
+exclude = ["/api/"]          # Additional URL substrings to skip (/_silcrow/ and /__pilcrow/ always excluded)
+offline_fallback = "/offline" # Optional: served when network fails and no cache hit
+```
+
+Pilcrow automatically:
+- Serves `GET /sw.js` with `Cache-Control: no-store` (always fresh)
+- Injects `<script>navigator.serviceWorker.register('/sw.js')</script>` before `</body>` in all HTML responses
+- Computes a cache version (CRC32 of strategy + precache list + silcrow.js) — busts automatically on any change
+- Skips `/_silcrow/` and `/__pilcrow/` from SW interception
+- Disables SW in dev mode (`PILCROW_DEV=1`) to avoid stale-cache development friction
+
+**Strategies:**
+- `network-first` (default) — try network, fall back to cache on failure. Best for dynamic pages.
+- `cache-first` — serve from cache immediately, network only on miss. Best for static assets.
+- `stale-while-revalidate` — serve cached instantly, update cache in background. Best for semi-static content.
+"""
+constraints = [
+  "Service worker is never registered in dev mode (PILCROW_DEV=1).",
+  "/_silcrow/ and /__pilcrow/ URL prefixes are always excluded from SW interception.",
+  "/sw.js is served with Cache-Control: no-store so the browser always checks for updates.",
+  "silcrow.js is always added to the precache list (it has a content-hashed URL, safe to cache forever).",
+  "The cache name changes automatically when strategy, precache list, or silcrow.js changes.",
+  "The offline_fallback URL must be reachable and cacheable for fallback to work.",
+]
+canonical_usage = """
+# Pilcrow.toml
+[service_worker]
+enabled = true
+strategy = "network-first"
+precache = ["/", "/about", "/styles.css"]
+offline_fallback = "/offline"
+"""
+source_refs = [
+  "crates/core/src/config/config.rs — ServiceWorkerConfig, SwStrategy",
+  "crates/runtime/src/sw.rs — generate_sw_source(), sw_handler(), sw_inject_layer(), SW_REGISTRATION",
+  "crates/runtime/src/start.rs — /sw.js route + sw_inject_layer wired in start_with_adapter()",
+]
+test_refs = []
+validation_rules = [
+  "service_worker.strategy must be one of: network-first, cache-first, stale-while-revalidate.",
+  "service_worker.enabled = true has no effect in dev mode — SW is always disabled when PILCROW_DEV is set.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "i18n"
+name = "Internationalisation (i18n)"
+domain = "pilcrow"
+status = "stable"
+since = "0.1.0"
+summary = "Fluent-based i18n with typed compile-time t:: helpers, prefix-except-default URL routing, bundle caching, and locale-aware req.fmt() formatting."
+spec = """
+Configure in `Pilcrow.toml` under `[i18n]`:
+
+```toml
+[i18n]
+default_locale = "en"          # Served at bare URLs (no prefix). Default: "en".
+locales        = ["en", "de", "fr"]  # All supported locales.
+locales_dir    = "locales"     # Relative to src/. Default: "locales".
+```
+
+**File layout:**
+```
+locales/
+  en/
+    messages.ftl   # One or more .ftl files per locale
+  de/
+    messages.ftl
+  fr/
+    messages.ftl
+```
+
+**URL strategy — prefix-except-default:**
+- Default locale (e.g. `en`) → `/products` (no prefix)
+- Other locales → `/de/products`, `/fr/products`
+
+The locale middleware strips the prefix before routing so page handlers see the canonical path.
+`req.locale` contains the detected locale string (e.g. `"de"`).
+
+**Typed translation helpers (generated by routekit):**
+
+routekit parses `.ftl` files from the default locale at build time and generates `pub mod t` with
+one typed function per message key. FTL message ids are converted to snake_case Rust identifiers.
+
+```ftl
+# locales/en/messages.ftl
+greeting = Hello, { $name }!
+product-count = { $count ->
+    [one] { $count } product
+   *[other] { $count } products
+}
+welcome = Welcome
+```
+
+Generates:
+```rust
+pub mod t {
+    pub fn greeting(req: &Req, name: impl Display) -> String;
+    pub fn product_count(req: &Req, count: impl Display) -> String;
+    pub fn welcome(req: &Req) -> String;
+}
+```
+
+**Usage in code-behind:**
+```rust
+pub async fn load(req: Req) -> AppResult<Props> {
+    Ok(Props {
+        heading: t::greeting(&req, &user.name),
+        count_label: t::product_count(&req, items.len()),
+    })
+}
+```
+
+**Usage in templates:**
+```html
+<h1>{{ props.heading }}</h1>
+```
+
+**Low-level access:**
+```rust
+req.__t("greeting", &[("name", &user.name)])  // returns String, falls back to key on miss
+```
+
+**Locale-aware formatting:**
+```rust
+req.fmt().number(1_234_567)   // "1,234,567" (en) | "1.234.567" (de)
+req.fmt().float(19.99, 2)     // "19.99" (en) | "19,99" (de)
+```
+
+**Fallback chain:** requested locale → default locale → return key verbatim.
+
+**Missing locale directory:** emits a tracing warning but does not fail startup.
+"""
+constraints = [
+  "When locales = [], i18n is disabled and pub mod t {} is generated (empty, no-op).",
+  "The default locale is served at bare URLs — do NOT add a URL prefix for it.",
+  "Non-default locales must be accessed with a URL prefix (/de/, /fr/, etc.).",
+  "FTL files are loaded at startup; changing them requires a server restart.",
+  "Typed t:: functions are generated from the default locale's .ftl files only.",
+  "FTL message ids with hyphens become underscore Rust fn names: product-count → product_count.",
+  "FTL attributes (button.label) become underscore fn names: button_label.",
+  "req.locale is empty string when i18n is not configured.",
+]
+canonical_usage = """
+# Pilcrow.toml
+[i18n]
+default_locale = "en"
+locales        = ["en", "de"]
+locales_dir    = "locales"
+
+# locales/en/messages.ftl
+greeting = Hello, { $name }!
+
+# pages/index.rs
+pub async fn load(req: Req) -> AppResult<Props> {
+    Ok(Props { heading: t::greeting(&req, "World") })
+}
+"""
+source_refs = [
+  "crates/core/src/config/config.rs — I18nConfig",
+  "crates/routekit/src/templating/build_config.rs — I18nBuildConfig",
+  "crates/routekit/src/templating/i18n_codegen.rs — FTL parser + t:: codegen",
+  "crates/runtime/src/i18n.rs — I18nBundles, locale_middleware_impl, FmtHelper",
+  "crates/runtime/src/context.rs — Req.locale, Req.__t(), Req.fmt()",
+  "crates/runtime/src/start.rs — bundle loading + locale middleware wiring",
+]
+test_refs = [
+  "crates/routekit/src/templating/i18n_codegen.rs — unit tests (ftl_id_to_rust_fn, render_empty)",
+  "crates/runtime/src/i18n.rs — unit tests (format_integer_en/de, format_float_en/de)",
+]
+validation_rules = [
+  "i18n.locales must include i18n.default_locale.",
+  "i18n.locales_dir must be a directory relative to project root/.",
+  "FTL files must be placed in {locales_dir}/{locale}/*.ftl.",
+]
+scaffold_templates = ["i18n"]
+
+[[features]]
+id = "image-optimization"
+name = "Image Optimization"
+domain = "pilcrow"
+status = "stable"
+summary = "Serve optimized images via `/_image?src=&w=&q=&f=` with disk cache, concurrency control, and `<pilcrow:image>` template tag transpilation."
+spec = """
+Enable in Pilcrow.toml:
+
+```toml
+[images]
+enabled     = true
+cache_dir   = ".pilcrow-image-cache"
+domains     = []              # allowed remote domains; empty = local-only
+max_width   = 3840
+max_height  = 2160
+quality     = 80
+formats     = ["webp", "jpeg"]
+concurrency = 4
+```
+
+Use in templates:
+
+```html
+<pilcrow:image src="/public/hero.jpg" width="1200" alt="Hero" />
+<!-- transpiles to -->
+<img src="/_image?src=%2Fpublic%2Fhero.jpg&w=1200" alt="Hero" width="1200" loading="lazy" decoding="async">
+```
+
+Query parameters:
+- `src` — URL-encoded source path (required)
+- `w` — output width in pixels
+- `h` — output height in pixels
+- `q` — quality override (1-100)
+- `f` — format: `webp`, `jpeg`, `png`, or `auto` (picks from `formats` list)
+
+The endpoint caches transforms to disk (hash-sharded by 2-char prefix).
+Cache files are served with `Cache-Control: public, max-age=31536000, immutable`.
+CPU transforms run in `spawn_blocking` behind a `Semaphore(concurrency)` to prevent overload.
+"""
+canonical_usage = """
+# Pilcrow.toml
+[images]
+enabled = true
+quality = 80
+formats = ["webp", "jpeg"]
+
+# pages/index.html
+<pilcrow:image src="/public/product.jpg" width="600" alt="Product" class="product-img" />
+"""
+constraints = [
+  "images.enabled must be true to mount the /_image endpoint.",
+  "Remote URLs in src are blocked unless the domain is listed in images.domains.",
+  "Dynamic Askama expressions ({{ ... }}) inside src are passed verbatim to avoid double-encoding.",
+  "Cache is disk-based; ensure cache_dir is writable at runtime.",
+  "<pilcrow:image> tags inside HTML comments are ignored and preserved as comments.",
+]
+source_refs = [
+  "crates/core/src/config/config.rs — ImageConfig",
+  "crates/runtime/src/image/handler.rs — ImageState, image_handler",
+  "crates/runtime/src/image/processor.rs — transform, cache_path, OutputFormat",
+  "crates/routekit/src/templating/compiler.rs — transpile_pilcrow_tags, parse_pilcrow_image_tag",
+  "crates/runtime/src/start.rs — /_image route wiring",
+]
+test_refs = [
+  "crates/routekit/src/templating/compiler.rs — pilcrow_image_* tests (7 tests)",
+]
+validation_rules = [
+  "images.enabled = true is required to activate the /_image route.",
+  "images.domains must be a list of hostnames (no protocol prefix).",
+]
+scaffold_templates = []
+
+[[features]]
+id = "head-meta"
+name = "Head/Meta Management"
+domain = "pilcrow"
+status = "stable"
+summary = "Per-page <head> metadata via <pilcrow:head> block tag: title, meta, og tags, links, and arbitrary head content are hoisted into the layout's pilcrow_head slot."
+spec = """
+<pilcrow:head> is a paired block tag placed in a page template whose inner content
+is hoisted into the layout's <slot name=\"pilcrow_head\"> at build time.
+
+Inner content can be any valid HTML: <title>, <meta>, <link>, <style>, <script>, etc.
+
+Transpilation: collect_slot_assignments recognises <pilcrow:head> as a built-in
+named slot assignment for \"pilcrow_head\". The slot wrapper is stripped; inner
+content replaces the slot in the layout.
+
+If the layout has no <slot name=\"pilcrow_head\">, the content is silently dropped.
+If the page has no <pilcrow:head>, the slot uses its fallback content.
+
+For pages with LAYOUT=\"none\" or no layout chain, <pilcrow:head> is stripped by
+transpile_pilcrow_tags — head content is not emitted to the final template.
+
+Askama expressions work inside <pilcrow:head>:
+  <pilcrow:head><title>{{ product.name }} — Shop</title></pilcrow:head>
+"""
+canonical_usage = """
+<!-- _layout.html -->
+<head>
+  <meta charset=\"utf-8\" />
+  <slot name=\"pilcrow_head\"><title>My Site</title></slot>
+</head>
+
+<!-- pages/products/[id].html -->
+<pilcrow:head>
+  <title>{{ product.name }} — My Shop</title>
+  <meta name=\"description\" content=\"Buy {{ product.name }}\" />
+  <meta property=\"og:title\" content=\"{{ product.name }}\" />
+  <meta property=\"og:image\" content=\"{{ product.image_url }}\" />
+</pilcrow:head>
+<h1>{{ product.name }}</h1>
+"""
+constraints = [
+  "<pilcrow:head> inner content is hoisted verbatim; Askama expressions are evaluated at render time.",
+  "Multiple <pilcrow:head> blocks per page are merged into the pilcrow_head slot.",
+  "Pages with LAYOUT=\"none\" have their <pilcrow:head> stripped (no layout = no head slot).",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs — collect_slot_assignments, render_slot_fragment_node",
+  "crates/routekit/src/templating/compiler.rs — transpile_pilcrow_tags, strip_pilcrow_head_block",
+  "sandbox/pages/_layout.html — slot name=\"pilcrow_head\" example",
+  "sandbox/pages/products/index.html — multi-tag pilcrow:head usage",
+]
+test_refs = [
+  "crates/routekit/src/templating/pipeline.rs — compile_pipeline_pilcrow_head_* (3 tests)",
+  "crates/routekit/src/templating/compiler.rs — pilcrow_head_* (4 tests)",
+]
+validation_rules = [
+  "<pilcrow:head> must have a matching </pilcrow:head> closing tag.",
+  "Layouts that want per-page head control must declare <slot name=\"pilcrow_head\">.",
+]
+scaffold_templates = []
+
+[feature.markdown_pages]
+name = "Markdown Pages"
+status = "stable"
+spec = """
+`.md` and `.mdx` files placed anywhere in `pages/` or a configured fragment directory
+become routes using the same conventions as `.html` files.
+
+- `pages/posts/hello.md` → `GET /posts/hello`
+- `widgets/intro.md` → `GET /widgets/intro`
+- GitHub Flavored Markdown (GFM) is compiled to HTML at build time via `markdown-rs`.
+- YAML frontmatter (between `---` delimiters at the top of the file) is stripped from
+  the rendered output and currently discarded. Use a code-behind `.rs` file to set page
+  options (`PRERENDER`, `LAYOUT`, `TRAILING_SLASH`) or define `load()` / actions.
+- Code-behind `.rs` files work identically to HTML pages: `hello.md` pairs with `hello.rs`.
+- Route groups, param matchers, and layout wrapping all apply to `.md` files exactly as
+  they do to `.html` files.
+- MDX component expansion (JSX tags inside markdown) is not yet supported; JSX tags are
+  preserved in the rendered HTML but will not be recognised by the component transpiler.
+"""
+canonical_usage = """
+<!-- pages/posts/hello.md -->
+# Hello World
+
+This is a **markdown** page with a [link](/about).
+"""
+constraints = [
+  "YAML frontmatter is stripped and discarded; page options must be declared in a code-behind `.rs` file.",
+  "MDX JSX tags are preserved in output but not transpiled to Askama components.",
+  "If both `about.html` and `about.md` exist in the same directory, the resulting module names collide — avoid this.",
+]
+source_refs = [
+  "crates/routekit/src/templating/markdown.rs — transpile_markdown()",
+  "crates/routekit/src/templating/pipeline.rs — is_markdown_path(), load_source_group(), load_fragment_source_group()",
+  "crates/routekit/src/routing/discovery.rs — is_markup_file() (includes .md/.mdx)",
+  "crates/routekit/src/lib.rs:125-129 — route extension stripping for .md/.mdx",
+  "crates/routekit/Cargo.toml — markdown = \"1.0.0-alpha.18\" dependency",
+]
+test_refs = [
+  "crates/routekit/src/templating/pipeline.rs — compile_pipeline_processes_markdown_page",
+  "crates/routekit/src/templating/pipeline.rs — compile_pipeline_markdown_with_codebehind",
+]
+validation_rules = []
+scaffold_templates = []

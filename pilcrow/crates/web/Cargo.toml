@@ -1,0 +1,36 @@
+[package]
+name = "pilcrow-web"
+version = "0.1.0"
+edition = "2024"
+description = "Web/SSR integration layer for Pilcrow applications"
+license = "MIT"
+
+[features]
+lambda = ["runtime/lambda"]
+experimental-baked-pages = ["runtime/experimental-baked-pages"]
+live-props = ["runtime/live-props"]
+
+[[example]]
+name = "baked_prebake"
+path = "examples/baked_prebake.rs"
+required-features = ["experimental-baked-pages"]
+
+[[example]]
+name = "baked_ticket"
+path = "examples/baked_ticket.rs"
+required-features = ["experimental-baked-pages"]
+
+[dependencies]
+pilcrow-core = { path = "../core" }
+runtime = { package = "pilcrow-runtime", path = "../runtime" }
+pilcrow-client = { path = "../client" }
+pilcrow-macros = { path = "../macros" }
+axum = "0.7"
+tracing = "0.1"
+
+[dev-dependencies]
+http-body-util = "0.1"
+serde_json = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }

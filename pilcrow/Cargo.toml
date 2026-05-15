@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "crates/runtime",
+    "crates/routekit",
+    "crates/macros",
+    "crates/core",
+    "crates/web",
+    "crates/client",
+]
+exclude = ["tools/cli"]
+resolver = "2"

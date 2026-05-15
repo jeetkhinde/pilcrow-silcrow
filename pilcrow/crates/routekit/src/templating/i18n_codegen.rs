@@ -1,0 +1,219 @@
+use std::collections::BTreeMap;
+use std::path::Path;
+
+use crate::templating::build_config::I18nBuildConfig;
+
+/// One translation message extracted from a `.ftl` file.
+#[derive(Debug, Clone)]
+pub struct MessageSpec {
+    /// FTL message id, e.g. `"greeting"` or `"button.label"` (attribute).
+    pub ftl_id: String,
+    /// Variable names referenced inside this message (`$name` → `"name"`), sorted.
+    pub args: Vec<String>,
+}
+
+/// Parse all `.ftl` files in `default_locale_dir` and return the message specs
+/// sorted by their generated Rust function name.
+pub fn parse_default_locale_messages(default_locale_dir: &Path) -> Vec<MessageSpec> {
+    let mut seen: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    let entries = match std::fs::read_dir(default_locale_dir) {
+        Ok(e) => e,
+        Err(_) => return Vec::new(),
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("ftl") {
+            continue;
+        }
+        let source = match std::fs::read_to_string(&path) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
+        let resource: fluent_syntax::ast::Resource<String> =
+            match fluent_syntax::parser::parse::<String>(source) {
+                Ok(r) => r,
+                Err((r, _errors)) => r,
+            };
+        collect_from_resource(&resource, &mut seen);
+    }
+
+    seen.into_iter()
+        .map(|(ftl_id, args)| MessageSpec { ftl_id, args })
+        .collect()
+}
+
+fn collect_from_resource(
+    resource: &fluent_syntax::ast::Resource<String>,
+    seen: &mut BTreeMap<String, Vec<String>>,
+) {
+    use fluent_syntax::ast::Entry;
+
+    for entry in &resource.body {
+        if let Entry::Message(msg) = entry {
+            let id = msg.id.name.clone();
+            let mut args: std::collections::BTreeSet<String> = Default::default();
+            if let Some(pattern) = &msg.value {
+                collect_vars_pattern(pattern, &mut args);
+            }
+            let entry = seen.entry(id.clone()).or_default();
+            merge_sorted(entry, args.into_iter());
+
+            // Attributes: "button.label" → fn button_label(req, ...) -> String
+            for attr in &msg.attributes {
+                let attr_id = format!("{}.{}", id, attr.id.name);
+                let mut attr_args: std::collections::BTreeSet<String> = Default::default();
+                collect_vars_pattern(&attr.value, &mut attr_args);
+                let aentry = seen.entry(attr_id).or_default();
+                merge_sorted(aentry, attr_args.into_iter());
+            }
+        }
+    }
+}
+
+fn collect_vars_pattern(
+    pattern: &fluent_syntax::ast::Pattern<String>,
+    out: &mut std::collections::BTreeSet<String>,
+) {
+    use fluent_syntax::ast::PatternElement;
+    for elem in &pattern.elements {
+        if let PatternElement::Placeable { expression } = elem {
+            collect_vars_expr(expression, out);
+        }
+    }
+}
+
+fn collect_vars_expr(
+    expr: &fluent_syntax::ast::Expression<String>,
+    out: &mut std::collections::BTreeSet<String>,
+) {
+    use fluent_syntax::ast::Expression;
+    match expr {
+        Expression::Select {
+            selector, variants, ..
+        } => {
+            collect_vars_inline(selector, out);
+            for variant in variants {
+                collect_vars_pattern(&variant.value, out);
+            }
+        }
+        Expression::Inline(inline) => collect_vars_inline(inline, out),
+    }
+}
+
+fn collect_vars_inline(
+    expr: &fluent_syntax::ast::InlineExpression<String>,
+    out: &mut std::collections::BTreeSet<String>,
+) {
+    use fluent_syntax::ast::InlineExpression;
+    match expr {
+        InlineExpression::VariableReference { id } => {
+            out.insert(id.name.clone());
+        }
+        InlineExpression::FunctionReference { arguments, .. } => {
+            for pos in &arguments.positional {
+                collect_vars_inline(pos, out);
+            }
+        }
+        InlineExpression::Placeable { expression } => {
+            collect_vars_expr(expression, out);
+        }
+        _ => {}
+    }
+}
+
+fn merge_sorted(existing: &mut Vec<String>, new_args: impl Iterator<Item = String>) {
+    for arg in new_args {
+        if !existing.contains(&arg) {
+            existing.push(arg);
+        }
+    }
+    existing.sort();
+}
+
+/// Convert a FTL message id (e.g. `"product-count"`, `"button.label"`) to a Rust
+/// identifier (e.g. `"product_count"`, `"button_label"`).
+pub fn ftl_id_to_rust_fn(id: &str) -> String {
+    id.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect()
+}
+
+/// Emit the `generated_i18n.rs` file.
+///
+/// When `config.locales` is empty, an empty `pub mod t {}` is emitted.
+/// Otherwise, one typed function is generated per message in the default locale's FTL files.
+pub fn render_generated_i18n_module(config: &I18nBuildConfig, src_root: &Path) -> String {
+    let mut out = String::from("// @generated by pilcrow-routekit. Do not edit manually.\n");
+
+    if config.locales.is_empty() {
+        out.push_str("pub mod t {}\n");
+        return out;
+    }
+
+    let default_locale_dir = src_root
+        .join(&config.locales_dir)
+        .join(&config.default_locale);
+    let specs = parse_default_locale_messages(&default_locale_dir);
+
+    out.push_str("pub mod t {\n");
+    out.push_str("    #[allow(unused_imports)]\n");
+    out.push_str("    use ::pilcrow_web::Req;\n\n");
+
+    for spec in &specs {
+        let fn_name = ftl_id_to_rust_fn(&spec.ftl_id);
+        let ftl_id = &spec.ftl_id;
+
+        // Build parameter list: (req: &Req, arg1: impl ::std::fmt::Display, ...)
+        let mut params = vec!["req: &Req".to_string()];
+        for arg in &spec.args {
+            params.push(format!("{arg}: impl ::std::fmt::Display"));
+        }
+        let params_str = params.join(", ");
+
+        // Build args array literal: &[("name", &name.to_string()), ...]
+        let args_literal = if spec.args.is_empty() {
+            "&[]".to_string()
+        } else {
+            let pairs: Vec<String> = spec
+                .args
+                .iter()
+                .map(|a| format!("(\"{a}\", &{a}.to_string())"))
+                .collect();
+            format!("&[{}]", pairs.join(", "))
+        };
+
+        out.push_str(&format!(
+            "    pub fn {fn_name}({params_str}) -> String {{\n"
+        ));
+        out.push_str(&format!("        req.__t(\"{ftl_id}\", {args_literal})\n"));
+        out.push_str("    }\n");
+    }
+
+    out.push_str("}\n");
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ftl_id_to_rust_fn_converts_hyphens_and_dots() {
+        assert_eq!(ftl_id_to_rust_fn("greeting"), "greeting");
+        assert_eq!(ftl_id_to_rust_fn("product-count"), "product_count");
+        assert_eq!(ftl_id_to_rust_fn("button.label"), "button_label");
+        assert_eq!(ftl_id_to_rust_fn("nav.link-text"), "nav_link_text");
+    }
+
+    #[test]
+    fn render_empty_when_no_locales() {
+        let config = I18nBuildConfig {
+            locales: vec![],
+            ..Default::default()
+        };
+        let src = render_generated_i18n_module(&config, Path::new("/nonexistent"));
+        assert!(src.contains("pub mod t {}"));
+    }
+}

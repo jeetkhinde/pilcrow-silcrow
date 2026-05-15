@@ -1,0 +1,44 @@
+set dotenv-load := true
+
+default:
+    @just --list
+
+# Build framework crates.
+build:
+    cargo build -p pilcrow-routekit
+    cargo build -p pilcrow-runtime
+    cargo build -p pilcrow-web
+
+# Build the sandbox app and CLI, which live outside the root workspace.
+build-all: build sandbox cli
+
+# Run the routekit test suite.
+test:
+    cargo test -p pilcrow-routekit
+
+# Run one routekit test by name.
+test-one name:
+    cargo test -p pilcrow-routekit -- {{name}}
+
+# Build the sandbox app and exercise routekit codegen.
+sandbox:
+    cargo build --manifest-path sandbox/apps/web/Cargo.toml
+
+# Run the sandbox app.
+dev:
+    cargo run --manifest-path sandbox/apps/web/Cargo.toml
+
+# Run the sandbox app with cargo-watch.
+watch:
+    cargo watch -w crates -w sandbox/apps/web -i "*.css" -s "cargo run --manifest-path sandbox/apps/web/Cargo.toml"
+
+# Build the CLI, which is excluded from the root workspace.
+cli:
+    cargo build --manifest-path tools/cli/Cargo.toml
+
+# Build the MCP server.
+mcp:
+    cargo check --manifest-path tools/mcp/pilcrow-mcp/Cargo.toml
+
+# Run the core checks expected before touching sandbox behavior.
+check: build test sandbox cli mcp

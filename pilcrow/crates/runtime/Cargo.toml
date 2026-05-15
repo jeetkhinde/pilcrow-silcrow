@@ -1,0 +1,75 @@
+# ./Cargo.toml
+[package]
+name = "pilcrow-runtime"
+version = "0.1.0"
+edition = "2024"
+description = "Premium response builders and content negotiation for Axum"
+license = "MIT"
+repository = "https://github.com/jeetkhinde/pilcrow"
+
+[lib]
+name = "runtime"
+path = "src/lib.rs"
+
+[features]
+lambda = ["dep:lambda_http"]
+experimental-baked-pages = []
+live-props = ["dep:sqlx", "experimental-baked-pages"]
+live-props-redis = ["live-props", "dep:redis"]
+
+[dependencies]
+lambda_http = { version = "0.13", optional = true }
+redis = { version = "0.27", optional = true, features = ["tokio-comp", "connection-manager", "aio"] }
+sqlx = { version = "0.8", optional = true, features = [
+    "postgres",
+    "macros",
+    "runtime-tokio-native-tls",
+    "json",
+    "chrono",
+] }
+http-body-util = "0.1"
+http = "1"
+pilcrow-macros = { path = "../macros" }
+pilcrow-core = { path = "../core" }
+axum = { version = "0.7", features = ["ws"] }
+cookie = "0.18"
+futures-core = "0.3"
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+urlencoding = "2.1"
+serde_urlencoded = "0.7"
+crc32fast = "1"
+dashmap = "6"
+notify = "6"
+tracing = "0.1"
+tower = { version = "0.5", features = ["timeout"] }
+tower-http = { version = "0.6", features = ["trace"] }
+axum-extra = { version = "0.9.6", features = ["cookie", "typed-header"] }
+headers = "0.4"
+bytes = "1"
+tokio = { version = "1", features = ["sync", "rt", "signal", "fs"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+fluent-bundle = "0.15"
+unic-langid = "0.9"
+image = { version = "0.25", default-features = false, features = ["jpeg", "webp", "png", "gif"] }
+sha2 = "0.10"
+hex = "0.4"
+url = "2"
+anyhow = "1"
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "rustls-tls",
+] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+async-stream = "0.3"
+hyper = "1"
+serde_json = "1"
+tempfile = "3"
+
+[build-dependencies]
+crc32fast = "1"
+minifier = "0.3"
+pilcrow-routekit = { path = "../routekit" }

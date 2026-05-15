@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "silcrow": "file:../silcrow"
+  }
+}
