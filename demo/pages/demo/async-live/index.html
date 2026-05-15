@@ -1,0 +1,73 @@
+---
+---
+<pilcrow:head>
+  <title>Async + Live — Pilcrow Demo</title>
+  <style>
+    .page { max-width: 640px; }
+    h1 { margin-bottom: 0.25rem; }
+
+    /* status badge */
+    .status-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #64748b; }
+    .badge-status { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 600; background: #fef9c3; color: #854d0e; }
+
+    /* summary area */
+    .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; min-height: 90px; }
+    .summary-loading { color: #94a3b8; font-style: italic; margin: 0; }
+    .summary-body p { margin: 0 0 0.5rem; }
+    .summary-body ul { margin: 0; padding-left: 1.25rem; }
+    .up { color: #16a34a; font-weight: 600; }
+
+    /* island wrapper */
+    .island-section h2 { font-size: 1rem; margin-bottom: 0.75rem; color: #374151; }
+    .activity-card { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem 1.25rem; display: inline-block; }
+    .watcher-count { font-size: 1.6rem; font-weight: 700; color: #0284c7; }
+    .watcher-label { font-size: 0.8rem; color: #0369a1; margin-top: 0.1rem; }
+
+    /* note box */
+    .note { margin-top: 2rem; padding: 1rem 1.25rem; background: #f8fafc; border-left: 4px solid #94a3b8; border-radius: 4px; font-size: 0.83rem; color: #475569; line-height: 1.6; }
+    code { font-family: monospace; background: #e2e8f0; padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.9em; }
+  </style>
+</pilcrow:head>
+
+<div class="page">
+  <h1>{{ title }}</h1>
+
+  <!--
+    status is a LiveProp<String>.
+    Shell bakes in "Generating..." at request time.
+    The moment DeferredHtml resolves server-side, it sends "Ready" to the
+    watch channel → SSE patches this span's textContent automatically.
+  -->
+  <div class="status-row">
+    Summary status: <span class="badge-status">{{ status }}</span>
+  </div>
+
+  <!--
+    summary is a DeferredHtml.
+    Shell renders with_loading skeleton; resolved HTML streams in ~2s later.
+  -->
+  <div class="summary-card">
+    {{ summary }}
+  </div>
+
+  <!--
+    Pilcrow island — fully independent fragment with its own load() and LiveProp.
+    strategy="idle" means it fetches after the main page is interactive.
+    Pilcrow resolves src="./islands/activity" to /__pages/demo/async-live/islands/activity.
+  -->
+  <div class="island-section">
+    <h2>Live Activity</h2>
+    <island src="./islands/activity" strategy="idle" />
+  </div>
+
+  <div class="note">
+    <strong>What's happening:</strong><br>
+    <code>summary</code> — <code>DeferredHtml</code>: shell renders immediately with a skeleton;
+    the expensive HTML streams in ~2s later via a one-shot inline script patch.<br><br>
+    <code>status</code> — <code>LiveProp&lt;String&gt;</code>: initial value <em>"Generating…"</em>
+    baked into the shell. When the <code>DeferredHtml</code> future completes it sends
+    <em>"Ready"</em> to the watch channel → SSE pushes it to this span with no full re-render.<br><br>
+    <code>&lt;island&gt;</code> — independent fragment fetched at idle time. Its own
+    <code>LiveProp&lt;u32&gt;</code> opens a separate SSE connection scoped to the island URL.
+  </div>
+</div>

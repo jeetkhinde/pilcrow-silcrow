@@ -7,7 +7,8 @@ demo/.pilcrow-baked
 
 target/
 public/
-
+pilcrow/
+silcrow/
 graphify-out/
 
 
@@ -23,7 +24,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
-
+.venv
+.uv_cache
 # Database files
 *.db
 *.sqlite

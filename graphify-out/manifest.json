@@ -35,6 +35,22 @@
     "mtime": 1778631458.2811584,
     "hash": "bd9a9cdb1fc70205327c3db1d5286d9a"
   },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/async-live/index.rs": {
+    "mtime": 1778791376.4044363,
+    "hash": "85cc91c570afcd11c28055a0f5dbb08c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/async-live/islands/activity.rs": {
+    "mtime": 1778791327.6658392,
+    "hash": "0ecd9a0572a95fb1aa12ba951a6273ac"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/combined/complex/index.rs": {
+    "mtime": 1778793175.058043,
+    "hash": "becdd277eb7aed5afdcdb905835b9b9a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/combined/simple/index.rs": {
+    "mtime": 1778792561.4304245,
+    "hash": "8bf019891d044d18880fdac00a1571eb"
+  },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/fsr/index.rs": {
     "mtime": 1778634268.7472844,
     "hash": "42dbb81131c28b6cf9a9eb0c6100e0ae"
@@ -144,8 +160,8 @@
     "hash": "0a06d880f0a14965604341497822be68"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Nav.html": {
-    "mtime": 1778631458.2947671,
-    "hash": "8c4e24b303f905606af6f6195c623a18"
+    "mtime": 1778793239.2808034,
+    "hash": "af66ee7fc9c5b646519f8ebdf83afdd9"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/docs/baked-pages.md": {
     "mtime": 1778631458.2696748,
@@ -178,6 +194,22 @@
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/react-island/index.html": {
     "mtime": 1778631458.280528,
     "hash": "4f80235da3d8d6ca5bf3e8f60cc4e154"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/async-live/index.html": {
+    "mtime": 1778791320.4503424,
+    "hash": "9c0f7a26174a7ee199633186c98beaf0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/async-live/islands/activity.html": {
+    "mtime": 1778791331.8843968,
+    "hash": "5b052983e51253133b66b3426a20a492"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/combined/complex/index.html": {
+    "mtime": 1778791908.7266178,
+    "hash": "e5d328b1e1b682dc26f0d77d6193fc05"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/combined/simple/index.html": {
+    "mtime": 1778791864.4331393,
+    "hash": "00e68d20f1983cb1c34cdea8c9e5908e"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/pages/demo/fsr/index.html": {
     "mtime": 1778631458.279182,

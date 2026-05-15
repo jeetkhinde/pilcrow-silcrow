@@ -46,8 +46,9 @@ locales        = ["en", "de"]
 locales_dir    = "locales"
 
 [fsr]
+redis_url = "redis://127.0.0.1:6379"
+promote_after_hits = 0
 poll_interval_ms = 200
-promote_after_hits = 10
 
 [images]
 enabled     = true
