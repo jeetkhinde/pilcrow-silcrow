@@ -4,21 +4,20 @@ This file provides guidance to AI coding agents working in the Pilcrow repositor
 
 ## MCP is the source of truth (AI-first policy)
 
-Pilcrow is AI-first. Treat `tools/mcp/pilcrow-mcp` as the authoritative interface for:
+Pilcrow is AI-first. Treat `tools/pilcrow-mcp` as the authoritative interface for:
 - feature status and canonical usage (`registry.toml`),
 - implementation evidence (`source_refs` + test refs),
-- examples and use-case retrieval (sandbox + tests),
 - docs answers for coding agents.
 
 When shipping or changing a feature, update **all** of:
 1. Runtime/routekit/web implementation,
 2. `registry.toml` feature contract (spec, canonical_usage, constraints, invalid_examples, refs),
-3. MCP knowledge coverage (`tools/mcp/pilcrow-mcp/src/docs.rs` document specs and searchability),
+3. MCP knowledge coverage (`tools/pilcrow-mcp/src/docs.rs`) — corpus is 3 fixed `.md` docs; only update if a doc file is renamed or a new prose doc is added.
 4. At least one executable example or test reference that MCP can cite.
 
 Goal: agents should not rely on memory or ad-hoc docs; they should be able to answer from MCP evidence first.
 
-After any MCP update, run `cargo check --manifest-path tools/mcp/pilcrow-mcp/Cargo.toml`.
+After any MCP update, run `cargo test --manifest-path tools/pilcrow-mcp/Cargo.toml`.
 
 ## What is Pilcrow
 
@@ -29,7 +28,7 @@ Pilcrow is a Rust full-stack web framework inspired by SvelteKit/Astro. It uses:
 - **silcrow.js** — Always read `crates/runtime/assets/silcrow.js` via MCP tool `silcrow-docs` before writing anything about it.
 - A **build.rs** pipeline (`routekit`) that compiles `.html` + `.rs` files into a wired axum `Router` — no manual route registration
 
-The repo workspace root `Cargo.toml` has only the framework crates as members. `tools/cli` is excluded from the workspace and must be built separately. In the `pilcrow-silcrow` integration workspace, `sandbox/` is an external production-style app beside the `pilcrow` symlink, not a directory inside the Pilcrow repo.
+The repo workspace root `Cargo.toml` has only the framework crates as members. `tools/cli` is excluded from the workspace and must be built separately. In the `pilcrow-silcrow` integration workspace, `demo/` is a production-style consumer app that depends on Pilcrow by path.
 
 ## Build Commands
 
@@ -45,8 +44,8 @@ cargo test -p pilcrow-routekit -- <test_name>   # single test
 # From the pilcrow-silcrow integration workspace root
 cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
-cargo build --manifest-path sandbox/Cargo.toml
-cargo run --manifest-path sandbox/Cargo.toml
+cargo build --manifest-path demo/Cargo.toml
+cargo run --manifest-path demo/Cargo.toml
 ```
 
 Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:3000`, backend on `127.0.0.1:4000`. Env overrides: `PILCROW_WEB_HOST`, `PILCROW_WEB_PORT`, `PILCROW_BACKEND_URL`.
