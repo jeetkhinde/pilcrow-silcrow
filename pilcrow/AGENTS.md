@@ -33,19 +33,22 @@ The repo workspace root `Cargo.toml` has only the framework crates as members. `
 ## Build Commands
 
 ```bash
-# From the Pilcrow repo root
-cargo build -p pilcrow-routekit
-cargo build -p pilcrow-runtime
-cargo build -p pilcrow-web
-cargo build --manifest-path tools/cli/Cargo.toml
-cargo test -p pilcrow-routekit
-cargo test -p pilcrow-routekit -- <test_name>   # single test
-
-# From the pilcrow-silcrow integration workspace root
+# From the pilcrow-silcrow workspace root (canonical)
 cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
-cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
+cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-runtime
+cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-web
+cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
+cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit -- <test_name>
+
+# Demo app
 cargo build --manifest-path demo/Cargo.toml
-cargo run --manifest-path demo/Cargo.toml
+cargo run   --manifest-path demo/Cargo.toml
+
+# MCP server (run after any MCP file change)
+cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml
+
+# Silcrow JS runtime (run after editing silcrow/src/silcrow.js)
+node silcrow/build.js
 ```
 
 Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:3000`, backend on `127.0.0.1:4000`. Env overrides: `PILCROW_WEB_HOST`, `PILCROW_WEB_PORT`, `PILCROW_BACKEND_URL`.
