@@ -39,6 +39,7 @@ pub use generated_routes::{
 pub use middleware::Next;
 pub use pilcrow_core::HookError;
 pub use pilcrow_macros::sse;
+pub use response::headers::SilcrowMutationId;
 pub use response::response::ToastLevel;
 pub use response::response::{
     ActionResult, ActionResultExt, ErrorResponse, FormErrorItem, FormErrors, JsonResponse,

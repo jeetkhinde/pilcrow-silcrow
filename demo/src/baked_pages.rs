@@ -95,17 +95,12 @@ enum BakeEligibility {
     NeverBake,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum BakedArtifactMode {
+    #[default]
     FullPage,
     FragmentComposed,
-}
-
-impl Default for BakedArtifactMode {
-    fn default() -> Self {
-        Self::FullPage
-    }
 }
 
 #[derive(Debug, Clone)]

@@ -176,6 +176,21 @@ impl Res {
         self
     }
 
+    /// Like `patch_target` but tags the patch entry with a mutation id.
+    ///
+    /// Use when an optimistic mutation is in flight: pass `req.mutation_id()`
+    /// here so silcrow.js confirms the pending mutation when the response arrives.
+    pub fn patch_target_with_mutation(
+        &self,
+        selector: &str,
+        data: &impl Serialize,
+        mutation_id: &str,
+    ) -> &Self {
+        self.state()
+            .add_patch_target_with_mutation(selector, data, mutation_id);
+        self
+    }
+
     /// Invalidate a DOM target's binding cache via `silcrow-invalidate`.
     /// Multiple calls accumulate — all selectors are carried in a single
     /// JSON-array header and invalidated in call order on the client.
@@ -420,6 +435,8 @@ pub struct Req {
     action: Option<String>,
     /// Pre-loaded Fluent bundles. `None` when i18n is not configured.
     i18n: Option<I18nBundles>,
+    /// Client-provided mutation id from `silcrow-mutation-id` header. `None` when absent.
+    mutation_id: Option<String>,
 }
 
 /// Typed page context passed to `load(ctx: Page)` for dynamic file routes.
@@ -471,6 +488,15 @@ impl Req {
     /// ```
     pub fn action(&self) -> &str {
         self.action.as_deref().unwrap_or("")
+    }
+
+    /// The client-side mutation id sent with this request, if any.
+    ///
+    /// Silcrow sets `silcrow-mutation-id` when an optimistic mutation is in flight.
+    /// Pass this to `SilcrowEvent::patch(...).with_mutation_id(id)` so the client
+    /// can confirm and retire the pending mutation.
+    pub fn mutation_id(&self) -> Option<&str> {
+        self.mutation_id.as_deref()
     }
 
     /// Return the smart form-error response for the current request context.
@@ -567,6 +593,7 @@ impl Req {
             locale: common.locale,
             i18n: common.i18n,
             action: common.action,
+            mutation_id: common.mutation_id,
         }
     }
 
@@ -591,6 +618,10 @@ impl Req {
         let path = parts.uri.path().to_owned();
         let headers = parts.headers.clone();
         let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
+        let mutation_id = parts
+            .headers
+            .typed_get::<SilcrowMutationId>()
+            .map(|h| h.0);
         let action = extract_action_from_query(parts.uri.query());
         let query = parse_query_multi(parts.uri.query());
         let locale = parts
@@ -613,6 +644,7 @@ impl Req {
             locale,
             i18n,
             action,
+            mutation_id,
         }
     }
 
@@ -687,6 +719,7 @@ impl Req {
             locale: String::new(),
             i18n: None,
             action: None,
+            mutation_id: None,
         }
     }
 }
@@ -787,6 +820,7 @@ impl ReqBuilder {
             locale: self.locale,
             i18n: None,
             action: None,
+            mutation_id: None,
         }
     }
 }
@@ -806,6 +840,7 @@ struct CommonParts {
     locale: String,
     i18n: Option<I18nBundles>,
     action: Option<String>,
+    mutation_id: Option<String>,
 }
 
 async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> CommonParts {
@@ -824,6 +859,10 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
     let headers = parts.headers.clone();
     let path = parts.uri.path().to_owned();
     let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
+    let mutation_id = parts
+        .headers
+        .typed_get::<SilcrowMutationId>()
+        .map(|h| h.0);
 
     // Shared per-request Locals: first extraction creates and inserts;
     // subsequent ones share the same Arc.
@@ -875,6 +914,7 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         locale,
         i18n,
         action,
+        mutation_id,
     }
 }
 
@@ -914,6 +954,7 @@ impl<S: Send + Sync> FromRequest<S> for Req {
             locale: common.locale,
             i18n: common.i18n,
             action: common.action,
+            mutation_id: common.mutation_id,
         })
     }
 }

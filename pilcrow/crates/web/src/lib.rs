@@ -10,6 +10,7 @@ pub use runtime::response::response::{form_errors, json, navigate, ok, redirect,
 
 // ── Request handling ─────────────────────────────────────────
 pub use runtime::{FormMap, Locals, Next, Page, Req, Res};
+pub use runtime::SilcrowMutationId;
 
 // ── Status & response primitives ─────────────────────────────
 pub use runtime::Response;

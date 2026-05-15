@@ -715,6 +715,36 @@ fn document_specs() -> Vec<DocumentSpec> {
             path: "crates/runtime/tests/response.rs",
             category: KnowledgeCategory::Tests,
         },
+        DocumentSpec {
+            id: "runtime-sse",
+            title: "SSE: SilcrowEvent, SseEmitter, sse_stream, with_mutation_id",
+            path: "crates/runtime/src/sse/server_sent_events.rs",
+            category: KnowledgeCategory::RuntimeApi,
+        },
+        DocumentSpec {
+            id: "runtime-ws",
+            title: "WebSocket: WsEvent, WsStream, ws(), with_mutation_id",
+            path: "crates/runtime/src/ws/ws.rs",
+            category: KnowledgeCategory::RuntimeApi,
+        },
+        DocumentSpec {
+            id: "runtime-response-headers",
+            title: "Silcrow typed response headers (SilcrowTarget, SilcrowMutationId, etc.)",
+            path: "crates/runtime/src/response/headers.rs",
+            category: KnowledgeCategory::RuntimeApi,
+        },
+        DocumentSpec {
+            id: "runtime-sse-tests",
+            title: "SSE event tests",
+            path: "crates/runtime/tests/sse_events.rs",
+            category: KnowledgeCategory::Tests,
+        },
+        DocumentSpec {
+            id: "runtime-ws-tests",
+            title: "WebSocket event tests",
+            path: "crates/runtime/tests/ws_events.rs",
+            category: KnowledgeCategory::Tests,
+        },
     ]
 }
 

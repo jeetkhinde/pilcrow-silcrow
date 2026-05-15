@@ -414,9 +414,26 @@ async function submitAction(url, body, options) {
     }
   }
 
-  const response = await fetch(fullUrl, opts);
-  const contentType = response.headers.get("Content-Type") || "";
-  const text = await response.text();
+  // Apply optimistic update before the round-trip
+  const optimistic = options.optimistic;
+  const mutationId = (optimistic && optimistic.mutationId)
+    ? optimistic.mutationId
+    : (optimistic ? ("m-" + Date.now() + "-" + Math.random().toString(36).slice(2)) : null);
+
+  if (optimistic) {
+    publishOptimistic(optimistic.scope, optimistic.data, mutationId);
+    opts.headers["silcrow-mutation-id"] = mutationId;
+  }
+
+  let response, contentType, text;
+  try {
+    response = await fetch(fullUrl, opts);
+    contentType = response.headers.get("Content-Type") || "";
+    text = await response.text();
+  } catch (err) {
+    if (mutationId) revertOptimistic(mutationId);
+    throw err;
+  }
 
   if (method !== "GET") {
     // Mutation: bust GET cache and any prefetch promise for affected paths
@@ -439,12 +456,18 @@ async function submitAction(url, body, options) {
     resolveAtomByScope(options.scope, true).set(parsed);
   }
 
+  // On error response, revert optimistic update; server confirm happens via SSE/WS patch
+  if (mutationId && !response.ok) {
+    revertOptimistic(mutationId);
+  }
+
   return {
     ok: response.ok,
     status: response.status,
     data: parsed,
     html: parsed === null ? text : null,
     headers: response.headers,
+    mutationId,
   };
 }
 
@@ -928,6 +951,18 @@ function resolveLiveTarget(selector, fallback) {
   return document.querySelector(selector) || null;
 }
 
+function scopeForTarget(el) {
+  if (!el) return null;
+  return el.getAttribute("s-bind") || null;
+}
+
+function hasPendingMutationForTarget(el) {
+  const scope = scopeForTarget(el);
+  if (!scope) return false;
+  const ids = pendingByScope.get(scope);
+  return ids ? ids.size > 0 : false;
+}
+
 function applyLivePatchPayload(payload, fallbackTarget) {
   if (
     payload &&
@@ -941,9 +976,17 @@ function applyLivePatchPayload(payload, fallbackTarget) {
     }
 
     const target = resolveLiveTarget(payload.target, fallbackTarget);
-    if (target) {
-      patch(payload.data, target);
+    if (!target) return;
+
+    // Confirm an optimistic mutation when the server echoes the mutation_id
+    if (payload.mutation_id) {
+      confirmOptimistic(payload.mutation_id);
+    } else if (hasPendingMutationForTarget(target)) {
+      // Stale-patch guard: drop server patch while a pending mutation exists
+      return;
     }
+
+    patch(payload.data, target);
     return;
   }
 
@@ -1483,6 +1526,11 @@ function dispatchWsMessage(hub, rawData) {
     if (type === "patch") {
       if (msg.data !== undefined) {
         for (const el of targets) {
+          if (msg.mutation_id) {
+            confirmOptimistic(msg.mutation_id);
+          } else if (hasPendingMutationForTarget(el)) {
+            continue;
+          }
           patch(msg.data, el);
         }
         getOrCreateAtom(streamAtoms, hub.url, undefined).patch(msg.data);
@@ -2266,53 +2314,68 @@ function onMouseEnter(e) {
 
 // /optimistic.js
 // ════════════════════════════════════════════════════════════
-// Optimistic — snapshot & revert for instant UI feedback
+// Optimistic mutations — atom-backed snapshot/confirm/revert
 // ════════════════════════════════════════════════════════════
 
-const snapshots = new WeakMap();
+// mutationId → { scope, snapshot }
+const pendingMutations = new Map();
+// scope → Set<mutationId>  — reverse index for stale-patch guard
+const pendingByScope = new Map();
 
-function optimisticPatch(data, root) {
-  const element = typeof root === "string" ? document.querySelector(root) : root;
-  if (!element) {
-    warn("Optimistic root not found: " + root);
+function publishOptimistic(scope, data, mutationId) {
+  const atom = resolveAtomByScope(scope, true);
+  if (!atom) {
+    warn("publishOptimistic: no atom for scope " + scope);
     return;
   }
+  const snapshot = atom.get();
+  pendingMutations.set(mutationId, { scope, snapshot });
+  let ids = pendingByScope.get(scope);
+  if (!ids) { ids = new Set(); pendingByScope.set(scope, ids); }
+  ids.add(mutationId);
 
-  // Snapshot current DOM state
-  snapshots.set(element, element.innerHTML);
-
-  // Apply the optimistic data
-  patch(data, element);
+  atom.patch(data);
 
   document.dispatchEvent(
     new CustomEvent("silcrow:optimistic", {
       bubbles: true,
-      detail: {root: element, data},
+      detail: { scope, data, mutationId },
     })
   );
 }
 
-function revertOptimistic(root) {
-  const element = typeof root === "string" ? document.querySelector(root) : root;
-  if (!element) {
-    warn("Revert root not found: " + root);
+function confirmOptimistic(mutationId) {
+  const entry = pendingMutations.get(mutationId);
+  if (!entry) return;
+  pendingMutations.delete(mutationId);
+  const ids = pendingByScope.get(entry.scope);
+  if (ids) { ids.delete(mutationId); if (!ids.size) pendingByScope.delete(entry.scope); }
+
+  document.dispatchEvent(
+    new CustomEvent("silcrow:confirmed", {
+      bubbles: true,
+      detail: { mutationId, scope: entry.scope },
+    })
+  );
+}
+
+function revertOptimistic(mutationId) {
+  const entry = pendingMutations.get(mutationId);
+  if (!entry) {
+    warn("revertOptimistic: no pending mutation " + mutationId);
     return;
   }
+  pendingMutations.delete(mutationId);
+  const ids = pendingByScope.get(entry.scope);
+  if (ids) { ids.delete(mutationId); if (!ids.size) pendingByScope.delete(entry.scope); }
 
-  const saved = snapshots.get(element);
-  if (saved === undefined) {
-    warn("No snapshot to revert for element");
-    return;
-  }
-
-  element.innerHTML = saved;
-  snapshots.delete(element);
-  invalidate(element);
+  const atom = resolveAtomByScope(entry.scope, false);
+  if (atom) atom.set(entry.snapshot);
 
   document.dispatchEvent(
     new CustomEvent("silcrow:revert", {
       bubbles: true,
-      detail: {root: element},
+      detail: { mutationId, scope: entry.scope },
     })
   );
 }
@@ -2473,8 +2536,9 @@ window.Silcrow = {
   },
 
   // --- Feedback Systems ---
-  optimistic: optimisticPatch,
-  revert: revertOptimistic,
+  publishOptimistic,
+  confirmOptimistic,
+  revertOptimistic,
   onToast: (handler) => {setToastHandler(handler); return window.Silcrow;},
 
   // --- Extensibility ---

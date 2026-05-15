@@ -121,7 +121,8 @@ pub fn process_live_rs(
                 && attr.to_token_stream().to_string().contains("Serialize")
         });
         if !has_serialize {
-            s.attrs.push(syn::parse_quote!(#[derive(::serde::Serialize)]));
+            s.attrs
+                .push(syn::parse_quote!(#[derive(::serde::Serialize)]));
         }
 
         let syn::Fields::Named(named) = &mut s.fields else {
@@ -238,8 +239,10 @@ pub fn validate_live_template_slots(
 - {}",
                 template_path.display(),
                 live_path.display(),
-                errors.join("
-- ")
+                errors.join(
+                    "
+- "
+                )
             ),
         ))
     }
@@ -388,10 +391,10 @@ fn parse_field_defaults(
             defaults.depends_on = Some(parse_depends_on_route_attr(attr, route_params)?);
         } else if last.ident == "allow_unused" {
             defaults.allow_unused = true;
-        } else if last.ident == "column" {
-            if let Ok(lit) = attr.parse_args::<syn::LitStr>() {
-                defaults.column_name = Some(lit.value());
-            }
+        } else if last.ident == "column"
+            && let Ok(lit) = attr.parse_args::<syn::LitStr>()
+        {
+            defaults.column_name = Some(lit.value());
         }
     }
     Ok(defaults)
@@ -470,17 +473,23 @@ fn parse_runtime_value_expr(expr: &Expr) -> RuntimeValueExpr {
 }
 
 fn generate_from_row_impl(fields: &[LiveField]) -> String {
-    let mut out = String::from("impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
-");
+    let mut out = String::from(
+        "impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
+",
+    );
     out.push_str("    fn query(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::pilcrow_runtime::fsr::LiveQuery {
 ");
     out.push_str("        Live::query(_params)\n");
-    out.push_str("    }
-");
+    out.push_str(
+        "    }
+",
+    );
     out.push_str("    fn from_row(row: &::std::collections::HashMap<String, ::serde_json::Value>, _params: &::serde_json::Map<String, ::serde_json::Value>) -> Self {
 ");
-    out.push_str("        Self {
-");
+    out.push_str(
+        "        Self {
+",
+    );
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
@@ -488,31 +497,45 @@ fn generate_from_row_impl(fields: &[LiveField]) -> String {
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
 "
         ));
-        out.push_str(&format!("                value: row.get(\"{column_name}\")\n"));
+        out.push_str(&format!(
+            "                value: row.get(\"{column_name}\")\n"
+        ));
         out.push_str(
             "                    .and_then(|v| ::serde_json::from_value(v.clone()).ok())
 ",
         );
-        out.push_str("                    .unwrap_or_default(),
-");
+        out.push_str(
+            "                    .unwrap_or_default(),
+",
+        );
         out.push_str("                depends_on: ");
         out.push_str(&generate_depends_on(&field.depends_on));
-        out.push_str(",
-");
+        out.push_str(
+            ",
+",
+        );
         out.push_str("                promote_after: ");
         out.push_str(&generate_option_u32(field.promote_after));
-        out.push_str(",
-");
+        out.push_str(
+            ",
+",
+        );
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));
-        out.push_str(",
-");
-        out.push_str("            },
-");
+        out.push_str(
+            ",
+",
+        );
+        out.push_str(
+            "            },
+",
+        );
     }
-    out.push_str("        }
+    out.push_str(
+        "        }
     }
-");
+",
+    );
     // Generate live_fields() impl.
     out.push_str("    fn live_fields(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::std::vec::Vec<::pilcrow_runtime::fsr::LiveFieldRegistration> {\n");
     out.push_str("        ::std::vec![\n");

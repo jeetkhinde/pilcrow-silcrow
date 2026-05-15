@@ -5,6 +5,7 @@ use axum::{
     http::{Request, StatusCode},
     routing::{get, post},
 };
+
 use http_body_util::BodyExt;
 use pilcrow_core::AppError;
 use runtime::{FormMap, Locals, Req, form_errors};
@@ -513,4 +514,39 @@ async fn req_for_test_drives_load_fn() {
     let req = Req::for_test().param("id", "99").build();
     let result = load(req).await.unwrap();
     assert_eq!(result, "99");
+}
+
+// ── req.mutation_id() ────────────────────────────────────────
+
+fn mutation_id_echo_app() -> Router {
+    Router::new().route(
+        "/",
+        get(|req: Req| async move {
+            req.mutation_id().unwrap_or("none").to_owned()
+        }),
+    )
+}
+
+#[tokio::test]
+async fn req_mutation_id_present_when_header_sent() {
+    let resp = mutation_id_echo_app()
+        .oneshot(
+            Request::builder()
+                .uri("/")
+                .header("silcrow-mutation-id", "mut-99")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(body_string(resp).await, "mut-99");
+}
+
+#[tokio::test]
+async fn req_mutation_id_none_when_header_absent() {
+    let resp = mutation_id_echo_app()
+        .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(body_string(resp).await, "none");
 }

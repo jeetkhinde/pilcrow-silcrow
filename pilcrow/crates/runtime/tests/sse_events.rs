@@ -147,6 +147,36 @@ async fn sse_emitter_json_sends_patch_event() {
     assert!(body.contains("\"value\""), "data key missing:\n{body}");
 }
 
+// ── mutation_id ───────────────────────────────────────────────
+
+#[tokio::test]
+async fn sse_patch_with_mutation_id_appears_in_body() {
+    let body = collect_sse_body(sse_stream(|emitter| async move {
+        emitter
+            .send(
+                SilcrowEvent::patch(serde_json::json!({"n": 1}), "#a")
+                    .with_mutation_id("mut-42"),
+            )
+            .await
+    }))
+    .await;
+    assert!(body.contains("mut-42"), "mutation_id missing:\n{body}");
+}
+
+#[tokio::test]
+async fn sse_patch_without_mutation_id_omits_key() {
+    let body = collect_sse_body(sse_stream(|emitter| async move {
+        emitter
+            .send(SilcrowEvent::patch(serde_json::json!({"n": 1}), "#a"))
+            .await
+    }))
+    .await;
+    assert!(
+        !body.contains("mutation_id"),
+        "mutation_id key should be absent:\n{body}"
+    );
+}
+
 // ── EmitError display ─────────────────────────────────────────
 
 #[test]

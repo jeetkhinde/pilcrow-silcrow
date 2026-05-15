@@ -539,7 +539,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             route_params: vec![],
         }])
         .expect("should generate");
-        assert!(generated.isr_config_map.get("page_index").is_none());
+        assert!(!generated.isr_config_map.contains_key("page_index"));
     }
 
     #[test]

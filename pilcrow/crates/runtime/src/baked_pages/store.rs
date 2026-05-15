@@ -80,10 +80,10 @@ impl BakedPageStore {
     pub fn write_shell(&self, route_pattern: &str, html: &str) -> io::Result<()> {
         let path = self.shell_path(route_pattern);
         // Skip write if content is identical (avoids unnecessary fsync).
-        if let Ok(existing) = fs::read_to_string(&path) {
-            if existing == html {
-                return Ok(());
-            }
+        if let Ok(existing) = fs::read_to_string(&path)
+            && existing == html
+        {
+            return Ok(());
         }
         self.write_atomic(&path, html.as_bytes())
     }
@@ -252,10 +252,10 @@ impl BakedPageStore {
             file.sync_all()?;
         }
         fs::rename(&tmp, path)?;
-        if let Some(parent) = path.parent() {
-            if let Ok(dir) = OpenOptions::new().read(true).open(parent) {
-                let _ = dir.sync_all();
-            }
+        if let Some(parent) = path.parent()
+            && let Ok(dir) = OpenOptions::new().read(true).open(parent)
+        {
+            let _ = dir.sync_all();
         }
         Ok(())
     }

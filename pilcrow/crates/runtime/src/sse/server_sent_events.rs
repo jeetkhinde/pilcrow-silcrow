@@ -19,6 +19,7 @@ pub(crate) enum EventKind {
     Patch {
         data: Result<serde_json::Value, String>,
         target: String,
+        mutation_id: Option<String>,
     },
     Html {
         markup: String,
@@ -43,6 +44,7 @@ impl SilcrowEvent {
             kind: EventKind::Patch {
                 data: serde_json::to_value(data).map_err(|e| e.to_string()),
                 target: target.to_owned(),
+                mutation_id: None,
             },
             id: None,
         }
@@ -99,6 +101,14 @@ impl SilcrowEvent {
         self
     }
 
+    /// Tag a `patch` event with a client-side mutation id so the client can confirm it.
+    pub fn with_mutation_id(mut self, mutation_id: impl Into<String>) -> Self {
+        if let EventKind::Patch { mutation_id: ref mut mid, .. } = self.kind {
+            *mid = Some(mutation_id.into());
+        }
+        self
+    }
+
     fn serialize_check(&self) -> Result<(), String> {
         match &self.kind {
             EventKind::Patch { data, .. } | EventKind::Custom { data, .. } => {
@@ -120,18 +130,24 @@ impl From<SilcrowEvent> for Event {
     fn from(evt: SilcrowEvent) -> Event {
         let id = evt.id;
         match evt.kind {
-            EventKind::Patch { data, target } => match data {
+            EventKind::Patch { data, target, mutation_id } => match data {
                 Err(e) => {
                     tracing::warn!("SilcrowEvent::patch dropped — serialization failed: {e}");
                     Event::default().comment("pilcrow:serialize_error")
                 }
-                Ok(data) => apply_id(
-                    Event::default()
-                        .event("patch")
-                        .json_data(serde_json::json!({ "target": target, "data": data }))
-                        .unwrap_or_else(|_| Event::default().comment("pilcrow:encode_error")),
-                    id,
-                ),
+                Ok(data) => {
+                    let mut payload = serde_json::json!({ "target": target, "data": data });
+                    if let Some(mid) = mutation_id {
+                        payload["mutation_id"] = serde_json::Value::String(mid);
+                    }
+                    apply_id(
+                        Event::default()
+                            .event("patch")
+                            .json_data(payload)
+                            .unwrap_or_else(|_| Event::default().comment("pilcrow:encode_error")),
+                        id,
+                    )
+                }
             },
             EventKind::Html { markup, target } => apply_id(
                 Event::default()

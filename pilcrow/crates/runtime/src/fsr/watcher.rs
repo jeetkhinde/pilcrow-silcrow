@@ -156,15 +156,15 @@ pub async fn watcher_tick_redis(
         }
 
         // 2. Push fresh HTML into Redis for promoted routes.
-        if slot_row.promoted {
-            if let Some(ref html) = patched_html {
-                if let Err(e) = redis.set_html(&slot_row.route, html).await {
-                    tracing::warn!(
-                        route = %slot_row.route,
-                        error = %e,
-                        "FSR watcher: Redis set_html failed"
-                    );
-                }
+        if slot_row.promoted
+            && let Some(ref html) = patched_html
+        {
+            if let Err(e) = redis.set_html(&slot_row.route, html).await {
+                tracing::warn!(
+                    route = %slot_row.route,
+                    error = %e,
+                    "FSR watcher: Redis set_html failed"
+                );
             }
             // 3. Patch Redis JSON if this route opted in.
             if slot_row.json_path.is_some() {
@@ -415,8 +415,7 @@ pub fn spawn_embedded_watcher_redis(
                     tokio::pin!(msg_stream);
 
                     loop {
-                        match tokio::time::timeout(Duration::from_secs(60), msg_stream.next())
-                            .await
+                        match tokio::time::timeout(Duration::from_secs(60), msg_stream.next()).await
                         {
                             // Invalidation message received — tick immediately.
                             Ok(Some(_)) => {

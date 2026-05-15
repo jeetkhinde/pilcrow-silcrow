@@ -27,6 +27,7 @@ React is used ONLY as a view layer. Silcrow owns everything else.
 | Form submission | `useSilcrowForm` or `useSilcrowAction` |
 | Named Pilcrow page action | `usePilcrowNamedAction` |
 | React Hook Form / complex validation | `silcrowSubmitHandler` |
+| Mutation with instant UI feedback (optimistic) | `useSilcrowMutation` |
 | Manually patch state | `publishSilcrowAtom` |
 | Cross-component sync | `useSilcrowAtom` |
 
@@ -39,6 +40,7 @@ React is used ONLY as a view layer. Silcrow owns everything else.
 - `useSilcrowAction(url, initialState?, options?)` — React 19 `useActionState` backed by Silcrow transport; returns tuple `[state, action, pending]`
 - `useSilcrowForm(url, initialState?, options?)` — object wrapper over `useSilcrowAction`; returns `{state, action, pending, ok, message, errors}`
 - `usePilcrowNamedAction(name, initialState?, options?)` — resolves a Pilcrow named action relative to the current page
+- `useSilcrowMutation(options)` — event-handler-driven mutation with optional optimistic update; returns `{mutate, pending, error, data, reset}`. Use when you need full control (button click, DnD) rather than a form action.
 - `submitSilcrow(url, options?)` — raw action function for `useActionState`
 - `silcrowSubmitHandler(url, options?)` — async submit callback for React Hook Form
 - `publishSilcrowAtom(scope, data)` — manually patch a Silcrow atom

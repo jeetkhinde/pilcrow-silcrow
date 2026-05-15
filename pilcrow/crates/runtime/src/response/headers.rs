@@ -48,3 +48,4 @@ define_string_header!(SilcrowInvalidate, "silcrow-invalidate");
 define_string_header!(SilcrowNavigate, "silcrow-navigate");
 define_string_header!(SilcrowSse, "silcrow-sse");
 define_string_header!(SilcrowWs, "silcrow-ws");
+define_string_header!(SilcrowMutationId, "silcrow-mutation-id");

@@ -12,6 +12,8 @@ pub enum WsEvent {
     Patch {
         target: String,
         data: serde_json::Value,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        mutation_id: Option<String>,
     },
     Html {
         target: String,
@@ -35,6 +37,19 @@ impl WsEvent {
         Self::Patch {
             target: target.to_owned(),
             data: value,
+            mutation_id: None,
+        }
+    }
+
+    /// Tag a `patch` event with a client-side mutation id so the client can confirm it.
+    pub fn with_mutation_id(self, id: impl Into<String>) -> Self {
+        match self {
+            Self::Patch { target, data, .. } => Self::Patch {
+                target,
+                data,
+                mutation_id: Some(id.into()),
+            },
+            other => other,
         }
     }
 

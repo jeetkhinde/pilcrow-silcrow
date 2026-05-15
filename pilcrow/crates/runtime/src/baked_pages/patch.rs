@@ -215,7 +215,7 @@ mod tests {
 
         let mut registry = BakedPatchRegistry::new(store.clone());
         registry.register_field_recompute("TicketStatus:123", "status", |_key| {
-            Err(io::Error::new(io::ErrorKind::Other, "db unavailable"))
+            Err(io::Error::other("db unavailable"))
         });
 
         let outcome = registry.patch_dependency("TicketStatus:123").unwrap();

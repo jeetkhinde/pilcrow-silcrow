@@ -131,12 +131,36 @@ impl BaseResponse {
     /// Patch a secondary DOM target via `silcrow-patch`.
     /// Multiple calls accumulate.
     pub fn add_patch_target(&mut self, selector: &str, data: &impl Serialize) {
+        self.add_patch_target_inner(selector, data, None);
+    }
+
+    /// Like `add_patch_target` but tags the entry with a mutation id so the
+    /// client can confirm and retire the pending optimistic mutation.
+    pub fn add_patch_target_with_mutation(
+        &mut self,
+        selector: &str,
+        data: &impl Serialize,
+        mutation_id: &str,
+    ) {
+        self.add_patch_target_inner(selector, data, Some(mutation_id));
+    }
+
+    fn add_patch_target_inner(
+        &mut self,
+        selector: &str,
+        data: &impl Serialize,
+        mutation_id: Option<&str>,
+    ) {
         let mut list = self
             .headers
             .typed_get::<SilcrowPatch>()
             .and_then(|h| serde_json::from_str::<Vec<serde_json::Value>>(&h.0).ok())
             .unwrap_or_default();
-        list.push(serde_json::json!({ "data": data, "target": selector }));
+        let mut entry = serde_json::json!({ "data": data, "target": selector });
+        if let Some(mid) = mutation_id {
+            entry["mutation_id"] = serde_json::Value::String(mid.to_owned());
+        }
+        list.push(entry);
         self.headers
             .typed_insert(SilcrowPatch(serde_json::Value::Array(list).to_string()));
     }
@@ -242,6 +266,16 @@ pub trait ResponseExt: Sized {
     }
     fn patch_target(mut self, selector: &str, data: &impl serde::Serialize) -> Self {
         self.base_mut().add_patch_target(selector, data);
+        self
+    }
+    fn patch_target_with_mutation(
+        mut self,
+        selector: &str,
+        data: &impl serde::Serialize,
+        mutation_id: &str,
+    ) -> Self {
+        self.base_mut()
+            .add_patch_target_with_mutation(selector, data, mutation_id);
         self
     }
     fn invalidate_target(mut self, selector: &str) -> Self {

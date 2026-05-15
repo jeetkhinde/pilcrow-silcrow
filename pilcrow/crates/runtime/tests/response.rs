@@ -255,6 +255,38 @@ fn response_ext_patch_target_accumulates() {
     assert_eq!(parsed[1]["data"]["label"], "new");
 }
 
+// ── patch_target_with_mutation ───────────────────────────────
+
+#[test]
+fn response_ext_patch_target_with_mutation_includes_mutation_id() {
+    let resp = navigate("/")
+        .patch_target_with_mutation(
+            "#counter",
+            &serde_json::json!({"count": 5}),
+            "mut-123",
+        )
+        .into_response();
+    let hdr = header_str(&resp, "silcrow-patch").unwrap_or("");
+    let parsed: Vec<serde_json::Value> = serde_json::from_str(hdr).expect("parse patch header");
+    assert_eq!(parsed.len(), 1);
+    assert_eq!(parsed[0]["target"], "#counter");
+    assert_eq!(parsed[0]["data"]["count"], 5);
+    assert_eq!(parsed[0]["mutation_id"], "mut-123");
+}
+
+#[test]
+fn response_ext_patch_target_without_mutation_omits_key() {
+    let resp = navigate("/")
+        .patch_target("#counter", &serde_json::json!({"count": 5}))
+        .into_response();
+    let hdr = header_str(&resp, "silcrow-patch").unwrap_or("");
+    let parsed: Vec<serde_json::Value> = serde_json::from_str(hdr).expect("parse patch header");
+    assert!(
+        parsed[0].get("mutation_id").is_none(),
+        "mutation_id should be absent"
+    );
+}
+
 #[test]
 fn navigate_with_toast_and_header_both_applied() {
     let resp = navigate("/")

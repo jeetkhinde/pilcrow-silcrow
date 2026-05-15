@@ -54,7 +54,7 @@ fn ws_event_patch_round_trips() {
     let json = serde_json::to_string(&original).unwrap();
     let decoded: WsEvent = serde_json::from_str(&json).unwrap();
     match decoded {
-        WsEvent::Patch { target, data } => {
+        WsEvent::Patch { target, data, .. } => {
             assert_eq!(target, "#box");
             assert_eq!(data["x"], 42);
         }
@@ -68,6 +68,22 @@ fn ws_event_navigate_round_trips() {
     let json = serde_json::to_string(&original).unwrap();
     let decoded: WsEvent = serde_json::from_str(&json).unwrap();
     assert!(matches!(decoded, WsEvent::Navigate { path } if path == "/checkout"));
+}
+
+// ── mutation_id ───────────────────────────────────────────────
+
+#[test]
+fn ws_event_patch_with_mutation_id_serializes() {
+    let evt = WsEvent::patch(serde_json::json!({"n": 1}), "#a").with_mutation_id("mut-7");
+    let v: serde_json::Value = serde_json::to_value(&evt).unwrap();
+    assert_eq!(v["mutation_id"], "mut-7");
+}
+
+#[test]
+fn ws_event_patch_without_mutation_id_omits_key() {
+    let evt = WsEvent::patch(serde_json::json!({"n": 1}), "#a");
+    let v: serde_json::Value = serde_json::to_value(&evt).unwrap();
+    assert!(v.get("mutation_id").is_none(), "mutation_id should be absent");
 }
 
 // ── WsRecvError display ───────────────────────────────────────

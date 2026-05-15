@@ -163,6 +163,46 @@ publishSilcrowAtom("route:/cart", {count: 3});
 
 ---
 
+## `useSilcrowMutation(options)`
+
+Event-handler-driven mutation with optional optimistic update. Unlike `useSilcrowAction`,
+this does **not** use `useActionState` — it fires from an event handler (button click,
+drag-and-drop, keyboard shortcut) where you need full control.
+
+```tsx
+type CartItem = {count: number};
+
+function AddToCart({cart}: {cart: CartItem}) {
+  const {mutate, pending, error} = useSilcrowMutation<CartItem>({
+    url: "/cart/add/1",
+    optimistic: {
+      scope: "route:/cart",
+      data: {count: cart.count + 1}, // applied immediately
+    },
+    onSuccess: (result) => console.log("server confirmed", result.mutationId),
+    onError: () => console.error("mutation failed — state reverted"),
+  });
+  return (
+    <button onClick={() => mutate()} disabled={pending}>
+      {pending ? "Adding…" : "Add to cart"}
+    </button>
+  );
+}
+```
+
+Fields returned:
+- `mutate(body?)` — fire the mutation; `body` is optional form/JSON data
+- `pending` — true while the network request is in flight
+- `error` — last error (network failure or non-2xx), or `null`
+- `data` — last successful response data, or `null`
+- `reset()` — clear `error` and `data`
+
+`options.optimistic.scope` must match a live atom scope (a `s-bind` value or seeded route atom).
+The server should echo the `silcrow-mutation-id` back through SSE/WS `.with_mutation_id()` or
+via `req.res.patch_target_with_mutation()` to auto-confirm the pending mutation.
+
+---
+
 ## Choosing between hooks
 
 | I want to… | Use |
@@ -174,4 +214,5 @@ publishSilcrowAtom("route:/cart", {count: 3});
 | Raw tuple (`[state, action, pending]`) | `useSilcrowAction` |
 | Named page action | `usePilcrowNamedAction` |
 | React Hook Form integration | `silcrowSubmitHandler` |
+| Event-handler mutation + instant UI | `useSilcrowMutation` |
 | Push a state update manually | `publishSilcrowAtom` |

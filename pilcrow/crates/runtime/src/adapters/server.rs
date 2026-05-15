@@ -55,6 +55,17 @@ impl PilcrowAdapter for PortEnvAdapter {
     }
 }
 
+fn resolve_addr(bind_addr: &str) -> String {
+    resolve_addr_impl(bind_addr, std::env::var("PORT").ok())
+}
+
+fn resolve_addr_impl(bind_addr: &str, port: Option<String>) -> String {
+    match port {
+        Some(port) => format!("0.0.0.0:{port}"),
+        None => bind_addr.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,16 +86,5 @@ mod tests {
     #[test]
     fn addr_preserves_non_loopback_bind_addr_as_fallback() {
         assert_eq!(resolve_addr_impl("0.0.0.0:4000", None), "0.0.0.0:4000");
-    }
-}
-
-fn resolve_addr(bind_addr: &str) -> String {
-    resolve_addr_impl(bind_addr, std::env::var("PORT").ok())
-}
-
-fn resolve_addr_impl(bind_addr: &str, port: Option<String>) -> String {
-    match port {
-        Some(port) => format!("0.0.0.0:{port}"),
-        None => bind_addr.to_string(),
     }
 }

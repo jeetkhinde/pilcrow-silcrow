@@ -669,8 +669,11 @@ const PILCROW_REACT_TS: &str = r#"import {
   createContext,
   use,
   useActionState,
+  useCallback,
   useContext,
   useMemo,
+  useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
   createElement,
@@ -691,6 +694,7 @@ export type SilcrowSubmitResult<T = unknown> = {
   data: T;
   html: string | null;
   headers: Headers;
+  mutationId?: string;
 };
 
 /**
@@ -707,6 +711,14 @@ export type SilcrowSubmitOptions = {
   method?: string;
   scope?: string;
   headers?: Record<string, string>;
+  optimistic?: {
+    /** Atom scope to patch optimistically (must match a `s-bind` scope or atom). */
+    scope: string;
+    /** Data to apply immediately before the round-trip completes. */
+    data: unknown;
+    /** Stable client id for this mutation; auto-generated when omitted. */
+    mutationId?: string;
+  };
 };
 
 /**
@@ -779,6 +791,9 @@ declare global {
         body?: BodyInit | object | null,
         options?: SilcrowSubmitOptions,
       ) => Promise<SilcrowSubmitResult<T>>;
+      publishOptimistic?: (scope: string, data: unknown, mutationId: string) => void;
+      confirmOptimistic?: (mutationId: string) => void;
+      revertOptimistic?: (mutationId: string) => void;
     };
   }
 }
@@ -1005,6 +1020,108 @@ export function useSilcrowForm<State extends SilcrowFormState = SilcrowFormState
     () => ({state, action, pending, ok: state.ok, message: state.message, errors: state.errors}),
     [state, action, pending],
   );
+}
+
+/**
+ * Options for `useSilcrowMutation`.
+ */
+export type SilcrowMutationOptions<Data = unknown> = {
+  /** URL to POST to. */
+  url: string;
+  /** HTTP method (default: `"POST"`). */
+  method?: string;
+  /** Extra request headers. */
+  headers?: Record<string, string>;
+  /** Optimistic update to apply immediately before the round-trip. */
+  optimistic?: {
+    scope: string;
+    data: Data;
+    mutationId?: string;
+  };
+  /** Called when the server confirms success. */
+  onSuccess?: (result: SilcrowSubmitResult) => void;
+  /** Called when the server returns an error response or network failure. */
+  onError?: (error: unknown) => void;
+};
+
+/**
+ * State returned by `useSilcrowMutation`.
+ */
+export type SilcrowMutationState<Data = unknown> = {
+  mutate: (body?: BodyInit | object | null) => Promise<SilcrowSubmitResult>;
+  pending: boolean;
+  error: unknown;
+  data: Data | null;
+  reset: () => void;
+};
+
+/**
+ * A simple mutation hook that wraps `Silcrow.submit` with optional optimistic updates.
+ *
+ * Unlike `useSilcrowAction`, this hook does not use React 19 `useActionState`.
+ * It is suitable for mutations triggered by event handlers (button clicks, drag-and-drop)
+ * where you need full control over when and how the mutation fires.
+ *
+ * @example
+ * type CartItem = {count: number};
+ * const {mutate, pending, error} = useSilcrowMutation<CartItem>({
+ *   url: "/cart/add/1",
+ *   optimistic: {scope: "route:/cart", data: {count: prev.count + 1}},
+ *   onSuccess: (result) => console.log("Added to cart", result.data),
+ * });
+ * return <button onClick={() => mutate()} disabled={pending}>Add to cart</button>;
+ */
+export function useSilcrowMutation<Data = unknown>(
+  options: SilcrowMutationOptions<Data>,
+): SilcrowMutationState<Data> {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const [data, setData] = useState<Data | null>(null);
+
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+
+  const reset = useCallback(() => {
+    setPending(false);
+    setError(null);
+    setData(null);
+  }, []);
+
+  const mutate = useCallback(async (body?: BodyInit | object | null) => {
+    const {url, method, headers, optimistic, onSuccess, onError} = optionsRef.current;
+    if (!window.Silcrow?.submit) {
+      const err = new Error("Silcrow is not loaded");
+      setError(err);
+      onError?.(err);
+      throw err;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      const result = await window.Silcrow.submit(url, body ?? null, {
+        method: method ?? "POST",
+        headers,
+        optimistic,
+      });
+      setData(result.data as Data);
+      if (result.ok) {
+        onSuccess?.(result);
+      } else {
+        const err = new Error("Request failed with status " + result.status);
+        setError(err);
+        onError?.(err);
+      }
+      return result;
+    } catch (err) {
+      setError(err);
+      onError?.(err);
+      throw err;
+    } finally {
+      setPending(false);
+    }
+  }, []);
+
+  return {mutate, pending, error, data, reset};
 }
 "#;
 
@@ -1721,6 +1838,12 @@ mod tests {
         assert!(PILCROW_REACT_TS.contains("export function useSilcrowAction"));
         assert!(PILCROW_REACT_TS.contains("export function useSilcrowForm"));
         assert!(PILCROW_REACT_TS.contains("export function useSilcrowResource"));
+        assert!(PILCROW_REACT_TS.contains("export function useSilcrowMutation"));
+        assert!(PILCROW_REACT_TS.contains("SilcrowMutationOptions"));
+        assert!(PILCROW_REACT_TS.contains("SilcrowMutationState"));
+        assert!(PILCROW_REACT_TS.contains("publishOptimistic"));
+        assert!(PILCROW_REACT_TS.contains("confirmOptimistic"));
+        assert!(PILCROW_REACT_TS.contains("revertOptimistic"));
         assert!(PILCROW_REACT_TS.contains("useActionState<State, FormData>"));
         assert!(!PILCROW_REACT_TS.contains("zodFormValidator"));
         assert!(!PILCROW_REACT_TS.contains("safeParse"));

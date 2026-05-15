@@ -50,8 +50,9 @@
 
 ## Response Headers (Server → Client)
 
-- `silcrow-target` (request header)
-- `silcrow-patch`
+- `silcrow-target` (request header — marks enhanced requests)
+- `silcrow-mutation-id` (request header — identifies an in-flight optimistic mutation)
+- `silcrow-patch` (response header — JSON array of `{target, data[, mutation_id]}` entries)
 - `silcrow-invalidate`
 - `silcrow-navigate`
 - `silcrow-sse`
@@ -67,7 +68,7 @@
 ## SSE Event Types
 
 - `message` (default)
-- `patch`
+- `patch` — payload: `{ target, data[, mutation_id] }`. When `mutation_id` is present, silcrow.js calls `confirmOptimistic(mutation_id)` before applying the patch.
 - `html`
 - `invalidate`
 - `navigate`
@@ -75,7 +76,7 @@
 
 ## WebSocket Message Types
 
-- `patch`
+- `patch` — payload: `{ type: "patch", target, data[, mutation_id] }`. Same confirmation semantics as SSE patch.
 - `html`
 - `invalidate`
 - `navigate`
@@ -95,8 +96,9 @@
 - `silcrow:sse`
 - `silcrow:sse:<event>`
 - `silcrow:ws:<event>`
-- `silcrow:optimistic`
-- `silcrow:revert`
+- `silcrow:optimistic` — fired when `publishOptimistic` applies a speculative patch
+- `silcrow:confirmed` — fired when `confirmOptimistic` retires a pending mutation
+- `silcrow:revert` — fired when `revertOptimistic` restores the snapshot
 
 ---
 
@@ -124,8 +126,9 @@
 - `publish`
 
 **Feedback**
-- `optimistic`
-- `revert`
+- `publishOptimistic(scope, data, mutationId)` — snapshot atom + apply optimistic patch + register pending mutation
+- `confirmOptimistic(mutationId)` — retire a pending mutation (server confirmed)
+- `revertOptimistic(mutationId)` — restore atom snapshot and retire pending mutation
 - `onToast`
 
 **Extensibility**
@@ -171,7 +174,7 @@
 
 **Navigator** — `VERB_ATTRS`, `VERB_SELECTOR`, `FORM_VERB_SELECTOR`, `DEFAULT_TIMEOUT`, `CACHE_TTL`, `MAX_CACHE`, `abortMap`, `routeHandler`, `errorHandler`, `responseCache`, `preloadInflight`, `resolveVerb`, `getTarget`, `getTimeout`, `showLoading`, `hideLoading`, `cacheSet`, `cacheGet`, `bustCacheOnMutation`, `processSideEffectHeaders`, `buildFetchOptions`, `processResponseHeaders`, `prepareSwapContent`, `finalizeNavigation`, `navigate`, `onClick`, `onSubmit`, `onPopState`, `onMouseEnter`
 
-**Optimistic** — `snapshots`, `optimisticPatch`, `revertOptimistic`
+**Optimistic** — `pendingMutations` (Map mutationId→{scope,snapshot}), `pendingByScope` (Map scope→Set<mutationId>), `publishOptimistic`, `confirmOptimistic`, `revertOptimistic`, `scopeForTarget`, `hasPendingMutationForTarget`
 
 **Lifecycle** — `liveObserver`, `middlewareLocked`, `init`, `destroy`, auto-boot on `DOMContentLoaded`
 
