@@ -50,15 +50,15 @@ Touch `pilcrow-routekit` for routing/codegen/template changes. Touch `pilcrow-ru
 **Never shortcut this chain:**
 
 ```
-silcrow/src/*.js           ← edit source here only
-  └─ npm run build         ← run inside silcrow/
-       └─ dist/silcrow.js  ← generated output
-            └─ pilcrow/crates/runtime/build.rs copies it to OUT_DIR at cargo build
-                 └─ assets.rs embeds via include_str!(concat!(env!("OUT_DIR"), "/silcrow.js"))
+silcrow/src/silcrow.js                  ← edit source here only
+  └─ node build.js                      ← run inside silcrow/ (uses terser, no npm needed)
+       └─ silcrow/dist/silcrow.min.js   ← minified output
+            └─ build.js auto-copies it to pilcrow/crates/runtime/assets/silcrow.js
+                 └─ assets.rs embeds via include_str!("../../assets/silcrow.js")
 ```
 
-After editing silcrow source: `npm run build` in `silcrow/`, then `cargo build` in `pilcrow/`.
-If node_modules is missing, run `npm install` in the pilcrow root first.
+After editing silcrow source: `node build.js` in `silcrow/`, then `cargo build -p pilcrow-runtime` to verify the embed.
+terser must be available: `npm install` inside `silcrow/` if it is missing.
 
 ## Build commands (from workspace root)
 
@@ -161,7 +161,7 @@ Use `/update-docs <feature-name>` to run this interactively.
 **After ANY Silcrow public API change:**
 
 1. Edit `silcrow/src/` only (never `dist/`)
-2. `npm run build` in `silcrow/`
+2. `node build.js` in `silcrow/` — auto-copies minified output to `pilcrow/crates/runtime/assets/silcrow.js`
 3. Update `silcrow/docs/silcrow-api.md` in the same commit
 4. `cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-runtime` to verify embed
 
