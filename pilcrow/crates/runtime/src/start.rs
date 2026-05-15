@@ -26,6 +26,10 @@ use crate::isr::{IsrCache, IsrHandle};
 use crate::sw::{sw_handler, sw_inject_layer};
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
+// local utility
+fn web_bind_addr(config: &PilcrowConfig) -> String {
+    format!("{}:{}", config.web.host, config.web.port)
+}
 
 pub async fn start(app: Router) {
     start_with_prerender(app, |_cache| async {}).await;
@@ -56,7 +60,7 @@ where
     A: PilcrowAdapter,
 {
     let config = Arc::new(load_config_or_exit());
-    let bind_addr = config.web_bind_addr();
+    let bind_addr = web_bind_addr(&config);
     let http = reqwest::Client::new();
 
     // Load i18n bundles when [i18n] is configured in Pilcrow.toml.
@@ -87,8 +91,12 @@ where
             IsrCache::with_persistence(dir)
         }
         CacheProvider::Sqlite => {
-            tracing::error!("ISR cache provider 'sqlite' is not implemented; use memory or filesystem");
-            eprintln!("pilcrow: cache provider 'sqlite' is not implemented; use memory or filesystem");
+            tracing::error!(
+                "ISR cache provider 'sqlite' is not implemented; use memory or filesystem"
+            );
+            eprintln!(
+                "pilcrow: cache provider 'sqlite' is not implemented; use memory or filesystem"
+            );
             std::process::exit(1);
         }
         CacheProvider::Redis => {
@@ -258,12 +266,17 @@ where
                                         // Rebuild fsr_store with Redis attached so that
                                         // invalidate_dep_key / invalidate_route publish
                                         // to pilcrow:invalidate immediately.
-                                        let fsr_store = Arc::new(fsr_store.with_redis_attached(Arc::clone(&redis)));
+                                        let fsr_store = Arc::new(
+                                            fsr_store.with_redis_attached(Arc::clone(&redis)),
+                                        );
                                         // Re-register the upgraded store as an Extension.
                                         app = app.layer(axum::Extension(Arc::clone(&fsr_store)));
 
                                         // Bridge: Redis pilcrow:patch → in-process broadcast.
-                                        spawn_redis_patch_bridge(Arc::clone(&redis), (*fsr_tx).clone());
+                                        spawn_redis_patch_bridge(
+                                            Arc::clone(&redis),
+                                            (*fsr_tx).clone(),
+                                        );
 
                                         spawn_embedded_watcher_redis(
                                             Arc::clone(&fsr_store),
