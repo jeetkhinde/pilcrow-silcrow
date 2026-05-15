@@ -2,7 +2,7 @@ use crate::{
     codegen, diagnostics,
     docs::{self, KnowledgeBase},
     inspect,
-    registry::{FeatureDomain, FeatureStatus, Registry},
+    registry::{Feature, FeatureDomain, FeatureStatus, Registry},
     scaffold::{orchestrate_feature, ScaffoldRequest},
     validation::validate_implementation,
     workspace::scan_project,
@@ -267,6 +267,20 @@ struct Pattern {
     status: String,
 }
 
+#[derive(Debug, Serialize)]
+struct FeatureSummary {
+    id: String,
+    name: String,
+    domain: FeatureDomain,
+    status: FeatureStatus,
+    summary: String,
+    key_requirements: Vec<String>,
+    key_constraints: Vec<String>,
+    feature_flags: Vec<String>,
+    config_requirements: Vec<String>,
+    detail_tool_hint: String,
+}
+
 // ── Tool implementations ───────────────────────────────────────────────────
 
 #[tool_router]
@@ -299,7 +313,13 @@ impl PilcrowServer {
             Ok(domain) => domain,
             Err(error) => return Ok(tool_error(error)),
         };
-        Ok(structured(self.registry.filtered(status, domain)))
+        let features = self
+            .registry
+            .filtered(status, domain)
+            .into_iter()
+            .map(feature_summary)
+            .collect::<Vec<_>>();
+        Ok(structured(features))
     }
 
     #[tool(
@@ -1093,6 +1113,127 @@ fn structured(value: impl serde::Serialize) -> CallToolResult {
     match serde_json::to_value(value) {
         Ok(value) => CallToolResult::structured(value),
         Err(error) => tool_error(error.to_string()),
+    }
+}
+
+fn feature_summary(feature: &Feature) -> FeatureSummary {
+    let mut key_requirements = take_matching(
+        feature,
+        &[
+            "requires",
+            "must",
+            "required",
+            "enable",
+            "opt in",
+            "configure",
+        ],
+        4,
+    );
+    let key_constraints = take_matching(
+        feature,
+        &[
+            "incompatible",
+            "invalid",
+            "do not",
+            "cannot",
+            "must not",
+            "requires",
+        ],
+        4,
+    );
+    let mut feature_flags = extract_backticked_terms(feature, "feature");
+    let mut config_requirements = take_matching(
+        feature,
+        &["pilcrow.toml", "redis_url", "[fsr]", "[cache]", "[live]"],
+        4,
+    );
+
+    if feature.id == "fsr" {
+        push_unique(
+            &mut key_requirements,
+            "Requires the `live-props` Cargo feature.".to_string(),
+        );
+        push_unique(
+            &mut key_requirements,
+            "Optional `live-props-redis` enables Redis cache/pub-sub mode.".to_string(),
+        );
+        push_unique(
+            &mut key_requirements,
+            "Redis mode uses pub/sub: `pilcrow:invalidate` -> watcher re-query -> Redis patch -> `pilcrow:patch` -> SSE clients."
+                .to_string(),
+        );
+        push_unique(
+            &mut key_requirements,
+            "Without Redis, the embedded watcher falls back to polling.".to_string(),
+        );
+        push_unique(&mut feature_flags, "live-props".to_string());
+        push_unique(&mut feature_flags, "live-props-redis".to_string());
+        push_unique(
+            &mut config_requirements,
+            "`[fsr].redis_url` is required when `live-props-redis` is enabled.".to_string(),
+        );
+    }
+
+    FeatureSummary {
+        id: feature.id.clone(),
+        name: feature.name.clone(),
+        domain: feature.domain,
+        status: feature.status,
+        summary: feature.summary.clone(),
+        key_requirements,
+        key_constraints,
+        feature_flags,
+        config_requirements,
+        detail_tool_hint: format!(
+            "Use get_feature_spec with id=\"{}\" for the full contract.",
+            feature.id
+        ),
+    }
+}
+
+fn take_matching(feature: &Feature, needles: &[&str], limit: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    for item in feature
+        .constraints
+        .iter()
+        .chain(feature.validation_rules.iter())
+        .chain(std::iter::once(&feature.summary))
+    {
+        let item_lower = item.to_ascii_lowercase();
+        if needles.iter().any(|needle| item_lower.contains(needle)) {
+            push_unique(&mut out, item.clone());
+            if out.len() >= limit {
+                break;
+            }
+        }
+    }
+    out
+}
+
+fn extract_backticked_terms(feature: &Feature, required_context: &str) -> Vec<String> {
+    let text = format!(
+        "{}\n{}\n{}\n{}",
+        feature.spec,
+        feature.constraints.join("\n"),
+        feature.validation_rules.join("\n"),
+        feature.canonical_usage.as_deref().unwrap_or_default()
+    );
+    let mut out = Vec::new();
+    for segment in text.split('`').skip(1).step_by(2) {
+        let segment_lower = segment.to_ascii_lowercase();
+        if segment_lower.contains(required_context)
+            || segment_lower.contains("live-props")
+            || segment_lower.contains("experimental-")
+        {
+            push_unique(&mut out, segment.to_string());
+        }
+    }
+    out
+}
+
+fn push_unique(items: &mut Vec<String>, item: String) {
+    if !items.iter().any(|existing| existing == &item) {
+        items.push(item);
     }
 }
 
