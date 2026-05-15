@@ -1,23 +1,13 @@
 # CLAUDE.md — pilcrow-silcrow workspace
 
-## CRITICAL: This workspace is a coordination shell — not where code lives
+## Workspace topology — monorepo
 
-`pilcrow/` and `silcrow/` are **symlinks to their own independent git repos**.
-All real source changes MUST be committed to those repos, not to this workspace.
-
-- Code changes to the framework → commit inside `pilcrow/` (its own git repo)
-- Code changes to the client runtime → commit inside `silcrow/` (its own git repo)
-- `demo/`, `plans/`, `.claude/` → these live in the workspace repo and are the only things you commit here
-
-**Never run `git commit` from the workspace root for framework or runtime code.**
-Always `cd pilcrow/` or `cd silcrow/` before staging and committing those changes.
-
-## Workspace topology
+Everything lives in one git repo. Commit from the workspace root.
 
 ```text
-pilcrow-silcrow/           ← workspace repo (demo, plans, docs only)
-  pilcrow -> ../../pilcrow      # Pilcrow framework repo (Rust SSR engine) — its own git
-  silcrow -> ../../silcrow      # Silcrow client runtime repo (JS) — its own git
+pilcrow-silcrow/               ← single git repo
+  pilcrow/                     # Pilcrow framework (Rust SSR engine)
+  silcrow/                     # Silcrow client runtime (JS)
   demo/                        # Real consumer app, depends on Pilcrow by path
   plans/                       # Feature implementation plans
   .claude/commands/            # Project slash commands
@@ -26,6 +16,10 @@ pilcrow-silcrow/           ← workspace repo (demo, plans, docs only)
   .claude/react-hook-guide.md  # Hook reference with examples
   .claude/rendering-models.md  # All rendering modes: SSR, ISR, SSG, streaming, deferred, islands
 ```
+
+**Publishing to crates.io (future):** Run `cargo publish -p <crate-name>` from the workspace root.
+Path deps in `demo/Cargo.toml` must become version deps before publishing Pilcrow crates.
+Use `git subtree split --prefix=pilcrow` to extract a clean Pilcrow-only history if a separate public repo is ever needed.
 
 NEVER call `scan_project_context` if this file was loaded at session start — topology,
 architecture, and build commands are all here. Only call it when debugging a specific
