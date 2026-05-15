@@ -8,7 +8,7 @@ demo/.pilcrow-baked
 target/
 public/
 pilcrow/
-silcrow/
+silcrow/node_modules
 graphify-out/
 
 

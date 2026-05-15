@@ -1,11 +1,23 @@
 # CLAUDE.md — pilcrow-silcrow workspace
 
+## CRITICAL: This workspace is a coordination shell — not where code lives
+
+`pilcrow/` and `silcrow/` are **symlinks to their own independent git repos**.
+All real source changes MUST be committed to those repos, not to this workspace.
+
+- Code changes to the framework → commit inside `pilcrow/` (its own git repo)
+- Code changes to the client runtime → commit inside `silcrow/` (its own git repo)
+- `demo/`, `plans/`, `.claude/` → these live in the workspace repo and are the only things you commit here
+
+**Never run `git commit` from the workspace root for framework or runtime code.**
+Always `cd pilcrow/` or `cd silcrow/` before staging and committing those changes.
+
 ## Workspace topology
 
 ```text
-pilcrow-silcrow/
-  pilcrow -> ../../pilcrow      # Pilcrow framework repo (Rust SSR engine)
-  silcrow -> ../../silcrow      # Silcrow client runtime repo (JS)
+pilcrow-silcrow/           ← workspace repo (demo, plans, docs only)
+  pilcrow -> ../../pilcrow      # Pilcrow framework repo (Rust SSR engine) — its own git
+  silcrow -> ../../silcrow      # Silcrow client runtime repo (JS) — its own git
   demo/                        # Real consumer app, depends on Pilcrow by path
   plans/                       # Feature implementation plans
   .claude/commands/            # Project slash commands

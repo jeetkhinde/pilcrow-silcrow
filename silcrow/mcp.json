@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "rust-analyzer": {
+      "command": "rust-mcp-server",
+      "args": ["--workspace", "."],
+      "description": "Provides deep analysis of your Rust-based SSR engine and types."
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
+      "description": "Allows Claude/Gemini to read and write your .md content and silcrow_runtime.js files directly."
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Enables the agent to process complex architectural decisions for your DOM patching logic."
+    }
+  }
+}

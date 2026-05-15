@@ -1,4 +1,576 @@
 {
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/migrations/002_pilcrow_cache_indexes.sql": {
+    "mtime": 1778547027.3955376,
+    "hash": "cd0a9ce37310cc44fda4d34689cfce17"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/migrations/001_pilcrow_cache.sql": {
+    "mtime": 1778547025.935809,
+    "hash": "145110de12b010cc3667ec7dc1203feb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/migrations/003_pilcrow_fsr.sql": {
+    "mtime": 1778685649.9368432,
+    "hash": "2218f89af619577e02b7bc174d002a8d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/cli/src/export.rs": {
+    "mtime": 1777245584.8878214,
+    "hash": "53455b6beb2fdec1bfb69f836ce30a59"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/cli/src/routes.rs": {
+    "mtime": 1777594032.7787035,
+    "hash": "eb1f87cebb09cb58b7c0c5a4e6e6a6b4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/cli/src/dev.rs": {
+    "mtime": 1777249989.7066586,
+    "hash": "03eb6b4890ff1ab5190ee4555cd33831"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/cli/src/main.rs": {
+    "mtime": 1777499466.2423537,
+    "hash": "89a982a15847a8d686a4e800ef016ce7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/cli/src/scaffold.rs": {
+    "mtime": 1777594022.860125,
+    "hash": "75db0ec19ba70eef013d5efe139a1e92"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/tests/golden.rs": {
+    "mtime": 1778850961.9574044,
+    "hash": "aac9a3460a350e8ca61e1053db0a607b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/tests/smoke.rs": {
+    "mtime": 1778850961.957789,
+    "hash": "ec36d887fc4abfd7a58584c3d5835323"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/tests/expert_qa.rs": {
+    "mtime": 1778850961.957083,
+    "hash": "37781e8cd07042d3c43622cbcb7b1650"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/docs.rs": {
+    "mtime": 1778850961.952848,
+    "hash": "6152659b5473691cc31104d7889a4b78"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/diagnostics.rs": {
+    "mtime": 1778850961.9520545,
+    "hash": "951621b546f293a9320b95faacee0143"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/registry.rs": {
+    "mtime": 1778850961.954221,
+    "hash": "cfaa8a5fd267ef108ce6bd376aa8f92b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/lib.rs": {
+    "mtime": 1776980254.072518,
+    "hash": "f796f7cdb9972558cf09f0537af57f1b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/server.rs": {
+    "mtime": 1777847455.9657128,
+    "hash": "dbef8d45be944bddfac21a152225e192"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/validation.rs": {
+    "mtime": 1778850961.9558334,
+    "hash": "a07810bc6f8fef5e7b5b4870c52914f4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/workspace.rs": {
+    "mtime": 1778850961.9566095,
+    "hash": "dd1fdd3172f7152c5a083ed77de37786"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/codegen.rs": {
+    "mtime": 1777594350.3202426,
+    "hash": "a8a0c34ad7bbe0bdc1bbfae8dfacd8ff"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/main.rs": {
+    "mtime": 1776886666.0296147,
+    "hash": "cf30a82038dda2b40e5b5225d08762f3"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/scaffold.rs": {
+    "mtime": 1778850961.9549375,
+    "hash": "07dd35cf5185d5de082ec310bc3605d6"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/tools/pilcrow-mcp/src/inspect.rs": {
+    "mtime": 1778850961.9534945,
+    "hash": "2e7a872b1309b34347b54b2b3512bacb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/lib.rs": {
+    "mtime": 1777494846.302034,
+    "hash": "ad8b1e188f628cacec8b24b67130d561"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/config/config.rs": {
+    "mtime": 1778848735.582917,
+    "hash": "5e6e3ddd8d584e875b91e72a144b8a60"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/config/mod.rs": {
+    "mtime": 1778612199.5287404,
+    "hash": "1a9b722f31e953c9d98a38e457128e32"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/envelope/mod.rs": {
+    "mtime": 1778612200.5503564,
+    "hash": "3bb70e1899c4631467fc2725c445f0c3"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/envelope/envelope.rs": {
+    "mtime": 1774648449.1050203,
+    "hash": "4564414acc38092ad4e0cfd63a076254"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/error/error.rs": {
+    "mtime": 1777402704.232985,
+    "hash": "7d576e26f994598f5481f066fb066bb7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/core/src/error/mod.rs": {
+    "mtime": 1778612201.5693398,
+    "hash": "46f0bb39b5a67328cc6bc38306cd100e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/web/examples/baked_prebake.rs": {
+    "mtime": 1778850961.948967,
+    "hash": "c66b7203a9e1f82781934acfc69228b9"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/web/examples/baked_ticket.rs": {
+    "mtime": 1778850961.9493475,
+    "hash": "89027132e619bd45868cfc63469b7dcf"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/web/src/lib.rs": {
+    "mtime": 1778850961.949687,
+    "hash": "7ae169fbbbe87456a48947c560cd277f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/web/src/live.rs": {
+    "mtime": 1778850961.9500024,
+    "hash": "9dbee5d8747336638e63cffe26d31511"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/lib.rs": {
+    "mtime": 1778850961.9281268,
+    "hash": "9adb7a7e5cce9fb8ae94fc18be96e719"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/fsr.rs": {
+    "mtime": 1778850961.927494,
+    "hash": "247ce6084c6f5841f3c5855f2f235aac"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/page_options.rs": {
+    "mtime": 1778687424.3843696,
+    "hash": "cf187b1ce2106ee099042f0b9b27551b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/layout.rs": {
+    "mtime": 1775228489.8178523,
+    "hash": "968ce8b66e33435c9e1e56b0c481dce2"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/i18n_codegen.rs": {
+    "mtime": 1777494846.4256146,
+    "hash": "938b806981c119732f673cc3f292f85f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/compiler.rs": {
+    "mtime": 1778850961.9315953,
+    "hash": "22a4c28445969fcd614a1d33f46a2d93"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/solid.rs": {
+    "mtime": 1778850961.9334605,
+    "hash": "d729a1696bde579436a8316e5b71f697"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/env_codegen.rs": {
+    "mtime": 1777494846.4231088,
+    "hash": "3e71c9f3a74bfeea78234b6b1b320a63"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/react.rs": {
+    "mtime": 1778612241.415099,
+    "hash": "303c760ddc31ad96a14b15343b586c93"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/mod.rs": {
+    "mtime": 1777643899.147626,
+    "hash": "1844d3bb442f4e3fd79deb7bc3d304cc"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/routes_codegen.rs": {
+    "mtime": 1777494709.3383987,
+    "hash": "218398ec353fa6c9fdd2feb741e07e4e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/pipeline.rs": {
+    "mtime": 1778850961.93289,
+    "hash": "584fc896436984327b45ab2f64934ffb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/markdown.rs": {
+    "mtime": 1778850961.931993,
+    "hash": "d9c9614867c8f30eb86d8d7c337a86de"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/build_config.rs": {
+    "mtime": 1777662012.1807866,
+    "hash": "720a30647dce0f1f55ee970b90d9ce02"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/api_routes.rs": {
+    "mtime": 1776989884.156571,
+    "hash": "ee34150f1ea1663bf72e6b9abe0ae125"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/types.rs": {
+    "mtime": 1778850961.930982,
+    "hash": "cced1f923579a558b093048f32200060"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/util.rs": {
+    "mtime": 1776815317.9019537,
+    "hash": "56c2f7067b540dc5f9da031ec244e9de"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/app_module.rs": {
+    "mtime": 1778850463.2941499,
+    "hash": "17bdae768382c151fc78ff0c0e8f0b7e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/mod.rs": {
+    "mtime": 1778850961.9300086,
+    "hash": "ef6d176c2ac0637c658e7637010dcaa7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/page_routes.rs": {
+    "mtime": 1777593858.5423553,
+    "hash": "7701b314204e8d2879a65324c059906c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/emit.rs": {
+    "mtime": 1778628574.498723,
+    "hash": "b55a76cb7dc9beb38831af8a9c23d69d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/tests.rs": {
+    "mtime": 1778744431.3879895,
+    "hash": "ecbc23b29e9743db4a424c795a8f5feb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/instrument.rs": {
+    "mtime": 1778850961.9293308,
+    "hash": "c8e059e2205d494aa5ee9f2b99ec028e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/templating/codegen/templates.rs": {
+    "mtime": 1778850961.9305074,
+    "hash": "89bed2d81eb48715dd8585b02f48bb5a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/discovery.rs": {
+    "mtime": 1777594387.1438127,
+    "hash": "ae832bdca4e4b82f4a1dd043f94e85c0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/intercept.rs": {
+    "mtime": 1774639395.7179189,
+    "hash": "4a6c2d29c60a71e16d57ac909fa1fc69"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/constraint.rs": {
+    "mtime": 1776814363.136955,
+    "hash": "c01bc0b7e6c050ec113380995ee74903"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/mod.rs": {
+    "mtime": 1775243833.9994814,
+    "hash": "bf76fc8c4f7817e25885c96a89c00dcc"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/route/pattern.rs": {
+    "mtime": 1776815317.8585894,
+    "hash": "efc1cb8f9572e6f7f56e5d0fac740fa8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/route/detection.rs": {
+    "mtime": 1775243862.9630647,
+    "hash": "1f73d3148061ea2324e7b4463c9440ac"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/route/mod.rs": {
+    "mtime": 1775218237.621277,
+    "hash": "33a0fe923b479f90e30727a67806a06b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/route/parser.rs": {
+    "mtime": 1778850961.9286263,
+    "hash": "4a60f9ea86ed8068aef8d852ba05afb0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/path/hierarchy.rs": {
+    "mtime": 1774639395.7711244,
+    "hash": "e7c35edccaeee58c66f190f8a8d496b4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/src/routing/path/mod.rs": {
+    "mtime": 1774639395.7504158,
+    "hash": "4a43eb6f3780fe36b8d63b66ff64c752"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/build.rs": {
+    "mtime": 1777593886.4154239,
+    "hash": "908368e88e9f99d6d65eadb1cf0f9678"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/migrations/0001_pilcrow_fsr.sql": {
+    "mtime": 1778850436.0543337,
+    "hash": "ee2b6f762d88633f1162aea90f335109"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/tests/ws_events.rs": {
+    "mtime": 1778850961.9486833,
+    "hash": "5f4ff98a26179db2ca5a9da6fef591ec"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/tests/response.rs": {
+    "mtime": 1778850961.9480135,
+    "hash": "0312133f8647b99ea7e4cf4ecef1de70"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/tests/live_props_derive.rs": {
+    "mtime": 1778850961.9476638,
+    "hash": "0bf79809df67046f5129a102d0718930"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/tests/sse_events.rs": {
+    "mtime": 1778850961.9483967,
+    "hash": "f65706a9354dea06e66870b9137dc71d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/tests/context.rs": {
+    "mtime": 1778850961.9473732,
+    "hash": "384eeebd0b843134ebdf6112fe66b23b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/assets/react-islands.js": {
+    "mtime": 1777690393.1306753,
+    "hash": "fda9994be9a8a84e0f3cfb5bc77aab48"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/assets/silcrow.js": {
+    "mtime": 1778589629.8394067,
+    "hash": "55c5014cc870d5996b7aed08c510f82e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/assets/solid-islands.js": {
+    "mtime": 1777690403.9969938,
+    "hash": "e29f1428c79a3fc83e262046a5f702d5"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/start.rs": {
+    "mtime": 1778850594.7134619,
+    "hash": "6c7d49f8c35e08ff58c4b7c023f7bedc"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/adapter.rs": {
+    "mtime": 1778617595.496846,
+    "hash": "61e9cdea5315931543bc04fa801a0c8d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/lib.rs": {
+    "mtime": 1778850961.9420254,
+    "hash": "ec1263da5256bc8c5c676ac3f1eff84a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/csrf.rs": {
+    "mtime": 1777494846.4872339,
+    "hash": "b4f627b7fb259fea13b5ca0927c14b16"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/validator.rs": {
+    "mtime": 1778850961.9466677,
+    "hash": "ee534602c9973117d80708205428818e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/island_ssr.rs": {
+    "mtime": 1778850961.9412909,
+    "hash": "fcfddb0dfc685736f917282d56b378e1"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/isr.rs": {
+    "mtime": 1778850961.9416528,
+    "hash": "c5ec57ed82633a290c63ed519577012e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/middleware.rs": {
+    "mtime": 1776474305.1997485,
+    "hash": "1f574f416964702eb5bc436ee5411cbf"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/dev.rs": {
+    "mtime": 1778612212.9447653,
+    "hash": "49e0b43292cc869a9bf2d4b2c1871790"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sw.rs": {
+    "mtime": 1778850961.9462442,
+    "hash": "0a76464a68d537442633d9a75f5f5906"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/i18n.rs": {
+    "mtime": 1778850961.9399133,
+    "hash": "be6eaefdefb043e69fc7c75107496e78"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/generated_routes.rs": {
+    "mtime": 1775242915.6900058,
+    "hash": "08902990c9b949ba1e87b42d6976532c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/deferred.rs": {
+    "mtime": 1778850961.9376342,
+    "hash": "f6759f875619e5b0a71e5c8daa573e21"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/context.rs": {
+    "mtime": 1778850961.9371686,
+    "hash": "f12566233089270e7827f73713111cea"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/server_sent_events.rs": {
+    "mtime": 1778850961.945397,
+    "hash": "61b2330477ced1265b10e36ea376bf2d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/interval.rs": {
+    "mtime": 1773011318.4098265,
+    "hash": "3482dd07f95adae3acc74f720333261d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/mod.rs": {
+    "mtime": 1778850961.9445572,
+    "hash": "3e7edaf647051a8b7f72a35bc80ee48f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/ext.rs": {
+    "mtime": 1773015661.5911698,
+    "hash": "d9de86e083cae2801ae489cedb9e4972"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/watch.rs": {
+    "mtime": 1778850961.9458048,
+    "hash": "b60a13ae03fa04ac63d398d6e2005c3f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/sse/macros.rs": {
+    "mtime": 1775227350.1314118,
+    "hash": "daf922ea6cd60cfa9a3d8b812dca6d20"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/response/response.rs": {
+    "mtime": 1778850961.943341,
+    "hash": "176d763ce84f5cb9a6794f180e3ab25e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/response/mod.rs": {
+    "mtime": 1778612204.8321178,
+    "hash": "e4f4332eb0f2fa8666368842c4a8bdba"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/response/headers.rs": {
+    "mtime": 1775218237.6150362,
+    "hash": "70e6c8ad8bfeb073af615391a2d44d46"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/image/processor.rs": {
+    "mtime": 1778850961.9406774,
+    "hash": "3821da8aae1a32bbce919d7882317977"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/image/handler.rs": {
+    "mtime": 1778850961.9402292,
+    "hash": "bdd965686507a80abfeb469f48095880"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/image/mod.rs": {
+    "mtime": 1777397256.4076884,
+    "hash": "abb81021674a27e71f8aa75b88e713d9"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/adapters/lambda.rs": {
+    "mtime": 1778853333.9347317,
+    "hash": "fa46a32d949e26ff5bdca29702e682db"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/adapters/server.rs": {
+    "mtime": 1778853476.2733395,
+    "hash": "abddd5674fe65f211b8687592c175415"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/adapters/mod.rs": {
+    "mtime": 1777311780.979022,
+    "hash": "b104f35b2e96f4a68e102173c099bf7b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/assets/mod.rs": {
+    "mtime": 1778612202.5938077,
+    "hash": "cf1e70c1fc5840ca9b350c93e72410a0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/assets/assets.rs": {
+    "mtime": 1778850961.934643,
+    "hash": "f44b88cda027f358808af0ededb91c4b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/serving.rs": {
+    "mtime": 1778850961.9357529,
+    "hash": "c4b4556ce566748b91a1d7ddb044cf2c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/store.rs": {
+    "mtime": 1778850961.9361243,
+    "hash": "ffd2402475b4296dbb1514d1c064a4ab"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/patch.rs": {
+    "mtime": 1778850961.9352894,
+    "hash": "ebe36929a5c1ebc21421d0cb88683caa"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/mod.rs": {
+    "mtime": 1778614474.9114935,
+    "hash": "25af0f795b8f2ae8578b57ceae627519"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/model.rs": {
+    "mtime": 1778614399.1129587,
+    "hash": "1d301c717d3692e4896de054fe20c6b2"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/baked_pages/inject.rs": {
+    "mtime": 1778614046.155497,
+    "hash": "fdb3a9fc9f252a0d989c736e03bb3738"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/cache.rs": {
+    "mtime": 1778849020.6807213,
+    "hash": "48bd5450901382f800ab99f4ff09382b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/hub.rs": {
+    "mtime": 1778763977.4223835,
+    "hash": "5c228b5598547cea26c17b88089e8238"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/extractor.rs": {
+    "mtime": 1778850961.9384823,
+    "hash": "fe7c5889fd38a10acbf2bc42520a753b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/store.rs": {
+    "mtime": 1778850580.920447,
+    "hash": "8954e44e9ea1e6b4b1db266a7fe53ffe"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/live_props.rs": {
+    "mtime": 1778744508.1879706,
+    "hash": "56a1df2ad4ae296ae90c8ae134b46128"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/mod.rs": {
+    "mtime": 1778848753.8398285,
+    "hash": "03278d11bc811ae48a5d98630d6c2a1a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/watcher.rs": {
+    "mtime": 1778848976.1820283,
+    "hash": "c0ba5778fcb07af7da5a4f65a7705b02"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/macros.rs": {
+    "mtime": 1778850961.939394,
+    "hash": "918a19336eeae1f1891648e846d58e67"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/live_trait.rs": {
+    "mtime": 1778850961.9390588,
+    "hash": "ac2502f483128630c141b4bfaca10bac"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/inspect.rs": {
+    "mtime": 1778764241.9842815,
+    "hash": "8ec9b5c7ecd0551f51b28b4db4f52542"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/fsr/baking.rs": {
+    "mtime": 1778850961.9382043,
+    "hash": "7a484855328b55ea8e2d5556844e71b3"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/ws/mod.rs": {
+    "mtime": 1778612203.8108442,
+    "hash": "3620dd4db952996ef98627e511488c8d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/ws/ws.rs": {
+    "mtime": 1775227574.9080775,
+    "hash": "b3d8acfc4d10429a38bbda80b7d0426a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/store.rs": {
+    "mtime": 1778609706.512197,
+    "hash": "029ff28e971ddf10168e8a07afc6d53e"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/dep.rs": {
+    "mtime": 1778850961.9423022,
+    "hash": "b407a35704b27bdc09cb06f8506ad6b7"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/mod.rs": {
+    "mtime": 1778850961.9425545,
+    "hash": "730dc69dded322d58612efe5c0193f00"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/broadcast.rs": {
+    "mtime": 1778547986.4117188,
+    "hash": "9deb8f374f1c22d4df54c94244307bd5"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/baking.rs": {
+    "mtime": 1778609706.5040793,
+    "hash": "2c8504d964b6ecf117c48ceef4d00e2a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/src/live_props/model.rs": {
+    "mtime": 1778850961.9429796,
+    "hash": "12f2eaf2733f0171ec79bc9c18a0b884"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/invalidate_macro.rs": {
+    "mtime": 1778850961.9253166,
+    "hash": "e11c6bf4c81a40e83a1bdeca9b4c8379"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/live_props_derive.rs": {
+    "mtime": 1778850961.9258711,
+    "hash": "80647850e6275a92a622dea858c39d37"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/handler.rs": {
+    "mtime": 1778850961.9249938,
+    "hash": "7b9f0a7d628ad85a2bb001f352ae2808"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/lib.rs": {
+    "mtime": 1778850961.9255753,
+    "hash": "592a9eebba492be82484cfc2523b3cfc"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/fsr_invalidate.rs": {
+    "mtime": 1778850961.9245017,
+    "hash": "1873fa95557be028bdb4c4f96407645c"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/macros/src/dep_macro.rs": {
+    "mtime": 1778850961.9242537,
+    "hash": "5b4e176e2fd15326aacbdda85eb6703b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/client/src/extractor.rs": {
+    "mtime": 1775429840.4662802,
+    "hash": "679f8d1a8b7891fecebd0fd8df3e684a"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/client/src/client.rs": {
+    "mtime": 1778850961.9239392,
+    "hash": "cd72e463e5664e53bcced76e6bf1ae81"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/client/src/error.rs": {
+    "mtime": 1775432811.8352027,
+    "hash": "f744712a93c9eccd07b06e45456a09e8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/client/src/lib.rs": {
+    "mtime": 1775429777.34388,
+    "hash": "5eb455af81f3d8efdc55229ed1bf1afb"
+  },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/build.rs": {
     "mtime": 1778631458.2689123,
     "hash": "bbbc1bdedf2d2550a9b593de96438de8"
@@ -123,6 +695,14 @@
     "mtime": 1778767641.1696227,
     "hash": "2ba26c5320c25dad4b8cb9422d4fadab"
   },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/build.js": {
+    "mtime": 1777672890.6817875,
+    "hash": "80af144415376cf5ec9567192d2a2a72"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/src/silcrow.js": {
+    "mtime": 1778589520.565293,
+    "hash": "91601db09f57d87643b395eb1984f0e2"
+  },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CONTEXT.md": {
     "mtime": 1778631458.2647712,
     "hash": "251b81994a650448b3714b324e0b060f"
@@ -136,8 +716,32 @@
     "hash": "f0a25fbe21f1232cae99cfb61e8e748c"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/CLAUDE.md": {
-    "mtime": 1778631458.263828,
-    "hash": "5ba724bfe8ac8ff576c4e7b078bdec91"
+    "mtime": 1778854039.575308,
+    "hash": "6ea236207159fbfd36fe599509850a7d"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/GEMINI.md": {
+    "mtime": 1777500997.2990391,
+    "hash": "37fd691ff3b18769fb58a7feea7319f8"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/AGENTS.md": {
+    "mtime": 1777992094.3950014,
+    "hash": "23d42c00eb00f6c3a03578c078681e1f"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/CLAUDE.md": {
+    "mtime": 1777500993.3499813,
+    "hash": "bfa601d6d055a751bde54087e71b6ceb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/routekit/README.md": {
+    "mtime": 1777594424.6300135,
+    "hash": "d480757b75f9c8be933ed4dbcebc43f0"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/crates/runtime/readme.md": {
+    "mtime": 1775077785.7916524,
+    "hash": "e751730090ccd4c7c0a06fc5f3b674f4"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/pilcrow/docs/experimental-baked-pages.md": {
+    "mtime": 1778454101.9047384,
+    "hash": "5bf450e16df54e075ae612ceea73f28a"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/ui/Card.html": {
     "mtime": 1778631458.2936394,
@@ -250,6 +854,22 @@
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/Redis Implementation/FSR_IMPLEMENTATION_PLAN.md": {
     "mtime": 1778862350.0,
     "hash": "36d3b8fce9bfa760be9184e559d99d8b"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/README.md": {
+    "mtime": 1777911766.7847455,
+    "hash": "828759173aba907fb7f81c06d0e5aaf9"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/AGENTS.md": {
+    "mtime": 1778599094.5804832,
+    "hash": "6ed0cc43afb37f9ccf80f9c7201c5122"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/CLAUDE.md": {
+    "mtime": 1778104738.936203,
+    "hash": "e293f060d7d1f384689401f96846e5eb"
+  },
+  "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/silcrow/docs/silcrow-api.md": {
+    "mtime": 1778105014.3865473,
+    "hash": "bbcd91a3d14ad6f8e5a9b8de1d6f61b5"
   },
   "/Users/jagjeet/Development/workspaces/pilcrow-silcrow/docs/superpowers/plans/2026-05-14-fsr-sse-best-practices.md": {
     "mtime": 1778759039.3189685,
