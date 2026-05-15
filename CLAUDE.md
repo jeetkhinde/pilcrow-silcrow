@@ -140,13 +140,19 @@ for atom API shape — do not trust silcrow-mcp for this.
 
 ## Mandatory update checklist — ENFORCE ON EVERY FEATURE CHANGE
 
+**The four-layer rule:** When shipping or changing any feature, all four layers must be updated in the same commit:
+1. **Implementation** — source code
+2. **`pilcrow/registry.toml`** — `[[features]]` entry with `id`, `name`, `domain`, `status`, `summary`, `spec`, `source_refs`, `test_refs`
+3. **MCP knowledge** — `pilcrow/tools/pilcrow-mcp/src/docs.rs` `DocumentSpec` entries for new/changed files
+4. **Executable test** — at least one runnable test covering the new behaviour
+
 Use `/update-docs <feature-name>` to run this interactively.
 
 **After ANY Pilcrow framework behavior change:**
-1. `pilcrow/registry.toml` — update `status`, `spec`, `canonical_usage`, `constraints`, `source_refs`
-2. `pilcrow/tools/mcp/pilcrow-mcp/src/validation.rs` — remove resolved / add new error rules
-3. `pilcrow/tools/mcp/pilcrow-mcp/src/docs.rs` — add new `DocumentSpec` entries
-4. Run: `cargo test --manifest-path pilcrow/tools/mcp/pilcrow-mcp/Cargo.toml`
+1. `pilcrow/registry.toml` — add/update `[[features]]` entry (must have `id`, `domain`, `summary`)
+2. `pilcrow/tools/pilcrow-mcp/src/validation.rs` — remove resolved / add new error rules
+3. `pilcrow/tools/pilcrow-mcp/src/docs.rs` — add new `DocumentSpec` entries
+4. Run: `cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml`
    (`cargo check` is NOT sufficient — golden tests fail silently under check)
 
 **After adding or changing any hook in `PILCROW_REACT_TS` (react.rs):**
