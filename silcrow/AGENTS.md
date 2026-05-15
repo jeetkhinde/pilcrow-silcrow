@@ -25,13 +25,16 @@ Bootstrap auto-runs on `DOMContentLoaded`: registers global listeners (click, su
 ## Commands
 
 ```bash
-npm install
+# Install terser (one-time, from silcrow/)
+npm install terser
 
-npm run build       # src/silcrow.js -> dist/silcrow.js + dist/silcrow.min.js
-npm run watch       # rebuild on src/ changes
+node build.js           # src/silcrow.js -> dist/silcrow.js + dist/silcrow.min.js
+                        # also auto-copies dist/silcrow.min.js to
+                        # ../pilcrow/crates/runtime/assets/silcrow.js
+node build.js --watch   # rebuild on src/ changes
 ```
 
-`build.js` reads `src/silcrow.js` and emits both `dist/silcrow.js` (unminified) and `dist/silcrow.min.js` (Terser, ES2020).
+`build.js` reads `src/silcrow.js`, emits `dist/silcrow.js` (unminified copy) and `dist/silcrow.min.js` (Terser, ES2020), then mirrors the minified file into the Pilcrow runtime assets directory.
 
 **Edit `src/silcrow.js` as the single source of truth.** Do not edit anything in `dist/` — it is generated.
 
