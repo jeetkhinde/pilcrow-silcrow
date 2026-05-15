@@ -134,8 +134,6 @@ mod tests {
             .unwrap()
             .parent()
             .unwrap()
-            .parent()
-            .unwrap()
             .to_path_buf();
         let registry = Registry::load_from_project(&root).unwrap();
         assert!(registry.feature("ssr-pages").is_some());

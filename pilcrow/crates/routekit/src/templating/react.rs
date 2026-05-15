@@ -878,6 +878,7 @@ export function submitSilcrow<T>(
       method: options?.method ?? "POST",
       scope: options?.scope,
       headers: options?.headers,
+      optimistic: options?.optimistic,
     });
     return result.data ?? ({ok: result.ok, status: result.status} as T);
   };
@@ -909,6 +910,7 @@ export function silcrowSubmitHandler<Result = unknown, Values = object>(
       method: options?.method ?? "POST",
       scope: options?.scope,
       headers: options?.headers,
+      optimistic: options?.optimistic,
     });
   };
 }
@@ -931,7 +933,7 @@ export function useSilcrowAction<State>(
   options?: SilcrowActionOptions,
 ) {
   const submitOptions = options
-    ? {method: options.method, scope: options.scope, headers: options.headers}
+    ? {method: options.method, scope: options.scope, headers: options.headers, optimistic: options.optimistic}
     : undefined;
   return useActionState<State, FormData>(
     submitSilcrow<State>(url, submitOptions),
@@ -1039,7 +1041,7 @@ export type SilcrowMutationOptions<Data = unknown> = {
     mutationId?: string;
   };
   /** Called when the server confirms success. */
-  onSuccess?: (result: SilcrowSubmitResult) => void;
+  onSuccess?: (result: SilcrowSubmitResult<Data>) => void;
   /** Called when the server returns an error response or network failure. */
   onError?: (error: unknown) => void;
 };
@@ -1048,7 +1050,7 @@ export type SilcrowMutationOptions<Data = unknown> = {
  * State returned by `useSilcrowMutation`.
  */
 export type SilcrowMutationState<Data = unknown> = {
-  mutate: (body?: BodyInit | object | null) => Promise<SilcrowSubmitResult>;
+  mutate: (body?: BodyInit | object | null) => Promise<SilcrowSubmitResult<Data>>;
   pending: boolean;
   error: unknown;
   data: Data | null;
@@ -1081,6 +1083,8 @@ export function useSilcrowMutation<Data = unknown>(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
+  const pendingCountRef = useRef(0);
+
   const reset = useCallback(() => {
     setPending(false);
     setError(null);
@@ -1095,16 +1099,17 @@ export function useSilcrowMutation<Data = unknown>(
       onError?.(err);
       throw err;
     }
-    setPending(true);
+    pendingCountRef.current += 1;
+    if (pendingCountRef.current === 1) setPending(true);
     setError(null);
     try {
-      const result = await window.Silcrow.submit(url, body ?? null, {
+      const result = await window.Silcrow.submit<Data>(url, body ?? null, {
         method: method ?? "POST",
         headers,
         optimistic,
       });
-      setData(result.data as Data);
       if (result.ok) {
+        setData(result.data);
         onSuccess?.(result);
       } else {
         const err = new Error("Request failed with status " + result.status);
@@ -1117,7 +1122,8 @@ export function useSilcrowMutation<Data = unknown>(
       onError?.(err);
       throw err;
     } finally {
-      setPending(false);
+      pendingCountRef.current -= 1;
+      if (pendingCountRef.current === 0) setPending(false);
     }
   }, []);
 

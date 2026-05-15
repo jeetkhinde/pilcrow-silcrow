@@ -717,8 +717,6 @@ mod tests {
             .unwrap()
             .parent()
             .unwrap()
-            .parent()
-            .unwrap()
             .to_path_buf();
         let result = diagnose_project(&root, None, None).unwrap();
         // Should at minimum report something (no panic)

@@ -46,7 +46,6 @@ pub struct TemplateInspection {
 pub struct InspectCodeBehindResult {
     pub path: String,
     pub info: Option<CodeBehindInfo>,
-    pub raw_source: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -164,12 +163,10 @@ pub fn inspect_code_behind(
     if !abs_path.exists() {
         bail!("code-behind file not found: {}", abs_path.display());
     }
-    let raw_source = fs::read_to_string(&abs_path).ok();
     let info = parse_code_behind(&abs_path);
     Ok(InspectCodeBehindResult {
         path: path.to_string(),
         info,
-        raw_source,
     })
 }
 

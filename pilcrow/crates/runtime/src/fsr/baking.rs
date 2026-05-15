@@ -23,7 +23,7 @@ pub fn inject_fsr_slots(shell: &str, slots: &[(String, serde_json::Value)]) -> S
     }
 
     // Apply patches right-to-left so earlier byte offsets remain valid.
-    patches.sort_by_key(|&(start, ..)| std::cmp::Reverse(start));
+    patches.sort_by(|a, b| b.0.cmp(&a.0));
     let mut result = shell.to_string();
     for (start, end, replacement) in patches {
         result.replace_range(start..end, &replacement);

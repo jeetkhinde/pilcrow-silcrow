@@ -11,8 +11,6 @@ fn pilcrow_root() -> std::path::PathBuf {
         .unwrap()
         .parent()
         .unwrap()
-        .parent()
-        .unwrap()
         .to_path_buf()
 }
 

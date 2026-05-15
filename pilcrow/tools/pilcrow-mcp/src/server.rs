@@ -55,15 +55,6 @@ pub struct ExplainFeatureArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-pub struct FindExamplesArgs {
-    pub feature: String,
-    #[serde(default)]
-    pub pattern: Option<String>,
-    #[serde(default)]
-    pub limit: Option<usize>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
 pub struct AnswerQuestionArgs {
     pub question: String,
     #[serde(default)]
@@ -344,21 +335,6 @@ impl PilcrowServer {
             explanation.evidence.truncate(3);
         }
         Ok(structured(explanation))
-    }
-
-    #[tool(
-        description = "Find sandbox examples and tests for a Pilcrow feature or implementation pattern."
-    )]
-    async fn find_examples(
-        &self,
-        Parameters(args): Parameters<FindExamplesArgs>,
-    ) -> Result<CallToolResult, McpError> {
-        let limit = args.limit.unwrap_or(8).clamp(1, 20);
-        Ok(structured(self.knowledge.find_examples(
-            &args.feature,
-            args.pattern.as_deref(),
-            limit,
-        )))
     }
 
     #[tool(

@@ -78,10 +78,10 @@ impl BakedPageStore {
         self.write_page(&page)?;
 
         // Serve from cache if fresh.
-        if page.is_baked && !page.stale_state.stale
-            && let Some(outcome) = self.try_serve_from_cache(&page)?
-        {
-            return Ok(outcome);
+        if page.is_baked && !page.stale_state.stale {
+            if let Some(outcome) = self.try_serve_from_cache(&page)? {
+                return Ok(outcome);
+            }
         }
 
         // Render.

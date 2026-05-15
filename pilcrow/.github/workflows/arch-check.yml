@@ -1,0 +1,16 @@
+name: Architecture Check
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  check-arch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run architecture boundary checks
+        working-directory: sandbox
+        run: cargo run -p pilcrow-cli -- check-arch

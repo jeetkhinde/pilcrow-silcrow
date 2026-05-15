@@ -34,8 +34,6 @@ impl McpClient {
             .unwrap()
             .parent()
             .unwrap()
-            .parent()
-            .unwrap()
             .to_path_buf();
 
         let mut process = Command::new(&bin)
@@ -137,7 +135,6 @@ const EXPECTED_TOOLS: &[&str] = &[
     "list_features",
     "get_feature_spec",
     "explain_feature",
-    "find_examples",
     "answer_pilcrow_question",
     "scan_project_context",
     "validate_implementation",
@@ -187,11 +184,7 @@ fn smoke_tools_list_contains_all_expected_tools() {
 
 const EXPECTED_RESOURCE_URIS: &[&str] = &[
     "pilcrow://docs",
-    "pilcrow://api/runtime",
-    "pilcrow://api/web",
     "pilcrow://routekit/features",
-    "pilcrow://examples",
-    "pilcrow://tests/feature-matrix",
     "pilcrow://current-project",
 ];
 
@@ -243,37 +236,6 @@ fn smoke_read_routekit_features_resource() {
         json!({ "uri": "pilcrow://routekit/features" }),
     );
     assert!(resp["error"].is_null(), "reading routekit features: {resp}");
-}
-
-#[test]
-fn smoke_read_api_runtime_resource() {
-    let mut client = McpClient::spawn();
-    let resp = client.request("resources/read", json!({ "uri": "pilcrow://api/runtime" }));
-    assert!(resp["error"].is_null(), "reading api/runtime: {resp}");
-}
-
-#[test]
-fn smoke_read_api_web_resource() {
-    let mut client = McpClient::spawn();
-    let resp = client.request("resources/read", json!({ "uri": "pilcrow://api/web" }));
-    assert!(resp["error"].is_null(), "reading api/web: {resp}");
-}
-
-#[test]
-fn smoke_read_examples_resource() {
-    let mut client = McpClient::spawn();
-    let resp = client.request("resources/read", json!({ "uri": "pilcrow://examples" }));
-    assert!(resp["error"].is_null(), "reading examples: {resp}");
-}
-
-#[test]
-fn smoke_read_test_matrix_resource() {
-    let mut client = McpClient::spawn();
-    let resp = client.request(
-        "resources/read",
-        json!({ "uri": "pilcrow://tests/feature-matrix" }),
-    );
-    assert!(resp["error"].is_null(), "reading test matrix: {resp}");
 }
 
 #[test]

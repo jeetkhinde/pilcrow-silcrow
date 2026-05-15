@@ -2346,12 +2346,9 @@ validation_rules = [
 ]
 scaffold_templates = []
 
-[[features]]
-id = "markdown-pages"
+[feature.markdown_pages]
 name = "Markdown Pages"
-domain = "pilcrow"
 status = "stable"
-summary = "`.md` and `.mdx` files in pages/ compile to routes at build time via markdown-rs."
 spec = """
 `.md` and `.mdx` files placed anywhere in `pages/` or a configured fragment directory
 become routes using the same conventions as `.html` files.
@@ -2389,101 +2386,6 @@ source_refs = [
 test_refs = [
   "crates/routekit/src/templating/pipeline.rs — compile_pipeline_processes_markdown_page",
   "crates/routekit/src/templating/pipeline.rs — compile_pipeline_markdown_with_codebehind",
-]
-validation_rules = []
-scaffold_templates = []
-
-[[features]]
-id = "optimistic-mutations"
-name = "Optimistic Mutations"
-domain = "pilcrow"
-status = "stable"
-summary = "Client-side speculative UI updates via publishOptimistic/confirmOptimistic/revertOptimistic with server-echo confirmation through SSE, WS, or HTTP patch headers."
-spec = """
-Optimistic mutations let the client apply an instant UI update before the server
-round-trip completes, then confirm or revert based on the outcome.
-
-Three layers work together:
-
-1. **Client (`silcrow.js`)** — `Silcrow.publishOptimistic(scope, data, mutationId)` snapshots
-   the current atom value and patches it immediately.  On network error or non-2xx response,
-   `revertOptimistic(mutationId)` restores the snapshot automatically.
-   `confirmOptimistic(mutationId)` retires the pending entry (called internally when the
-   server echoes the mutation id back through SSE/WS patch or HTTP `silcrow-patch` header).
-
-2. **Server (Rust)** — `req.mutation_id()` reads the `silcrow-mutation-id` request header.
-   Pass it to `SilcrowEvent::patch(...).with_mutation_id(id)` (SSE) or
-   `WsEvent::patch(...).with_mutation_id(id)` (WS) so the client can confirm the mutation.
-   For HTTP action responses, use `req.res.patch_target_with_mutation(selector, data, id)`.
-
-3. **React hook** — `useSilcrowMutation({ url, optimistic, onSuccess, onError })` wraps the
-   full lifecycle: optimistic apply → fetch → confirm/revert.
-
-The stale-patch guard drops server-pushed SSE/WS patches for a scope that has an in-flight
-pending mutation, preventing a flash of stale data between the optimistic update and the
-server echo.
-"""
-canonical_usage = """
-// --- Rust action handler ---
-pub async fn add_to_cart(req: Req) -> ActionResult {
-    // … perform mutation …
-    let mid = req.mutation_id();
-    if let Some(id) = mid {
-        req.res.patch_target_with_mutation("#cart", &json!({"count": 4}), id);
-    } else {
-        req.res.patch_target("#cart", &json!({"count": 4}));
-    }
-    ok()
-}
-
-// --- SSE stream handler ---
-pub async fn feed(emitter: SseEmitter, req: Req) -> Result<(), EmitError> {
-    let data = json!({"count": 5});
-    let event = if let Some(id) = req.mutation_id() {
-        SilcrowEvent::patch(data, "#cart").with_mutation_id(id)
-    } else {
-        SilcrowEvent::patch(data, "#cart")
-    };
-    emitter.send(event).await
-}
-
-// --- React island ---
-const {mutate, pending, error} = useSilcrowMutation({
-  url: "/cart/add/1",
-  optimistic: { scope: "route:/cart", data: {count: cart.count + 1} },
-  onSuccess: (r) => console.log("confirmed", r.mutationId),
-  onError: () => console.error("reverted"),
-});
-return <button onClick={() => mutate()} disabled={pending}>Add to cart</button>;
-"""
-constraints = [
-  "publishOptimistic requires a live atom registered under `scope` — the scope must match a `s-bind` attribute or a seeded route atom.",
-  "The stale-patch guard keyed on `s-bind` scope only applies to elements in the DOM at the time the patch arrives. Unmounted elements are not tracked.",
-  "mutationId is auto-generated (timestamp + random suffix) when omitted from `options.optimistic`.",
-  "with_mutation_id() is a no-op on non-Patch event kinds (Navigate, Html, etc.).",
-]
-source_refs = [
-  "crates/runtime/src/sse/server_sent_events.rs — SilcrowEvent::with_mutation_id()",
-  "crates/runtime/src/ws/ws.rs — WsEvent::with_mutation_id()",
-  "crates/runtime/src/response/headers.rs — SilcrowMutationId header",
-  "crates/runtime/src/context.rs — Req::mutation_id()",
-  "crates/runtime/src/context.rs — Res::patch_target_with_mutation()",
-  "crates/runtime/src/response/response.rs — BaseResponse::add_patch_target_with_mutation()",
-  "silcrow/src/silcrow.js — publishOptimistic, confirmOptimistic, revertOptimistic",
-  "silcrow/src/silcrow.js — submitAction optimistic integration",
-  "silcrow/src/silcrow.js — applyLivePatchPayload stale-patch guard",
-  "silcrow/src/silcrow.js — dispatchWsMessage stale-patch guard",
-  "crates/routekit/src/templating/react.rs — useSilcrowMutation hook",
-]
-test_refs = [
-  "crates/runtime/tests/sse_events.rs — sse_patch_with_mutation_id_appears_in_body",
-  "crates/runtime/tests/sse_events.rs — sse_patch_without_mutation_id_omits_key",
-  "crates/runtime/tests/ws_events.rs — ws_event_patch_with_mutation_id_serializes",
-  "crates/runtime/tests/ws_events.rs — ws_event_patch_without_mutation_id_omits_key",
-  "crates/runtime/tests/context.rs — req_mutation_id_present_when_header_sent",
-  "crates/runtime/tests/context.rs — req_mutation_id_none_when_header_absent",
-  "crates/runtime/tests/response.rs — response_ext_patch_target_with_mutation_includes_mutation_id",
-  "crates/runtime/tests/response.rs — response_ext_patch_target_without_mutation_omits_key",
 ]
 validation_rules = []
 scaffold_templates = []

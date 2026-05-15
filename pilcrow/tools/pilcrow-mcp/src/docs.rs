@@ -4,11 +4,7 @@ use serde::Serialize;
 use std::{fs, path::Path};
 
 pub const DOCS_URI: &str = "pilcrow://docs";
-pub const API_RUNTIME_URI: &str = "pilcrow://api/runtime";
-pub const API_WEB_URI: &str = "pilcrow://api/web";
 pub const ROUTEKIT_FEATURES_URI: &str = "pilcrow://routekit/features";
-pub const EXAMPLES_URI: &str = "pilcrow://examples";
-pub const TEST_MATRIX_URI: &str = "pilcrow://tests/feature-matrix";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct KnowledgeResource {
@@ -22,11 +18,7 @@ pub struct KnowledgeResource {
 #[serde(rename_all = "kebab-case")]
 pub enum KnowledgeCategory {
     Docs,
-    RuntimeApi,
-    WebApi,
     Routekit,
-    Examples,
-    Tests,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -64,12 +56,6 @@ pub struct FeatureExplanation {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ExampleSearch {
-    pub query: String,
-    pub examples: Vec<Evidence>,
-}
-
-#[derive(Debug, Clone, Serialize)]
 pub struct ExpertAnswer {
     pub question: String,
     pub answer: String,
@@ -93,34 +79,10 @@ pub fn resources() -> Vec<KnowledgeResource> {
             category: KnowledgeCategory::Docs,
         },
         KnowledgeResource {
-            uri: API_RUNTIME_URI,
-            title: "Pilcrow runtime API",
-            description: "Runtime request, response, middleware, deferred, SSE, and WebSocket APIs.",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        KnowledgeResource {
-            uri: API_WEB_URI,
-            title: "Pilcrow web facade API",
-            description: "pilcrow-web exports and generated app integration.",
-            category: KnowledgeCategory::WebApi,
-        },
-        KnowledgeResource {
             uri: ROUTEKIT_FEATURES_URI,
             title: "Routekit features",
             description: "Routekit routing, templating, codegen, page options, and feature registry.",
             category: KnowledgeCategory::Routekit,
-        },
-        KnowledgeResource {
-            uri: EXAMPLES_URI,
-            title: "Pilcrow examples",
-            description: "Sandbox app examples for pages, layouts, actions, fragments, APIs, and UI templates.",
-            category: KnowledgeCategory::Examples,
-        },
-        KnowledgeResource {
-            uri: TEST_MATRIX_URI,
-            title: "Pilcrow test feature matrix",
-            description: "Routekit and runtime tests grouped as evidence for implemented behavior.",
-            category: KnowledgeCategory::Tests,
         },
     ]
 }
@@ -166,7 +128,7 @@ impl KnowledgeBase {
                 title: "Pilcrow feature registry".to_string(),
                 path: "registry.toml".to_string(),
                 category: KnowledgeCategory::Routekit,
-                text: serde_json::to_string_pretty(&registry.features).unwrap_or_default(),
+                text: serde_json::to_string_pretty(&registry.features).unwrap_or_else(|_| "[]".to_string()),
             });
         }
         Some(ResourcePayload {
@@ -198,32 +160,6 @@ impl KnowledgeBase {
             silcrow_boundary,
             evidence,
         })
-    }
-
-    pub fn find_examples(
-        &self,
-        feature: &str,
-        pattern: Option<&str>,
-        limit: usize,
-    ) -> ExampleSearch {
-        let query = [feature, pattern.unwrap_or("")]
-            .into_iter()
-            .filter(|part| !part.trim().is_empty())
-            .collect::<Vec<_>>()
-            .join(" ");
-        let examples = self
-            .documents
-            .iter()
-            .filter(|document| {
-                matches!(
-                    document.category,
-                    KnowledgeCategory::Examples | KnowledgeCategory::Tests
-                )
-            })
-            .flat_map(|document| document_hits(document, &terms(&query), 3))
-            .take(limit)
-            .collect();
-        ExampleSearch { query, examples }
     }
 
     pub fn answer_question(&self, registry: &Registry, question: &str) -> ExpertAnswer {
@@ -414,337 +350,6 @@ fn document_specs() -> Vec<DocumentSpec> {
             path: "docs/experimental-baked-pages.md",
             category: KnowledgeCategory::Docs,
         },
-        DocumentSpec {
-            id: "web-facade",
-            title: "pilcrow-web facade",
-            path: "crates/web/src/lib.rs",
-            category: KnowledgeCategory::WebApi,
-        },
-        DocumentSpec {
-            id: "runtime-context",
-            title: "Runtime request context",
-            path: "crates/runtime/src/context.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-response",
-            title: "Runtime response helpers",
-            path: "crates/runtime/src/response/response.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-deferred",
-            title: "AsyncValue/AsyncHtml streaming, LiveProp<T> SSE live props, and SSR Streaming",
-            path: "crates/runtime/src/deferred.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-live-surface",
-            title: "FSR developer surface: `use pilcrow::live::*;`",
-            path: "crates/web/src/live.rs",
-            category: KnowledgeCategory::WebApi,
-        },
-        DocumentSpec {
-            id: "fsr-mod",
-            title: "FSR runtime module (LiveProp, LiveQuery, PilcrowLive, watcher, hub)",
-            path: "crates/runtime/src/fsr/mod.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-live-props",
-            title: "FSR LiveProp<T> and DependencyKey types",
-            path: "crates/runtime/src/fsr/live_props.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-live-trait",
-            title: "FSR PilcrowLive trait and LiveQuery",
-            path: "crates/runtime/src/fsr/live_trait.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-macros",
-            title: "FSR macros: fsr_dep!, live_query!",
-            path: "crates/runtime/src/fsr/macros.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-routekit-validation",
-            title: "FSR routekit validation for live.rs and s-live slots",
-            path: "crates/routekit/src/fsr.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "fsr-cache",
-            title: "FSR Redis cache layer (RedisCache, pub/sub payloads)",
-            path: "crates/runtime/src/fsr/cache.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "fsr-store",
-            title: "FSR Postgres store (FsrStore, StaleSlot, InspectRow)",
-            path: "crates/runtime/src/fsr/store.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-middleware",
-            title: "Middleware",
-            path: "crates/runtime/src/middleware.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-isr",
-            title: "ISR cache runtime",
-            path: "crates/runtime/src/isr.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-baked-pages",
-            title: "Experimental baked-page declaration model",
-            path: "crates/runtime/src/baked_pages/model.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-baked-page-store",
-            title: "Experimental baked-page artifact store",
-            path: "crates/runtime/src/baked_pages/store.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-baked-page-patching",
-            title: "Experimental baked-page slot patching",
-            path: "crates/runtime/src/baked_pages/patch.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-
-        DocumentSpec {
-            id: "runtime-baked-page-serving",
-            title: "Experimental baked-page lazy serving helper",
-            path: "crates/runtime/src/baked_pages/serving.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-start",
-            title: "Server startup (start / start_with_prerender)",
-            path: "crates/runtime/src/start.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-csrf",
-            title: "CSRF protection middleware",
-            path: "crates/runtime/src/csrf.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-adapter",
-            title: "PilcrowAdapter trait and TokioAdapter",
-            path: "crates/runtime/src/adapter.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-adapters-server",
-            title: "PortEnvAdapter — Fly/Railway/Cloud Run/Render/Vercel adapters",
-            path: "crates/runtime/src/adapters/server.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-adapters-lambda",
-            title: "LambdaAdapter — AWS Lambda / Vercel Functions / Netlify Functions",
-            path: "crates/runtime/src/adapters/lambda.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-dev",
-            title: "Dev server: live reload, CSS hot swap, build banner",
-            path: "crates/runtime/src/dev.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-sw",
-            title: "Service worker: generate_sw_source(), sw_handler(), sw_inject_layer()",
-            path: "crates/runtime/src/sw.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-i18n",
-            title: "i18n: I18nBundles, locale_middleware_impl, FmtHelper",
-            path: "crates/runtime/src/i18n.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "routekit-i18n-codegen",
-            title: "i18n codegen: FTL parser → pub mod t typed translation helpers",
-            path: "crates/routekit/src/templating/i18n_codegen.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "runtime-image",
-            title: "Image optimization: ImageState, image_handler, /_image endpoint",
-            path: "crates/runtime/src/image/handler.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-image-processor",
-            title: "Image processor: transform, cache_path, OutputFormat, resize",
-            path: "crates/runtime/src/image/processor.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "core-config",
-            title: "PilcrowConfig, I18nConfig, ImageConfig, ServiceWorkerConfig, SwStrategy, CacheConfig",
-            path: "crates/core/src/config/config.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "routekit-lib",
-            title: "Routekit library",
-            path: "crates/routekit/src/lib.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-pipeline",
-            title: "Routekit compile pipeline",
-            path: "crates/routekit/src/templating/pipeline.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-compiler",
-            title: "Template compiler",
-            path: "crates/routekit/src/templating/compiler.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-build-config",
-            title: "Pilcrow build config",
-            path: "crates/routekit/src/templating/build_config.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-page-options",
-            title: "Page options (TRAILING_SLASH, LAYOUT, REVALIDATE, PRERENDER, STREAMING)",
-            path: "crates/routekit/src/templating/page_options.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-routes-codegen",
-            title: "Typed route helper codegen",
-            path: "crates/routekit/src/templating/routes_codegen.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-env-codegen",
-            title: "Typed env struct codegen",
-            path: "crates/routekit/src/templating/env_codegen.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-codegen-types",
-            title: "Generated template metadata",
-            path: "crates/routekit/src/templating/codegen/types.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-app-codegen",
-            title: "Generated app module (ISR, SSG, STREAMING, Deferred handler emitters)",
-            path: "crates/routekit/src/templating/codegen/app_module.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "cli-scaffold",
-            title: "CLI scaffold (new + --with-auth/--with-postgres)",
-            path: "tools/cli/src/scaffold.rs",
-            category: KnowledgeCategory::Examples,
-        },
-        DocumentSpec {
-            id: "cli-export",
-            title: "CLI export command",
-            path: "tools/cli/src/export.rs",
-            category: KnowledgeCategory::Examples,
-        },
-        DocumentSpec {
-            id: "routekit-compiler-pilcrow-tags",
-            title: "Pilcrow tag transpilation: <pilcrow:image>, <pilcrow:head> stripping, island tags (compiler.rs)",
-            path: "crates/routekit/src/templating/compiler.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-react-islands",
-            title: "React island transpilation, Vite build, and asset manifest generation",
-            path: "crates/routekit/src/templating/react.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "runtime-react-islands-loader",
-            title: "React island browser loader",
-            path: "crates/runtime/assets/react-islands.js",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "routekit-pipeline-templating",
-            title: "Build pipeline: slot expansion, <pilcrow:head> hoisting, island detection, layout chain (pipeline.rs)",
-            path: "crates/routekit/src/templating/pipeline.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "routekit-tests",
-            title: "Routekit codegen tests",
-            path: "crates/routekit/src/templating/codegen/tests.rs",
-            category: KnowledgeCategory::Tests,
-        },
-        DocumentSpec {
-            id: "routekit-pipeline-tests",
-            title: "Routekit pipeline tests, including configured fragments",
-            path: "crates/routekit/src/templating/pipeline.rs",
-            category: KnowledgeCategory::Tests,
-        },
-        DocumentSpec {
-            id: "routekit-markdown",
-            title: "Markdown transpiler: GFM .md/.mdx → Askama HTML (markdown.rs)",
-            path: "crates/routekit/src/templating/markdown.rs",
-            category: KnowledgeCategory::Routekit,
-        },
-        DocumentSpec {
-            id: "runtime-context-tests",
-            title: "Runtime context tests",
-            path: "crates/runtime/tests/context.rs",
-            category: KnowledgeCategory::Tests,
-        },
-        DocumentSpec {
-            id: "runtime-response-tests",
-            title: "Runtime response tests",
-            path: "crates/runtime/tests/response.rs",
-            category: KnowledgeCategory::Tests,
-        },
-        DocumentSpec {
-            id: "runtime-sse",
-            title: "SSE: SilcrowEvent, SseEmitter, sse_stream, with_mutation_id",
-            path: "crates/runtime/src/sse/server_sent_events.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-ws",
-            title: "WebSocket: WsEvent, WsStream, ws(), with_mutation_id",
-            path: "crates/runtime/src/ws/ws.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-response-headers",
-            title: "Silcrow typed response headers (SilcrowTarget, SilcrowMutationId, etc.)",
-            path: "crates/runtime/src/response/headers.rs",
-            category: KnowledgeCategory::RuntimeApi,
-        },
-        DocumentSpec {
-            id: "runtime-sse-tests",
-            title: "SSE event tests",
-            path: "crates/runtime/tests/sse_events.rs",
-            category: KnowledgeCategory::Tests,
-        },
-        DocumentSpec {
-            id: "runtime-ws-tests",
-            title: "WebSocket event tests",
-            path: "crates/runtime/tests/ws_events.rs",
-            category: KnowledgeCategory::Tests,
-        },
     ]
 }
 
@@ -759,8 +364,6 @@ mod tests {
             .unwrap()
             .parent()
             .unwrap()
-            .parent()
-            .unwrap()
             .to_path_buf()
     }
 
@@ -771,7 +374,7 @@ mod tests {
         assert!(kb
             .documents
             .iter()
-            .any(|doc| doc.category == KnowledgeCategory::Examples));
+            .any(|doc| doc.category == KnowledgeCategory::Docs));
     }
 
     #[test]
