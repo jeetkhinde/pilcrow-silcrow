@@ -607,6 +607,10 @@ function parseForExpression(expr) {
   return match ? {alias: match[1], path: match[2]} : null;
 }
 
+function isOnHandler(prop) {
+  return typeof prop === "string" && prop.toLowerCase().startsWith("on");
+}
+
 // ── Binding Engine ──────────────────────────────────────────
 
 function setValue(el, prop, value) {
