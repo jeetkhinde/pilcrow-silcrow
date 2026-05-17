@@ -19,7 +19,8 @@ pub fn instrument_frontmatter(
     })?;
 
     // Parse and strip framework-reserved `pub const` declarations before other processing.
-    // Handled: TRAILING_SLASH, LAYOUT, REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, PRERENDER, STREAMING, PROMOTE_AFTER, FSR_JSON.
+    // Handled: TRAILING_SLASH, LAYOUT, PRERENDER, PROMOTE_AFTER, FSR_JSON.
+    // Removed (emit build errors): REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, STREAMING.
     let mut page_options = PageOptions::default();
     let mut const_remove_indices: Vec<usize> = Vec::new();
     for (index, item) in file.items.iter().enumerate() {
@@ -39,21 +40,38 @@ pub fn instrument_frontmatter(
                 };
                 const_remove_indices.push(index);
             } else if c.ident == "REVALIDATE" {
-                if let Ok(v) = parse_u64_const(&c.expr) {
-                    page_options.isr.revalidate = Some(v);
-                }
-                const_remove_indices.push(index);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "{source_path}: REVALIDATE is removed. \
+                         Use FSR with ScheduledInvalidation instead: register \
+                         ScheduledInvalidation::new(\"<dep_key>\", Duration::from_secs(N)) \
+                         in WatcherConfig::scheduled_invalidations."
+                    ),
+                ));
             } else if c.ident == "MAX_STALE" {
-                if let Ok(v) = parse_u64_const(&c.expr) {
-                    page_options.isr.max_stale = Some(v);
-                }
-                const_remove_indices.push(index);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "{source_path}: MAX_STALE is removed along with the ISR cache. \
+                         Use FSR LiveProp<T> with promote_after for route-level baking."
+                    ),
+                ));
             } else if c.ident == "CACHE_TAGS" {
-                page_options.isr.cache_tags = parse_str_slice_const(&c.expr);
-                const_remove_indices.push(index);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "{source_path}: CACHE_TAGS is removed. \
+                         Use FSR dep keys and FsrStore::invalidate_dep_key() for targeted invalidation."
+                    ),
+                ));
             } else if c.ident == "CACHE_VARY" {
-                page_options.isr.cache_vary = parse_str_slice_const(&c.expr);
-                const_remove_indices.push(index);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "{source_path}: CACHE_VARY is removed along with the ISR cache."
+                    ),
+                ));
             } else if c.ident == "PRERENDER" {
                 let is_prerender = value_str.trim() == "true";
                 page_options.ssg.prerender = is_prerender;
@@ -69,8 +87,13 @@ pub fn instrument_frontmatter(
                 }
                 const_remove_indices.push(index);
             } else if c.ident == "STREAMING" {
-                page_options.streaming = value_str.trim() == "true";
-                const_remove_indices.push(index);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "{source_path}: STREAMING is removed. \
+                         Use FSR LiveProp<T> for field-level live updates, or plain SSR."
+                    ),
+                ));
             } else if c.ident == "FSR_JSON" {
                 page_options.fsr.json = value_str.trim() == "true";
                 const_remove_indices.push(index);
@@ -329,35 +352,6 @@ pub fn instrument_frontmatter(
     // Extract the page's own named fields before any modification.
     let own_syn_fields = extract_named_fields(props_struct);
 
-    // Detect `AsyncValue<T>` (JSON patch) and `AsyncHtml` (HTML slot) fields.
-    let deferred_fields: Vec<String> = own_syn_fields
-        .iter()
-        .filter_map(|f| {
-            if let Some(ident) = &f.ident
-                && type_last_ident(&f.ty)
-                    .map(|id| id == "AsyncValue")
-                    .unwrap_or(false)
-            {
-                return Some(ident.to_string());
-            }
-            None
-        })
-        .collect();
-
-    let deferred_html_fields: Vec<String> = own_syn_fields
-        .iter()
-        .filter_map(|f| {
-            if let Some(ident) = &f.ident
-                && type_last_ident(&f.ty)
-                    .map(|id| id == "AsyncHtml")
-                    .unwrap_or(false)
-            {
-                return Some(ident.to_string());
-            }
-            None
-        })
-        .collect();
-
     // Detect `LiveProp<T>` fields.
     let live_fields: Vec<String> = own_syn_fields
         .iter()
@@ -385,23 +379,10 @@ pub fn instrument_frontmatter(
     };
     let template_source = live_template.as_ref();
 
-    // Rewrite {{ async_value }} → <span data-pilcrow-async-value="async_value" :text="async_value">
-    // so scalar deferred patches can target a small binding root instead of document.body.
-    let async_value_template = if deferred_fields.is_empty() {
-        std::borrow::Cow::Borrowed(template_source)
-    } else {
-        std::borrow::Cow::Owned(crate::templating::compiler::inject_async_value_text_spans(
-            template_source,
-            &deferred_fields,
-        ))
-    };
-    let template_source = async_value_template.as_ref();
-
     if extra_fields.is_empty() {
         // Normal path: Props is used directly for template rendering.
-        // Inject Default derive for static pages (no load function) or STREAMING pages
-        // (shell renders with Props::default() before load() resolves).
-        if (load_signature.is_none() || page_options.streaming)
+        // Inject Default derive for static pages (no load function).
+        if load_signature.is_none()
             && !has_manual_default
             && !has_derive_trait(&props_struct.attrs, &["Default"])
         {
@@ -462,8 +443,6 @@ pub fn instrument_frontmatter(
         own_syn_fields,
         actions,
         page_options,
-        deferred_fields,
-        deferred_html_fields,
         live_fields,
         has_live_fn,
         fsr_live_source: None, // Set by templates.rs after calling process_live_rs
@@ -665,38 +644,3 @@ fn parse_u64_const(expr: &syn::Expr) -> Result<u64, ()> {
     Err(())
 }
 
-/// Parse a `&[&str]` array literal into a `Vec<String>`.
-///
-/// Handles `&["a", "b"]` and `&["a"]` forms.
-fn parse_str_slice_const(expr: &syn::Expr) -> Vec<String> {
-    // &[...] → Reference to Array
-    let inner = match expr {
-        syn::Expr::Reference(r) => r.expr.as_ref(),
-        other => other,
-    };
-    let syn::Expr::Array(arr) = inner else {
-        return vec![];
-    };
-    arr.elems
-        .iter()
-        .filter_map(|elem| {
-            // Each element may be a &str literal (reference to lit) or just a lit.
-            let lit_expr = match elem {
-                syn::Expr::Lit(l) => l,
-                syn::Expr::Reference(r) => {
-                    if let syn::Expr::Lit(l) = r.expr.as_ref() {
-                        l
-                    } else {
-                        return None;
-                    }
-                }
-                _ => return None,
-            };
-            if let syn::Lit::Str(s) = &lit_expr.lit {
-                Some(s.value())
-            } else {
-                None
-            }
-        })
-        .collect()
-}

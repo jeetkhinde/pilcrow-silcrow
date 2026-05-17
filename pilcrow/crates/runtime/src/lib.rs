@@ -26,7 +26,7 @@ pub(crate) mod sw;
 pub mod validator;
 pub mod ws;
 pub use adapter::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use start::{export, start, start_with_adapter, start_with_prerender};
+pub use start::{start, start_with_adapter, start_with_prerender};
 // ── Core API re-exports ──────────────────────────────────────
 pub use axum::http::StatusCode;
 pub use axum::response::Response;
@@ -57,14 +57,9 @@ pub use axum;
 #[doc(hidden)]
 pub use response::response::html;
 
-pub use deferred::{
-    __async_html_patch_stream, __async_value_patch_stream, __live_props_response,
-    __serialize_async_value, __serialize_page_props, __streaming_props_response, AsyncHtml,
-    AsyncHtmlPatch, AsyncValue, AsyncValuePatch, LiveProp, LiveTarget, async_response_combined,
-    async_value_response,
-};
-// ── ISR ──────────────────────────────────────────────────────
-pub use isr::{__isr_cache_key, CacheEntrySnapshot, IsrCache, IsrCacheState, IsrHandle};
+pub use deferred::{__live_props_response, LiveProp, LiveTarget};
+// ── ISR / SSG cache ──────────────────────────────────────────
+pub use isr::{__isr_cache_key, IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────
 pub use context::ReqBuilder;
 pub use validator::Validator;

@@ -895,7 +895,7 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
     });
 
     // ISR cache handle — injected by start() when the cache is initialised.
-    // Pages without REVALIDATE will have a no-op IsrHandle (inner = None).
+    // Pages without PRERENDER will have a no-op IsrHandle (inner = None).
     let cache = parts
         .extensions
         .get::<IsrHandle>()

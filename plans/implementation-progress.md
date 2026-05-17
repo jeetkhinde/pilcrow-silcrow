@@ -89,6 +89,32 @@ spawn_embedded_watcher(store, WatcherConfig {
 
 ---
 
+### Slice C — Remove deprecated rendering paths  ✅ DONE
+
+**TODO #4**: Remove STREAMING, REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, `Deferred<T>` / `DeferredHtml` / `AsyncHtml` / `AsyncValue`, ISR cache inspect endpoint, filesystem ISR persistence, combined PRERENDER+REVALIDATE, Static Export (`export()`).
+
+**Files changed:**
+| File | Change |
+|------|--------|
+| `pilcrow/crates/routekit/src/templating/page_options.rs` | Removed `IsrOpts`, `streaming` field from `PageOptions`; kept `SsgOpts`, `FsrOpts` |
+| `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` | REVALIDATE/MAX_STALE/CACHE_TAGS/CACHE_VARY/STREAMING now produce build errors; removed `parse_str_slice_const` |
+| `pilcrow/crates/routekit/src/templating/codegen/types.rs` | Removed `deferred_fields_map`, `deferred_html_fields_map`, `isr_config_map` from `GeneratedTemplatesModule`; removed `deferred_fields`, `deferred_html_fields` from `InstrumentedFrontmatter` |
+| `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` | Removed `AppCodegenMaps` fields for ISR/deferred; removed `emit_isr_handler`, `emit_isr_revalidation_body`, `emit_streaming_handler`; hardcoded SSG TTL to `u64::MAX` |
+| `pilcrow/crates/routekit/src/templating/codegen/templates.rs` | Removed ISR/deferred map population and struct fields |
+| `pilcrow/crates/routekit/src/templating/codegen/mod.rs` | Removed `IsrOpts` from imports/exports |
+| `pilcrow/crates/routekit/src/templating/pipeline.rs` | Removed removed fields from `AppCodegenMaps` construction |
+| `pilcrow/crates/routekit/src/templating/compiler.rs` | Removed `inject_async_value_text_spans` (dead code) |
+| `pilcrow/crates/runtime/src/deferred.rs` | Removed `AsyncHtml`, `AsyncValue<T>`, streaming helpers; kept `LiveProp<T>`, `LiveTarget`, `__live_props_response`, `BakedProp<T>`, `PatchDelay` |
+| `pilcrow/crates/runtime/src/isr.rs` | Removed filesystem persistence, `with_persistence`, `invalidate_tag`, snapshot types; kept in-memory `IsrCache` for SSG only |
+| `pilcrow/crates/runtime/src/start.rs` | Removed `export()`, `isr_inspect_handler()`, filesystem/SQLite/Redis cache init; `export` import removed from pub exports |
+| `pilcrow/crates/runtime/src/lib.rs` | Re-exports trimmed to `__live_props_response, LiveProp, LiveTarget`; removed `export` |
+| `pilcrow/crates/web/src/lib.rs` | Removed streaming/async/export re-exports |
+| `pilcrow/crates/runtime/tests/response.rs` | Removed async_value / async_response_combined tests |
+| `pilcrow/crates/routekit/src/templating/codegen/tests.rs` | Updated ISR/streaming tests to expect build errors; removed streaming handler tests |
+| `pilcrow/registry.toml` | Marked `deferred-streams`, `incremental-ssr`, `ssr-streaming` as removed |
+
+---
+
 ## TODO Backlog
 
 | # | Title | Status |
@@ -96,7 +122,7 @@ spawn_embedded_watcher(store, WatcherConfig {
 | 1 | Tombstone invalidation | ✅ Done (Slice A) |
 | 2 | Unify `PRERENDER = true` → `promote_after = 0, prebake = true`; collapse `emit_ssg_handler` / `emit_isr_handler` into FSR path | ✅ Done (Slice B — route-level PROMOTE_AFTER constant + PRERENDER→FSR mapping; full emit_ssg collapse deferred to Slice C) |
 | 3 | Timer-based watcher — fires `invalidate_dep_key` on a schedule (replaces REVALIDATE TTL) | ✅ Done (Slice B — `ScheduledInvalidation` + `WatcherConfig::scheduled_invalidations`) |
-| 4 | Deprecate and remove: STREAMING, REVALIDATE, MAX_STALE, `Deferred<T>`, `DeferredHtml`, ISR cache inspect endpoint, filesystem ISR cache, combined PRERENDER+REVALIDATE, Static Export | ⬜ Pending |
+| 4 | Deprecate and remove: STREAMING, REVALIDATE, MAX_STALE, `Deferred<T>`, `DeferredHtml`, ISR cache inspect endpoint, filesystem ISR cache, combined PRERENDER+REVALIDATE, Static Export | ✅ Done (Slice C) |
 | 5 | s-boost opt-out by default — auto-skip external origin, download, `mailto:`, hash-only, `s-boost="false"` | ⬜ Pending |
 | 6 | Layout-aware navigation — three-mode system (JSON / fragment / full) driven by `X-Pilcrow-Layout` header; `data-ps-slot` markers emitted by codegen | ⬜ Pending |
 | 7 | Scroll behaviour per mode — full→top, fragment→main-top, JSON→preserve | ⬜ Pending |

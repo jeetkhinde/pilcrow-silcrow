@@ -2,7 +2,7 @@
 use axum::{http::StatusCode, response::IntoResponse};
 use http_body_util::BodyExt;
 use runtime::{
-    AsyncHtmlPatch, AsyncValuePatch, ToastLevel, async_response_combined, async_value_response,
+    ToastLevel,
     response::response::{ResponseExt, form_errors, json, navigate, redirect},
 };
 
@@ -128,42 +128,6 @@ fn response_ext_with_header_adds_header() {
 fn response_ext_no_cache_sets_silcrow_cache_header() {
     let resp = navigate("/").no_cache().into_response();
     assert_eq!(header_str(&resp, "silcrow-cache"), Some("no-cache"));
-}
-
-#[tokio::test]
-async fn async_value_response_requests_full_reload_for_boosted_navigation() {
-    let resp = async_value_response("shell".to_owned(), futures_util::stream::empty());
-    assert_eq!(header_str(&resp, "silcrow-full-reload"), Some("true"));
-}
-
-#[tokio::test]
-async fn async_value_response_streams_direct_scalar_patch_script() {
-    let resp = async_value_response(
-        "shell".to_owned(),
-        futures_util::stream::iter([AsyncValuePatch {
-            field: "slow_count",
-            json: "8".to_owned(),
-        }]),
-    );
-    let body = body_string(resp).await;
-    assert!(body.contains("window.__pilcrow_async_value(\"slow_count\",8)"));
-    assert!(!body.contains("Silcrow.patch"));
-}
-
-#[tokio::test]
-async fn async_response_combined_streams_direct_html_patch_script() {
-    let resp = async_response_combined(
-        "shell".to_owned(),
-        futures_util::stream::empty(),
-        futures_util::stream::iter([AsyncHtmlPatch {
-            slot: "post_list",
-            html: "<ul><li>Hi</li></ul>".to_owned(),
-        }]),
-    );
-    let body = body_string(resp).await;
-    assert!(body.contains("window.__pilcrow_async_html(\"post_list\""));
-    assert!(body.contains("<ul><li>Hi</li></ul>"));
-    assert!(!body.contains("window.__pd"));
 }
 
 #[test]

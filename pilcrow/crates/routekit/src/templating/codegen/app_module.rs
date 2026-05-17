@@ -19,9 +19,6 @@ pub struct AppCodegenMaps<'a> {
     pub loading_module_for_page: &'a HashMap<String, String>,
     pub action_map: &'a HashMap<String, Vec<ActionFn>>,
     pub page_options_map: &'a HashMap<String, PageOptions>,
-    pub deferred_fields_map: &'a HashMap<String, Vec<String>>,
-    pub deferred_html_fields_map: &'a HashMap<String, Vec<String>>,
-    pub isr_config_map: &'a HashMap<String, IsrOpts>,
     pub ssg_config_map: &'a HashMap<String, SsgOpts>,
     pub live_fields_map: &'a HashMap<String, Vec<String>>,
     pub has_live_fn_map: &'a HashMap<String, bool>,
@@ -33,8 +30,6 @@ pub struct AppCodegenMaps<'a> {
 struct SsgRenderCtx<'a> {
     active_chain: &'a [(usize, String, Vec<String>, LoadSignature)],
     chain_info: Option<&'a LayoutFieldsInfo>,
-    ttl_expr: &'a str,
-    tags_expr: &'a str,
 }
 
 fn emit_render_binding(
@@ -243,9 +238,6 @@ pub fn render_generated_app_module(
         loading_module_for_page,
         action_map,
         page_options_map,
-        deferred_fields_map,
-        deferred_html_fields_map,
-        isr_config_map,
         ssg_config_map,
         live_fields_map,
         has_live_fn_map,
@@ -341,14 +333,6 @@ pub fn render_generated_app_module(
         let pattern = rust_string(&entry.pattern);
         let mod_name = &entry.symbol;
         let render_fn = &entry.render_symbol;
-        let deferred_fields: &[String] = deferred_fields_map
-            .get(&entry.symbol)
-            .map(Vec::as_slice)
-            .unwrap_or(&[]);
-        let deferred_html_fields: &[String] = deferred_html_fields_map
-            .get(&entry.symbol)
-            .map(Vec::as_slice)
-            .unwrap_or(&[]);
         let live_fields: &[String] = live_fields_map
             .get(&entry.symbol)
             .map(Vec::as_slice)
@@ -421,62 +405,10 @@ pub fn render_generated_app_module(
             parts.join(", ")
         };
 
-        let isr_opts = isr_config_map.get(&entry.symbol);
         let ssg_opts = ssg_config_map.get(&entry.symbol);
-        let is_streaming = page_options_map
-            .get(&entry.symbol)
-            .is_some_and(|o| o.streaming);
-        let fsr_json = page_options_map
+        let _fsr_json = page_options_map
             .get(&entry.symbol)
             .is_some_and(|o| o.fsr.json);
-
-        // Build-time validation for STREAMING.
-        if is_streaming {
-            if isr_opts.is_some_and(|o| o.is_active()) {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true is incompatible with REVALIDATE.",
-                    "Use AsyncValue<T> for individual field streaming with ISR caching, or remove REVALIDATE for full-page streaming.",
-                ));
-            }
-            if ssg_opts.is_some_and(|o| o.prerender) {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true is incompatible with PRERENDER = true.",
-                    "Remove PRERENDER for streaming pages; pre-rendered pages are static and cannot stream.",
-                ));
-            }
-            if !deferred_fields.is_empty() || !deferred_html_fields.is_empty() {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true cannot be combined with AsyncValue<T> or AsyncHtml fields.",
-                    "Use one mechanism: either STREAMING = true for full-page streaming or explicit AsyncValue<T>/AsyncHtml fields.",
-                ));
-            }
-            if page_load.is_some_and(|s| s.wants_client) {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true does not support PilcrowClient in load().",
-                    "Use AsyncValue<T> for client-based data fetching, or remove the PilcrowClient argument from the streaming page load().",
-                ));
-            }
-            // FSR compatibility: live.rs routes serve pre-baked or SSR HTML and cannot stream.
-            if has_fsr {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true is incompatible with a live.rs companion (FSR).",
-                    "FSR routes serve pre-baked HTML with surgical slot patches — full-page streaming is not supported. Remove STREAMING = true or the live.rs file.",
-                ));
-            }
-            // FSR_JSON is only meaningful on FSR routes; it is also incompatible with streaming.
-            if fsr_json {
-                return Err(route_config_error(
-                    entry,
-                    "STREAMING = true is incompatible with FSR_JSON = true.",
-                    "Remove FSR_JSON = true from streaming pages — baked JSON output requires a promoted (non-streaming) route.",
-                ));
-            }
-        }
 
         // Build-time validation: PRERENDER on a dynamic route requires entries().
         if ssg_opts.is_some_and(|o| o.prerender) && page_load.is_some() {
@@ -489,7 +421,7 @@ pub fn render_generated_app_module(
                     "Add `pub async fn entries() -> Vec<HashMap<String, String>>` to the route code-behind file.",
                 ));
             }
-            // PRERENDER + REVALIDATE: allowed — startup-prerender with ISR revalidation.
+            // PRERENDER only: startup prerender with in-memory SSG cache.
         }
 
         let pattern_str = entry.pattern.as_str();
@@ -558,46 +490,11 @@ pub fn render_generated_app_module(
             out.push_str(&emit_loading_append(loading_mod, "html"));
             out.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
         } else if ssg_opts.is_some_and(|o| o.prerender)
-            && !isr_opts.is_some_and(|o| o.is_active())
             && page_load.is_some()
-            && deferred_fields.is_empty()
-            && deferred_html_fields.is_empty()
         {
-            // ── Case 1.5: SSG-only prerendered page (no REVALIDATE) ─────────────
+            // ── Case 1.5: SSG-only prerendered page ─────────────────────────────
             if let Some(sig) = page_load {
                 out.push_str(&emit_ssg_handler(
-                    mod_name,
-                    render_fn,
-                    error_mod,
-                    loading_mod,
-                    sig,
-                    &active_chain,
-                    chain_info,
-                ));
-            }
-        } else if isr_opts.is_some_and(|o| o.is_active())
-            && page_load.is_some()
-            && deferred_fields.is_empty()
-            && deferred_html_fields.is_empty()
-        {
-            // ── Case 2: ISR-enabled dynamic page ────────────────────────────────
-            if let (Some(isr), Some(sig)) = (isr_opts, page_load) {
-                out.push_str(&emit_isr_handler(
-                    isr,
-                    mod_name,
-                    render_fn,
-                    error_mod,
-                    loading_mod,
-                    sig,
-                    &active_chain,
-                    chain_info,
-                ));
-            }
-        } else if is_streaming && page_load.is_some() {
-            // ── Case 2.5: SSR Streaming — layout loads run, page load() is background-spawned.
-            // Shell renders immediately; resolved Props are streamed as a Silcrow.patch() call.
-            if let Some(sig) = page_load {
-                out.push_str(&emit_streaming_handler(
                     mod_name,
                     render_fn,
                     error_mod,
@@ -772,178 +669,10 @@ pub fn render_generated_app_module(
                 out.push_str("            };\n");
             } else {
                 // Only page has load() → Props directly.
-                // Only alias to `props` when there are no deferred fields; the deferred
-                // path destructures page_data in-place and `props` would shadow it incorrectly.
-                let has_any_deferred_peek =
-                    !deferred_fields.is_empty() || !deferred_html_fields.is_empty();
-                if !has_any_deferred_peek {
-                    let _ = writeln!(out, "            let props = page_data;");
-                }
+                let _ = writeln!(out, "            let props = page_data;");
             }
 
-            let has_any_deferred = !deferred_fields.is_empty() || !deferred_html_fields.is_empty();
-            if has_any_deferred && !any_layout_load {
-                // ── Deferred streaming response ───────────────────────────────────
-                // Step 1: extract futures and loading HTML from DeferredHtml fields.
-                for field in deferred_html_fields {
-                    let _ = writeln!(
-                        out,
-                        "            let (__deferred_html_{field}_fut, __deferred_html_{field}_loading) = page_data.{field}.__into_parts();"
-                    );
-                }
-                // Step 2: extract Deferred<T> futures.
-                for field in deferred_fields {
-                    let _ = writeln!(
-                        out,
-                        "            let __deferred_{field} = page_data.{field};"
-                    );
-                }
-                // Step 3: build shell props — replace deferred fields with placeholders.
-                let _ = writeln!(
-                    out,
-                    "            let __shell_props = __pilcrow_gen::{mod_name}::Props {{"
-                );
-                for field in deferred_fields {
-                    let _ = writeln!(
-                        out,
-                        "                {field}: ::pilcrow_web::AsyncValue::ready(Default::default()),"
-                    );
-                }
-                for field in deferred_html_fields {
-                    let _ = writeln!(
-                        out,
-                        "                {field}: ::pilcrow_web::AsyncHtml::__slot({name}, __deferred_html_{field}_loading.clone()),",
-                        name = rust_string(field)
-                    );
-                }
-                out.push_str("                ..page_data\n");
-                out.push_str("            };\n");
-                // Step 4: render shell.
-                out.push_str(&emit_render_binding(
-                    "__shell_html",
-                    &format!("__pilcrow_gen::{mod_name}::{render_fn}(__shell_props)"),
-                    error_mod,
-                    needs_req,
-                    3,
-                ));
-                // Step 5: replace text markers from DeferredHtml Display with real async HTML targets.
-                for field in deferred_html_fields {
-                    let marker = rust_string(&format!("__pilcrow_html_slot_{field}__"));
-                    let _ = writeln!(
-                        out,
-                        "            let mut __slot_span_{field} = String::new();"
-                    );
-                    let _ = writeln!(
-                        out,
-                        "            __slot_span_{field}.push_str(\"<span data-pilcrow-async-html=\\\"{field}\\\">\");"
-                    );
-                    let _ = writeln!(
-                        out,
-                        "            __slot_span_{field}.push_str(&__deferred_html_{field}_loading);"
-                    );
-                    let _ = writeln!(
-                        out,
-                        "            __slot_span_{field}.push_str(\"</span>\");"
-                    );
-                    let _ = writeln!(
-                        out,
-                        "            let __shell_html = __shell_html.replace({marker}, &__slot_span_{field});"
-                    );
-                }
-                out.push_str(&emit_loading_append(loading_mod, "__shell_html"));
-                // Step 6: build patch streams.
-                out.push_str("            let __json_patches = ::pilcrow_web::__async_value_patch_stream(vec![\n");
-                for field in deferred_fields {
-                    let field_lit = rust_string(field);
-                    let _ = writeln!(
-                        out,
-                        "                ({field_lit}, Box::pin(async move {{ ::pilcrow_web::__serialize_async_value(__deferred_{field}.resolve().await) }})),"
-                    );
-                }
-                out.push_str("            ]);\n");
-                out.push_str("            let __html_patches = ::pilcrow_web::__async_html_patch_stream(vec![\n");
-                for field in deferred_html_fields {
-                    let field_lit = rust_string(field);
-                    let _ = writeln!(
-                        out,
-                        "                ({field_lit}, Box::pin(async move {{ __deferred_html_{field}_fut.await }})),"
-                    );
-                }
-                out.push_str("            ]);\n");
-                // Step 7: inject shim(s) before </head>.
-                let json_shim = if !deferred_fields.is_empty() {
-                    "window.__pilcrow_async_value=function(k,v){document.querySelectorAll('[data-pilcrow-async-value=\"'+k+'\"]').forEach(function(n){n.textContent=v==null?'':String(v)})}"
-                } else {
-                    ""
-                };
-                let html_shim = if !deferred_html_fields.is_empty() {
-                    "window.__pilcrow_async_html=function(k,v){var t=document.createElement('template');t.innerHTML=v==null?'':String(v);document.querySelectorAll('[data-pilcrow-async-html=\"'+k+'\"]').forEach(function(e){e.replaceChildren(t.content.cloneNode(true))})}"
-                } else {
-                    ""
-                };
-                let live_shim = if !live_fields.is_empty() {
-                    "window.__pilcrow_live_patch=function(data){if(!data||typeof data!=='object')return;Object.keys(data).forEach(function(k){var v=data[k];document.querySelectorAll('[data-pilcrow-live-field=\"'+k+'\"]').forEach(function(n){n.textContent=v==null?'':String(v)})})}"
-                } else {
-                    ""
-                };
-                let shim_body = [json_shim, html_shim, live_shim]
-                    .iter()
-                    .filter(|s| !s.is_empty())
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join(";");
-                let shim_tag = format!("<script>{shim_body}</script>");
-                let shim_lit = rust_string(&shim_tag);
-                let _ = writeln!(out, "            const __DEFERRED_SHIM: &str = {shim_lit};");
-                out.push_str("            let __shell_html = if let Some(__pos) = __shell_html.find(\"</head>\") {\n");
-                out.push_str("                let mut __s = String::with_capacity(__shell_html.len() + __DEFERRED_SHIM.len());\n");
-                out.push_str("                __s.push_str(&__shell_html[..__pos]);\n");
-                out.push_str("                __s.push_str(__DEFERRED_SHIM);\n");
-                out.push_str("                __s.push_str(&__shell_html[__pos..]);\n");
-                out.push_str("                __s\n");
-                out.push_str("            } else {\n");
-                out.push_str("                format!(\"{}{}\", __DEFERRED_SHIM, __shell_html)\n");
-                out.push_str("            };\n");
-                // ── FSR: inject client script before </head> ─────────────────
-                if has_fsr {
-                    let fsr_script = FSR_PATCH_SCRIPT;
-                    let fsr_script_tag = format!("<script>{fsr_script}</script>");
-                    let fsr_script_lit = rust_string(&fsr_script_tag);
-                    let _ = writeln!(
-                        out,
-                        "            const __FSR_SCRIPT: &str = {fsr_script_lit};"
-                    );
-                    out.push_str("            let __shell_html = if let Some(__pos) = __shell_html.find(\"</head>\") {\n");
-                    out.push_str("                let mut __s = String::with_capacity(__shell_html.len() + __FSR_SCRIPT.len());\n");
-                    out.push_str("                __s.push_str(&__shell_html[..__pos]);\n");
-                    out.push_str("                __s.push_str(__FSR_SCRIPT);\n");
-                    out.push_str("                __s.push_str(&__shell_html[__pos..]);\n");
-                    out.push_str("                __s\n");
-                    out.push_str("            } else {\n");
-                    out.push_str("                format!(\"{}{}\", __FSR_SCRIPT, __shell_html)\n");
-                    out.push_str("            };\n");
-                }
-                // ── Live props: inject s-sse anchor before </body> ────────────
-                if !live_fields.is_empty() && !has_fsr {
-                    out.push_str("            let __shell_html = {\n");
-                    out.push_str("                let __live_anchor = format!(\"<script>(function(){{var es=new EventSource(\\\"/__pilcrow/live{}\\\");es.addEventListener(\\\"live\\\",function(e){{try{{window.__pilcrow_live_patch(JSON.parse(e.data))}}catch(x){{}}}});}})()</script>\", __live_path);\n");
-                    out.push_str(
-                        "                if let Some(__pos) = __shell_html.rfind(\"</body>\") {\n",
-                    );
-                    out.push_str("                    let mut __s = String::with_capacity(__shell_html.len() + __live_anchor.len());\n");
-                    out.push_str("                    __s.push_str(&__shell_html[..__pos]);\n");
-                    out.push_str("                    __s.push_str(&__live_anchor);\n");
-                    out.push_str("                    __s.push_str(&__shell_html[__pos..]);\n");
-                    out.push_str("                    __s\n");
-                    out.push_str("                } else {\n");
-                    out.push_str(
-                        "                    format!(\"{}{}\", __shell_html, __live_anchor)\n",
-                    );
-                    out.push_str("                }\n");
-                    out.push_str("            };\n");
-                }
-                out.push_str("            return ::pilcrow_web::async_response_combined(__shell_html, __json_patches, __html_patches);\n");
-            } else {
+            {
                 out.push_str(&emit_render_binding(
                     "html",
                     &format!("__pilcrow_gen::{mod_name}::{render_fn}(props)"),
@@ -1200,9 +929,6 @@ pub fn render_generated_app_module(
         load_map,
         layout_fields_map,
         ssg_config_map,
-        isr_config_map,
-        deferred_fields_map,
-        deferred_html_fields_map,
     ));
 
     // ── handle shim: extracts Req (body stays intact), calls hooks::handle ────
@@ -1258,396 +984,6 @@ pub fn render_generated_app_module(
     Ok(out)
 }
 
-/// Emit the handler body for an ISR-enabled page (stale-while-revalidate).
-///
-/// This generates:
-/// 1. ISR preamble — extract cache Arc, compute key, pre-bypass check.
-/// 2. Cache-state dispatch — Fresh returns immediately; Stale spawns a background
-///    revalidation task then returns the stale HTML; Miss falls through.
-/// 3. Normal load + render (identical to the non-ISR path).
-/// 4. ISR cache store — writes the freshly rendered HTML to the cache.
-#[allow(clippy::too_many_arguments)]
-fn emit_isr_handler(
-    isr: &IsrOpts,
-    mod_name: &str,
-    render_fn: &str,
-    error_mod: Option<&str>,
-    loading_mod: Option<&str>,
-    page_sig: LoadSignature,
-    active_chain: &[(usize, &str, &Vec<String>, LoadSignature)],
-    chain_info: Option<&LayoutFieldsInfo>,
-) -> String {
-    let mut out = String::new();
-    out.push_str("            use ::pilcrow_web::axum::response::IntoResponse;\n");
-
-    // ISR constants (statically embedded at codegen time).
-    let ttl = isr.revalidate.unwrap_or(60);
-    let _ = writeln!(out, "            const __ISR_TTL: u64 = {ttl}u64;");
-    match isr.max_stale {
-        Some(ms) => {
-            let _ = writeln!(
-                out,
-                "            const __ISR_MAX_STALE: ::std::option::Option<u64> = ::std::option::Option::Some({ms}u64);"
-            );
-        }
-        None => {
-            out.push_str("            const __ISR_MAX_STALE: ::std::option::Option<u64> = ::std::option::Option::None;\n");
-        }
-    }
-    let tags_lit = if isr.cache_tags.is_empty() {
-        "&[]".to_string()
-    } else {
-        let items: Vec<String> = isr.cache_tags.iter().map(|t| format!("\"{t}\"")).collect();
-        format!("&[{}]", items.join(", "))
-    };
-    let _ = writeln!(out, "            const __ISR_TAGS: &[&str] = {tags_lit};");
-    let vary_lit = if isr.cache_vary.is_empty() {
-        "&[]".to_string()
-    } else {
-        let items: Vec<String> = isr.cache_vary.iter().map(|k| format!("\"{k}\"")).collect();
-        format!("&[{}]", items.join(", "))
-    };
-    let _ = writeln!(out, "            const __ISR_VARY: &[&str] = {vary_lit};");
-
-    // Preamble: extract cache, resp handle, compute key, check pre-bypass.
-    out.push_str("            let __isr_arc = req.cache.__arc();\n");
-    out.push_str("            let __resp_handle = req.res.clone();\n");
-    out.push_str("            let __isr_key = ::pilcrow_web::__isr_cache_key(&req.path, &req.query, __ISR_VARY, &req.cookies, &req.headers);\n");
-    out.push_str("            let __pre_bypass = __resp_handle.__is_bypass_cache();\n");
-
-    // Cache-state dispatch block.
-    out.push_str("            if let (::std::option::Option::Some(ref __cache), false) = (&__isr_arc, __pre_bypass) {\n");
-    out.push_str("                match __cache.check(&__isr_key, __ISR_MAX_STALE).await {\n");
-
-    // Fresh branch.
-    out.push_str("                    ::pilcrow_web::IsrCacheState::Fresh(html) => {\n");
-    out.push_str("                        return ::pilcrow_web::axum::response::Html(html).into_response();\n");
-    out.push_str("                    }\n");
-
-    // Stale branch — serve stale HTML immediately, spawn background revalidation.
-    out.push_str("                    ::pilcrow_web::IsrCacheState::Stale(stale_html) => {\n");
-    out.push_str("                        if __cache.begin_revalidation(&__isr_key).await {\n");
-    out.push_str("                            let __cache2 = ::std::sync::Arc::clone(__cache);\n");
-    out.push_str("                            let __key2 = __isr_key.clone();\n");
-    // Capture req parts for the synthetic request used in the background task.
-    out.push_str("                            let __synth_path = req.path.clone();\n");
-    out.push_str("                            let __synth_params = req.params.clone();\n");
-    out.push_str("                            let __synth_query = req.query.clone();\n");
-    out.push_str("                            let __synth_headers = req.headers.clone();\n");
-    out.push_str("                            let __synth_cookies = req.cookies.clone();\n");
-    out.push_str("                            let __synth_locals = req.locals.clone();\n");
-    out.push_str("                            ::pilcrow_web::tokio::spawn(async move {\n");
-    // Synthetic req used ONLY in the background task.
-    out.push_str(
-        "                                let __synth_req = ::pilcrow_web::Req::__synthetic(\n",
-    );
-    out.push_str(
-        "                                    __synth_path, __synth_params, __synth_query,\n",
-    );
-    out.push_str(
-        "                                    __synth_headers, __synth_cookies, __synth_locals,\n",
-    );
-    out.push_str("                                );\n");
-    // Emit the revalidation body inside the spawn task.
-    out.push_str(&emit_isr_revalidation_body(
-        mod_name,
-        render_fn,
-        page_sig,
-        active_chain,
-        chain_info,
-    ));
-    out.push_str("                            });\n"); // close tokio::spawn
-    out.push_str("                        }\n"); // close if begin_revalidation
-    out.push_str("                        return ::pilcrow_web::axum::response::Html(stale_html).into_response();\n");
-    out.push_str("                    }\n"); // close Stale branch
-
-    // Miss branch — fall through to normal load.
-    out.push_str("                    ::pilcrow_web::IsrCacheState::Miss => {}\n");
-    out.push_str("                }\n"); // close match
-    out.push_str("            }\n"); // close if let
-
-    // ── Normal load path (identical to existing non-ISR code) ──────────────────
-    // Layout loads (outermost first).
-    let any_layout_load = !active_chain.is_empty();
-    let layout_req_consumers = active_chain
-        .iter()
-        .filter(|(_, _, _, s)| s.consumes_req())
-        .count();
-    let mut req_clones_left = if any_layout_load || page_sig.consumes_req() {
-        let total = layout_req_consumers + if page_sig.consumes_req() { 1 } else { 0 };
-        total.saturating_sub(1)
-    } else {
-        0
-    };
-
-    let layout_client_consumers = active_chain
-        .iter()
-        .filter(|(_, _, _, s)| s.wants_client)
-        .count();
-    let mut client_clones_left =
-        if layout_client_consumers + if page_sig.wants_client { 1 } else { 0 } > 0 {
-            (layout_client_consumers + if page_sig.wants_client { 1 } else { 0 }).saturating_sub(1)
-        } else {
-            0
-        };
-
-    for (idx, layout_mod, _, lsig) in active_chain {
-        let req_arg = if lsig.wants_req {
-            if req_clones_left > 0 {
-                req_clones_left -= 1;
-                "req.clone()"
-            } else {
-                "req"
-            }
-        } else {
-            ""
-        };
-        let client_arg = if lsig.wants_client {
-            if client_clones_left > 0 {
-                client_clones_left -= 1;
-                "client.clone()"
-            } else {
-                "client"
-            }
-        } else {
-            ""
-        };
-        let layout_call_args = match (req_arg, client_arg) {
-            ("", "") => String::new(),
-            (r, "") => r.to_string(),
-            ("", cl) => cl.to_string(),
-            (r, cl) => format!("{r}, {cl}"),
-        };
-        let call_expr = format!("__pilcrow_gen::{layout_mod}::load({layout_call_args})");
-        let awaited = if lsig.is_async {
-            format!("{call_expr}.await")
-        } else {
-            call_expr
-        };
-        let var = format!("layout_data_{idx}");
-        if lsig.returns_result {
-            let _ = writeln!(out, "            let {var} = match {awaited} {{");
-            out.push_str("                Ok(p) => p,\n");
-            out.push_str(&emit_error_branch(error_mod));
-            out.push_str("            };\n");
-        } else {
-            let _ = writeln!(out, "            let {var} = {awaited};");
-        }
-    }
-
-    // Page load.
-    let req_arg = if page_sig.consumes_req() {
-        let raw = if req_clones_left > 0 {
-            "req.clone()"
-        } else {
-            "req"
-        };
-        if page_sig.wants_page {
-            format!("::pilcrow_web::Page::from_req({raw})")
-        } else {
-            raw.to_string()
-        }
-    } else {
-        String::new()
-    };
-    let client_arg = if page_sig.wants_client {
-        if client_clones_left > 0 {
-            "client.clone()"
-        } else {
-            "client"
-        }
-    } else {
-        ""
-    };
-    let page_call_args = match (req_arg.as_str(), client_arg) {
-        ("", "") => String::new(),
-        (r, "") => r.to_string(),
-        ("", cl) => cl.to_string(),
-        (r, cl) => format!("{r}, {cl}"),
-    };
-    let page_call = format!("__pilcrow_gen::{mod_name}::load({page_call_args})");
-    let page_awaited = if page_sig.is_async {
-        format!("{page_call}.await")
-    } else {
-        page_call
-    };
-    if page_sig.returns_result {
-        let _ = writeln!(out, "            let page_data = match {page_awaited} {{");
-        out.push_str("                Ok(p) => p,\n");
-        out.push_str(&emit_error_branch(error_mod));
-        out.push_str("            };\n");
-    } else {
-        let _ = writeln!(out, "            let page_data = {page_awaited};");
-    }
-
-    // Construct props (MergedProps if layout chain contributed fields, else Props).
-    if any_layout_load {
-        let info = chain_info.expect("chain_info present when active_chain is non-empty");
-        let _ = writeln!(
-            out,
-            "            let props = __pilcrow_gen::{mod_name}::__MergedProps {{"
-        );
-        for (idx, _, field_names, _) in active_chain {
-            let var = format!("layout_data_{idx}");
-            for field in *field_names {
-                let _ = writeln!(out, "                {field}: {var}.{field},");
-            }
-        }
-        for field in &info.page_field_names {
-            let _ = writeln!(out, "                {field}: page_data.{field},");
-        }
-        out.push_str("            };\n");
-    } else {
-        out.push_str("            let props = page_data;\n");
-    }
-
-    // Render to HTML.
-    out.push_str(&emit_render_binding(
-        "html",
-        &format!("__pilcrow_gen::{mod_name}::{render_fn}(props)"),
-        error_mod,
-        true,
-        3,
-    ));
-    out.push_str(&emit_loading_append(loading_mod, "html"));
-
-    // ISR cache store (skip if load() called bypass_cache()).
-    out.push_str("            let __post_bypass = __resp_handle.__is_bypass_cache();\n");
-    out.push_str("            if let (::std::option::Option::Some(ref __cache), false) = (&__isr_arc, __post_bypass) {\n");
-    out.push_str("                let __tags: ::std::vec::Vec<String> = __ISR_TAGS.iter().map(|s| s.to_string()).collect();\n");
-    out.push_str(
-        "                __cache.store(&__isr_key, html.clone(), __ISR_TTL, __tags).await;\n",
-    );
-    out.push_str("            }\n");
-
-    // Apply response side-effects and return.
-    out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
-    out.push_str("            __resp_handle.apply_to(&mut __response);\n");
-    out.push_str("            __response\n");
-
-    out
-}
-
-/// Emit the body of the background ISR revalidation `tokio::spawn` task.
-///
-/// The task receives a `__synth_req: Req`, runs all load()s, merges props,
-/// renders to HTML, and stores the result in `__cache2` under `__key2`.
-fn emit_isr_revalidation_body(
-    mod_name: &str,
-    render_fn: &str,
-    page_sig: LoadSignature,
-    active_chain: &[(usize, &str, &Vec<String>, LoadSignature)],
-    chain_info: Option<&LayoutFieldsInfo>,
-) -> String {
-    let mut out = String::new();
-    let any_layout_load = !active_chain.is_empty();
-
-    out.push_str("                                let __reval_result: ::std::result::Result<String, String> = async {\n");
-
-    // Layout loads — always clone __synth_req since it's a background task.
-    for (idx, layout_mod, _, lsig) in active_chain {
-        let req_arg = if lsig.wants_req {
-            "__synth_req.clone()"
-        } else {
-            ""
-        };
-        let call_expr = format!("__pilcrow_gen::{layout_mod}::load({req_arg})");
-        let awaited = if lsig.is_async {
-            format!("{call_expr}.await")
-        } else {
-            call_expr
-        };
-        let var = format!("layout_data_{idx}");
-        if lsig.returns_result {
-            let _ = writeln!(
-                out,
-                "                                    let {var} = {awaited}.map_err(|e| e.to_string())?;"
-            );
-        } else {
-            let _ = writeln!(
-                out,
-                "                                    let {var} = {awaited};"
-            );
-        }
-    }
-
-    // Page load.
-    let page_req_arg = if page_sig.wants_page {
-        "::pilcrow_web::Page::from_req(__synth_req)".to_string()
-    } else if page_sig.wants_req {
-        "__synth_req".to_string()
-    } else {
-        String::new()
-    };
-    let page_call = format!("__pilcrow_gen::{mod_name}::load({page_req_arg})");
-    let page_awaited = if page_sig.is_async {
-        format!("{page_call}.await")
-    } else {
-        page_call
-    };
-    if page_sig.returns_result {
-        let _ = writeln!(
-            out,
-            "                                    let page_data = {page_awaited}.map_err(|e| e.to_string())?;"
-        );
-    } else {
-        let _ = writeln!(
-            out,
-            "                                    let page_data = {page_awaited};"
-        );
-    }
-
-    // Construct props.
-    if any_layout_load {
-        let info = chain_info.expect("chain_info present when active_chain is non-empty");
-        let _ = writeln!(
-            out,
-            "                                    let props = __pilcrow_gen::{mod_name}::__MergedProps {{"
-        );
-        for (idx, _, field_names, _) in active_chain {
-            let var = format!("layout_data_{idx}");
-            for field in *field_names {
-                let _ = writeln!(
-                    out,
-                    "                                        {field}: {var}.{field},"
-                );
-            }
-        }
-        for field in &info.page_field_names {
-            let _ = writeln!(
-                out,
-                "                                        {field}: page_data.{field},"
-            );
-        }
-        out.push_str("                                    };\n");
-    } else {
-        out.push_str("                                    let props = page_data;\n");
-    }
-
-    // Render.
-    let _ = writeln!(
-        out,
-        "                                    __pilcrow_gen::{mod_name}::{render_fn}(props).map_err(|e| e.to_string())"
-    );
-
-    out.push_str("                                }.await;\n");
-
-    // Handle result.
-    out.push_str("                                match __reval_result {\n");
-    out.push_str(
-        "                                    ::std::result::Result::Ok(fresh_html) => {\n",
-    );
-    out.push_str("                                        let __tags: ::std::vec::Vec<String> = __ISR_TAGS.iter().map(|s| s.to_string()).collect();\n");
-    out.push_str("                                        __cache2.store(&__key2, fresh_html, __ISR_TTL, __tags).await;\n");
-    out.push_str("                                    }\n");
-    out.push_str("                                    ::std::result::Result::Err(e) => {\n");
-    out.push_str("                                        ::pilcrow_web::tracing::error!(\"ISR revalidation failed for {}: {}\", __key2, e);\n");
-    out.push_str("                                    }\n");
-    out.push_str("                                }\n");
-    out.push_str("                                __cache2.end_revalidation(&__key2).await;\n");
-
-    out
-}
 
 /// Generate and write the app module and API mods files.
 #[allow(clippy::too_many_arguments)]
@@ -1834,9 +1170,6 @@ fn emit_prerender_all(
     load_map: &HashMap<String, Option<LoadSignature>>,
     layout_fields_map: &HashMap<String, LayoutFieldsInfo>,
     ssg_config_map: &HashMap<String, SsgOpts>,
-    isr_config_map: &HashMap<String, IsrOpts>,
-    deferred_fields_map: &HashMap<String, Vec<String>>,
-    deferred_html_fields_map: &HashMap<String, Vec<String>>,
 ) -> String {
     let mut out = String::new();
     out.push_str("\n#[allow(dead_code)]\n");
@@ -1855,12 +1188,6 @@ fn emit_prerender_all(
         let Some(page_sig) = load_map.get(&entry.symbol).copied().flatten() else {
             continue;
         };
-        // Pages with Deferred fields stream JavaScript — not suitable for SSG prerendering.
-        if deferred_fields_map.contains_key(&entry.symbol)
-            || deferred_html_fields_map.contains_key(&entry.symbol)
-        {
-            continue;
-        }
 
         has_any = true;
         let chain_info = layout_fields_map.get(&entry.symbol);
@@ -1881,23 +1208,6 @@ fn emit_prerender_all(
             })
             .unwrap_or_default();
 
-        // When combined with ISR, store at the ISR TTL so revalidation can happen.
-        // Otherwise use u64::MAX (never expires) for pure SSG.
-        let isr = isr_config_map.get(&entry.symbol);
-        let (ttl_expr, tags_expr) = if let Some(isr) = isr.filter(|o| o.is_active()) {
-            let ttl = isr.revalidate.unwrap_or(60);
-            let tags = if isr.cache_tags.is_empty() {
-                "vec![]".to_string()
-            } else {
-                let items: Vec<String> =
-                    isr.cache_tags.iter().map(|t| format!("\"{t}\"")).collect();
-                format!("vec![{}]", items.join(", "))
-            };
-            (format!("{ttl}u64"), tags)
-        } else {
-            ("u64::MAX".to_string(), "vec![]".to_string())
-        };
-
         let is_dynamic = entry.pattern.contains(':');
         if is_dynamic {
             let param_names: Vec<&str> = entry
@@ -1915,8 +1225,6 @@ fn emit_prerender_all(
                 &SsgRenderCtx {
                     active_chain: &active_chain,
                     chain_info,
-                    ttl_expr: &ttl_expr,
-                    tags_expr: &tags_expr,
                 },
             ));
         } else {
@@ -1928,8 +1236,6 @@ fn emit_prerender_all(
                 &SsgRenderCtx {
                     active_chain: &active_chain,
                     chain_info,
-                    ttl_expr: &ttl_expr,
-                    tags_expr: &tags_expr,
                 },
             ));
         }
@@ -2055,159 +1361,12 @@ fn emit_ssg_prerender_dynamic_block(
     out
 }
 
-// ── SSR Streaming handler (Case 2.5) ─────────────────────────────────────
-
-/// Emit the handler body for a STREAMING page.
-///
-/// Layout loads run sequentially (to preserve `req.locals` propagation semantics).
-/// The page's own `load()` is spawned in the background immediately after layout loads
-/// complete. The shell renders with layout data + default page props and is flushed
-/// to the client right away. When `load()` resolves, the full `Props` is serialized
-/// as JSON and streamed as `<script>window.__ps({...})</script>` — a single
-/// `Silcrow.patch(props, document.body)` call that patches all reactive bindings.
-///
-/// The streaming shim `window.__ps` is injected before `</head>` in the shell HTML.
-fn emit_streaming_handler(
-    mod_name: &str,
-    render_fn: &str,
-    error_mod: Option<&str>,
-    loading_mod: Option<&str>,
-    page_sig: LoadSignature,
-    active_chain: &[(usize, &str, &Vec<String>, LoadSignature)],
-    chain_info: Option<&LayoutFieldsInfo>,
-) -> String {
-    let mut out = String::new();
-    out.push_str("            use ::pilcrow_web::axum::response::IntoResponse;\n");
-    out.push_str("            let __resp_handle = req.res.clone();\n");
-
-    let any_layout_load = !active_chain.is_empty();
-
-    // Layout loads run first, each getting a clone of req so the original is available
-    // for the page spawn (and so layout-set locals are visible to the page).
-    for (idx, layout_mod, _, lsig) in active_chain {
-        let req_arg = if lsig.wants_req { "req.clone()" } else { "" };
-        let call_expr = format!("__pilcrow_gen::{layout_mod}::load({req_arg})");
-        let awaited = if lsig.is_async {
-            format!("{call_expr}.await")
-        } else {
-            call_expr
-        };
-        let var = format!("layout_data_{idx}");
-        if lsig.returns_result {
-            let _ = writeln!(out, "            let {var} = match {awaited} {{");
-            out.push_str("                Ok(p) => p,\n");
-            out.push_str(&emit_error_branch(error_mod));
-            out.push_str("            };\n");
-        } else {
-            let _ = writeln!(out, "            let {var} = {awaited};");
-        }
-    }
-
-    // Spawn page load() in the background; original req is moved in.
-    let page_req_arg = if page_sig.wants_page {
-        "::pilcrow_web::Page::from_req(req)".to_string()
-    } else if page_sig.wants_req {
-        "req".to_string()
-    } else {
-        String::new()
-    };
-    let page_call = format!("__pilcrow_gen::{mod_name}::load({page_req_arg})");
-    let page_inner = if page_sig.is_async {
-        format!("{page_call}.await")
-    } else {
-        page_call
-    };
-    let _ = writeln!(
-        out,
-        "            let __page_handle = ::pilcrow_web::tokio::spawn(async move {{ {page_inner} }});"
-    );
-
-    // Build shell props: layout fields from their loads + default values for page fields.
-    if any_layout_load {
-        let info = chain_info.expect("chain_info present when active_chain is non-empty");
-        let _ = writeln!(
-            out,
-            "            let __shell_props = __pilcrow_gen::{mod_name}::__MergedProps {{"
-        );
-        for (idx, _, field_names, _) in active_chain {
-            let var = format!("layout_data_{idx}");
-            for field in *field_names {
-                let _ = writeln!(out, "                {field}: {var}.{field},");
-            }
-        }
-        for field in &info.page_field_names {
-            let _ = writeln!(out, "                {field}: Default::default(),");
-        }
-        out.push_str("            };\n");
-    } else {
-        let _ = writeln!(
-            out,
-            "            let __shell_props = __pilcrow_gen::{mod_name}::Props::default();"
-        );
-    }
-
-    // Render shell immediately.
-    out.push_str(&emit_render_binding(
-        "__shell_html",
-        &format!("__pilcrow_gen::{mod_name}::{render_fn}(__shell_props)"),
-        error_mod,
-        true,
-        3,
-    ));
-
-    // Append loading skeleton if present (wraps __shell_html variable).
-    if let Some(lmod) = loading_mod {
-        let lrender = format!("render_{lmod}");
-        let _ = writeln!(
-            out,
-            "            let __loading_html = __pilcrow_gen::{lmod}::{lrender}(__pilcrow_gen::{lmod}::Props {{}}).unwrap_or_default();"
-        );
-        out.push_str("            let __shell_html = ::std::format!(\"{}{}{}{}{}\" ,__shell_html, \"<template id=\\\"__pilcrow_loading\\\" hidden>\", __loading_html, \"</template>\", \"\");\n");
-    }
-
-    // Inject streaming shim (`window.__ps`) before </head>.
-    let shim = "<script>window.__ps=function(v){window.__psData=v;if(window.Silcrow)Silcrow.patch(v,document.body);}</script>";
-    let shim_lit = rust_string(shim);
-    let _ = writeln!(
-        out,
-        "            const __STREAMING_SHIM: &str = {shim_lit};"
-    );
-    out.push_str(
-        "            let __shell_html = if let Some(__pos) = __shell_html.find(\"</head>\") {\n",
-    );
-    out.push_str("                let mut __s = String::with_capacity(__shell_html.len() + __STREAMING_SHIM.len());\n");
-    out.push_str("                __s.push_str(&__shell_html[..__pos]);\n");
-    out.push_str("                __s.push_str(__STREAMING_SHIM);\n");
-    out.push_str("                __s.push_str(&__shell_html[__pos..]);\n");
-    out.push_str("                __s\n");
-    out.push_str("            } else {\n");
-    out.push_str("                ::std::format!(\"{}{}\", __STREAMING_SHIM, __shell_html)\n");
-    out.push_str("            };\n");
-
-    // Future that resolves the page Props to JSON once load() completes.
-    out.push_str("            let __page_json_fut = async move {\n");
-    out.push_str("                match __page_handle.await {\n");
-    out.push_str(
-        "                    ::std::result::Result::Ok(::std::result::Result::Ok(page_data)) =>\n",
-    );
-    out.push_str("                        ::pilcrow_web::__serialize_page_props(page_data),\n");
-    out.push_str("                    _ => ::std::string::String::new(),\n");
-    out.push_str("                }\n");
-    out.push_str("            };\n");
-
-    out.push_str("            let mut __response = ::pilcrow_web::__streaming_props_response(__shell_html, __page_json_fut);\n");
-    out.push_str("            __resp_handle.apply_to(&mut __response);\n");
-    out.push_str("            __response\n");
-
-    out
-}
 
 /// Emit the load → render → cache-store body used by both static and dynamic prerender blocks.
 ///
 /// `req_var` is the identifier of the `Req` to use (e.g. `"__req"`).
 /// `key_expr` is an expression for the cache key (e.g. `"__ssg_key"` or `"&__ssg_key"`).
-/// `ttl_expr` is a Rust expression for the TTL (e.g. `"u64::MAX"` or `"60u64"`).
-/// `tags_expr` is a Rust expression for the tag vec (e.g. `"vec![]"` or `"vec![\"products\"]"`).
+/// TTL is always `u64::MAX` (pure SSG, never expires). Tags are always empty.
 /// Indented for use inside a `{ }` block (8-space indent for static, 12-space for dynamic loop).
 fn emit_ssg_load_render_store(
     mod_name: &str,
@@ -2220,9 +1379,10 @@ fn emit_ssg_load_render_store(
     let SsgRenderCtx {
         active_chain,
         chain_info,
-        ttl_expr,
-        tags_expr,
     } = ctx;
+    // Pure SSG: store with u64::MAX TTL (never expires) and no cache tags.
+    let ttl_expr = "u64::MAX";
+    let tags_expr = "vec![]";
     // Determine the indentation based on the call context.
     // Static blocks are at 8-space indent; dynamic blocks are at 12-space (inside for loop).
     // We detect this by checking whether key_expr starts with '&' (dynamic path variable).
