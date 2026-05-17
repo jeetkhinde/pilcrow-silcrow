@@ -88,8 +88,11 @@ pub async fn extract_live_from_parts<T: PilcrowLive>(parts: &mut Parts) -> Resul
     let fields = T::live_fields(&params_map);
     let query_params_json = Value::Array(live_query.params.clone());
 
+    // Prefer the route-level PROMOTE_AFTER / PRERENDER constant over per-field values.
+    let route_promote_after = T::route_promote_after()
+        .or_else(|| fields.first().and_then(|f| f.promote_after));
     store
-        .ensure_route_row(&route, fields.first().and_then(|f| f.promote_after))
+        .ensure_route_row(&route, route_promote_after)
         .await
         .ok();
 

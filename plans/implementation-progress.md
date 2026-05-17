@@ -47,13 +47,55 @@ async fn delete_task(req: Req, Path(id): Path<i64>) -> impl IntoResponse {
 
 ---
 
+### Slice B — PROMOTE_AFTER constant + scheduled invalidation  ✅ DONE
+
+**TODO #2 (partial)**: Route-level `PROMOTE_AFTER` constant and PRERENDER → FSR mapping.
+Full collapse of `emit_ssg_handler`/`emit_isr_handler` into FSR path is deferred to Slice C.
+
+**TODO #3**: Timer-based scheduled dep-key invalidation replacing REVALIDATE TTL.
+
+**Files changed:**
+| File | Change |
+|------|--------|
+| `pilcrow/crates/routekit/src/templating/page_options.rs` | Added `promote_after: Option<u32>` to `FsrOpts`; updated `PageOptions` doc |
+| `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` | Parse `PROMOTE_AFTER` const; `PRERENDER = true` sets `fsr.promote_after = Some(0)` |
+| `pilcrow/crates/routekit/src/fsr.rs` | `process_live_rs` now accepts `route_promote_after: Option<u32>`; `generate_from_row_impl` emits `route_promote_after()` method when Some |
+| `pilcrow/crates/routekit/src/templating/codegen/templates.rs` | Passes `page_options.fsr.promote_after` to `process_live_rs` |
+| `pilcrow/crates/runtime/src/fsr/live_trait.rs` | Added `fn route_promote_after() -> Option<u32>` to `PilcrowLive` trait (default: None) |
+| `pilcrow/crates/runtime/src/fsr/extractor.rs` | `ensure_route_row` prefers `T::route_promote_after()` over per-field value |
+| `pilcrow/crates/runtime/src/fsr/watcher.rs` | `ScheduledInvalidation` struct; `WatcherConfig::scheduled_invalidations`; both spawn functions now spawn per-key timer tasks |
+| `pilcrow/crates/runtime/src/fsr/mod.rs` | Exports `ScheduledInvalidation` |
+| `pilcrow/crates/runtime/src/start.rs` | `WatcherConfig` literal updated with `scheduled_invalidations: Vec::new()` |
+
+**DX surface (page.rs):**
+```rust
+// PRERENDER = true on a FSR route → promote_after = 0 (bake on first hit)
+pub const PRERENDER: bool = true;
+
+// OR set a custom threshold
+pub const PROMOTE_AFTER: u32 = 50;
+```
+
+**DX surface (app init, replaces REVALIDATE TTL):**
+```rust
+spawn_embedded_watcher(store, WatcherConfig {
+    scheduled_invalidations: vec![
+        ScheduledInvalidation::new("exchange_rates", Duration::from_secs(60)),
+        ScheduledInvalidation::new("nav_counts",     Duration::from_secs(300)),
+    ],
+    ..WatcherConfig::new()
+}, event_tx);
+```
+
+---
+
 ## TODO Backlog
 
 | # | Title | Status |
 |---|-------|--------|
 | 1 | Tombstone invalidation | ✅ Done (Slice A) |
-| 2 | Unify `PRERENDER = true` → `promote_after = 0, prebake = true`; collapse `emit_ssg_handler` / `emit_isr_handler` into FSR path | ⬜ Pending |
-| 3 | Timer-based watcher — fires `invalidate_dep_key` on a schedule (replaces REVALIDATE TTL) | ⬜ Pending |
+| 2 | Unify `PRERENDER = true` → `promote_after = 0, prebake = true`; collapse `emit_ssg_handler` / `emit_isr_handler` into FSR path | ✅ Done (Slice B — route-level PROMOTE_AFTER constant + PRERENDER→FSR mapping; full emit_ssg collapse deferred to Slice C) |
+| 3 | Timer-based watcher — fires `invalidate_dep_key` on a schedule (replaces REVALIDATE TTL) | ✅ Done (Slice B — `ScheduledInvalidation` + `WatcherConfig::scheduled_invalidations`) |
 | 4 | Deprecate and remove: STREAMING, REVALIDATE, MAX_STALE, `Deferred<T>`, `DeferredHtml`, ISR cache inspect endpoint, filesystem ISR cache, combined PRERENDER+REVALIDATE, Static Export | ⬜ Pending |
 | 5 | s-boost opt-out by default — auto-skip external origin, download, `mailto:`, hash-only, `s-boost="false"` | ⬜ Pending |
 | 6 | Layout-aware navigation — three-mode system (JSON / fragment / full) driven by `X-Pilcrow-Layout` header; `data-ps-slot` markers emitted by codegen | ⬜ Pending |

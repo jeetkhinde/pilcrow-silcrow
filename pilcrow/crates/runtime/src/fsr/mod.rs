@@ -28,6 +28,6 @@ pub use cache::{InvalidatePayload, PatchPayload};
 pub use cache::RedisCache;
 pub use store::{FsrStore, HitStatus, StaleSlot};
 pub use watcher::{
-    SlotPatch, WatcherConfig, WatcherEventTx, pilcrow_fsr_watcher_tick, spawn_embedded_watcher,
-    watcher_tick,
+    ScheduledInvalidation, SlotPatch, WatcherConfig, WatcherEventTx, pilcrow_fsr_watcher_tick,
+    spawn_embedded_watcher, watcher_tick,
 };

@@ -567,6 +567,11 @@ validation_rules = [
   "req.fsr.tombstone(path).await marks a promoted route as deleted; next request returns 404.",
   "tombstone() clears Redis keys (pilcrow:html, pilcrow:slot, pilcrow:json) and removes baked files from disk.",
   "tombstone() is a no-op when FSR is not configured or the route has no route-level row.",
+  "pub const PROMOTE_AFTER: u32 = N in page.rs sets a route-level promotion threshold that overrides per-field #[pilcrow::promote_after] for ensure_route_row.",
+  "pub const PRERENDER: bool = true in a FSR page (with live.rs) sets PROMOTE_AFTER = 0 automatically — route is promoted on its first hit.",
+  "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER or PRERENDER = true is set.",
+  "ScheduledInvalidation::new(dep_key, interval) in WatcherConfig::scheduled_invalidations replaces REVALIDATE TTL for FSR routes — calls invalidate_dep_key on a timer.",
+  "Each ScheduledInvalidation spawns a dedicated background task inside spawn_embedded_watcher / spawn_embedded_watcher_redis.",
 ]
 scaffold_templates = []
 

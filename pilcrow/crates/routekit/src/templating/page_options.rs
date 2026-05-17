@@ -41,6 +41,12 @@ pub struct FsrOpts {
     pub has_live_file: bool,
     /// `pub const FSR_JSON: bool = true` was declared in `page.rs`.
     pub json: bool,
+    /// Route-level promotion threshold (`pub const PROMOTE_AFTER: u32 = N`).
+    ///
+    /// Overrides the per-field `#[pilcrow::promote_after]` attribute for the entire route.
+    /// `Some(0)` means "promote on the very first hit" — equivalent to `PRERENDER = true`
+    /// for FSR routes. `None` means defer to the per-field or WatcherConfig default.
+    pub promote_after: Option<u32>,
 }
 
 impl FsrOpts {
@@ -56,9 +62,10 @@ impl FsrOpts {
 /// pub const TRAILING_SLASH: &str = "always"; // "always" | "never" | "ignore"
 /// pub const LAYOUT: &str = "none";           // opt out of all layout wrapping
 /// pub const REVALIDATE: u64 = 60;            // ISR: cache TTL in seconds
-/// pub const PRERENDER: bool = true;          // SSG: pre-render at server startup
+/// pub const PRERENDER: bool = true;          // SSG: pre-render at server startup (FSR: sets promote_after = 0)
 /// pub const STREAMING: bool = true;          // SSR Streaming: shell renders immediately, page data streamed
 /// pub const FSR_JSON: bool = true;           // FSR: opt in to baked JSON alongside baked HTML
+/// pub const PROMOTE_AFTER: u32 = 100;        // FSR: override per-field promote_after for the whole route
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PageOptions {
