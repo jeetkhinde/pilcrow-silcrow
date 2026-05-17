@@ -19,7 +19,7 @@ pub fn instrument_frontmatter(
     })?;
 
     // Parse and strip framework-reserved `pub const` declarations before other processing.
-    // Handled: TRAILING_SLASH, LAYOUT, REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, PRERENDER, STREAMING.
+    // Handled: TRAILING_SLASH, LAYOUT, REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, PRERENDER, STREAMING, PROMOTE_AFTER, FSR_JSON.
     let mut page_options = PageOptions::default();
     let mut const_remove_indices: Vec<usize> = Vec::new();
     for (index, item) in file.items.iter().enumerate() {
@@ -55,7 +55,18 @@ pub fn instrument_frontmatter(
                 page_options.isr.cache_vary = parse_str_slice_const(&c.expr);
                 const_remove_indices.push(index);
             } else if c.ident == "PRERENDER" {
-                page_options.ssg.prerender = value_str.trim() == "true";
+                let is_prerender = value_str.trim() == "true";
+                page_options.ssg.prerender = is_prerender;
+                // PRERENDER = true on a FSR route is equivalent to promote_after = 0.
+                // For non-FSR routes the value is unused; no harm setting it eagerly.
+                if is_prerender {
+                    page_options.fsr.promote_after = Some(0);
+                }
+                const_remove_indices.push(index);
+            } else if c.ident == "PROMOTE_AFTER" {
+                if let Ok(v) = parse_u64_const(&c.expr) {
+                    page_options.fsr.promote_after = Some(v as u32);
+                }
                 const_remove_indices.push(index);
             } else if c.ident == "STREAMING" {
                 page_options.streaming = value_str.trim() == "true";

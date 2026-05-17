@@ -7,8 +7,36 @@ use tokio::time;
 #[cfg(feature = "live-props-redis")]
 use super::cache::{PatchPayload, RedisCache};
 
-/// Configuration for the embedded FSR watcher.
+/// A scheduled dep-key invalidation fired on a fixed interval by the embedded watcher.
+///
+/// Use this to replace `REVALIDATE` TTL: instead of expiring a cache entry after N seconds,
+/// register the dep key that the affected slots `depends_on` and the watcher will call
+/// `invalidate_dep_key` on every `interval`, triggering a re-bake of all stale slots.
+///
+/// ```rust,ignore
+/// WatcherConfig {
+///     scheduled_invalidations: vec![
+///         ScheduledInvalidation::new("exchange_rates", Duration::from_secs(60)),
+///     ],
+///     ..Default::default()
+/// }
+/// ```
 #[derive(Debug, Clone)]
+pub struct ScheduledInvalidation {
+    /// The dependency key to invalidate (must match `depends_on` in affected live.rs fields).
+    pub dep_key: String,
+    /// How often to fire the invalidation.
+    pub interval: Duration,
+}
+
+impl ScheduledInvalidation {
+    pub fn new(dep_key: impl Into<String>, interval: Duration) -> Self {
+        Self { dep_key: dep_key.into(), interval }
+    }
+}
+
+/// Configuration for the embedded FSR watcher.
+#[derive(Debug, Clone, Default)]
 pub struct WatcherConfig {
     /// How often to poll for stale rows (polling mode or pub/sub fallback).
     pub poll_interval_ms: u64,
@@ -18,15 +46,22 @@ pub struct WatcherConfig {
     pub patch_debounce_secs: u32,
     /// Seconds before a route's baked artefacts are purged.
     pub purge_after_seconds: u64,
+    /// Dep keys that the watcher invalidates on a fixed schedule.
+    ///
+    /// Each entry spawns a dedicated timer task that calls `invalidate_dep_key` at the
+    /// specified interval, marking all dependent slots stale for re-baking. This replaces
+    /// the old `REVALIDATE` TTL pattern for FSR routes.
+    pub scheduled_invalidations: Vec<ScheduledInvalidation>,
 }
 
-impl Default for WatcherConfig {
-    fn default() -> Self {
+impl WatcherConfig {
+    pub fn new() -> Self {
         Self {
             poll_interval_ms: 500,
             promote_after_hits: 100,
             patch_debounce_secs: 30,
             purge_after_seconds: 2_592_000,
+            scheduled_invalidations: Vec::new(),
         }
     }
 }
@@ -364,14 +399,41 @@ fn value_to_string(v: &serde_json::Value) -> String {
 }
 
 /// Start the embedded watcher in polling mode (no Redis).
+///
+/// Also spawns one background timer task per `config.scheduled_invalidations` entry.
+/// These tasks call `invalidate_dep_key` at the configured interval, replacing the
+/// old `REVALIDATE` TTL pattern for FSR routes.
 pub fn spawn_embedded_watcher(
     store: Arc<FsrStore>,
     config: WatcherConfig,
     event_tx: Option<WatcherEventTx>,
 ) -> tokio::task::JoinHandle<()> {
+    // Spawn one timer task per scheduled invalidation before starting the main loop.
+    for scheduled in config.scheduled_invalidations.iter().cloned() {
+        let store_clone = Arc::clone(&store);
+        tokio::spawn(async move {
+            let mut ticker = time::interval(scheduled.interval);
+            ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            loop {
+                ticker.tick().await;
+                if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
+                    tracing::error!(
+                        dep_key = %scheduled.dep_key,
+                        error = %e,
+                        "FSR: scheduled invalidation failed"
+                    );
+                }
+            }
+        });
+    }
+
     tokio::spawn(async move {
-        let interval = Duration::from_millis(config.poll_interval_ms);
-        let mut ticker = time::interval(interval);
+        let poll_interval = if config.poll_interval_ms > 0 {
+            Duration::from_millis(config.poll_interval_ms)
+        } else {
+            Duration::from_millis(500)
+        };
+        let mut ticker = time::interval(poll_interval);
         ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
 
         loop {
@@ -390,6 +452,9 @@ pub fn spawn_embedded_watcher(
 ///
 /// Falls back to polling every `config.poll_interval_ms` if the pub/sub
 /// connection drops, and re-subscribes automatically once Redis is reachable.
+///
+/// Also spawns one background timer task per `config.scheduled_invalidations` entry
+/// (same as the non-Redis variant).
 #[cfg(feature = "live-props-redis")]
 pub fn spawn_embedded_watcher_redis(
     store: Arc<FsrStore>,
@@ -398,6 +463,25 @@ pub fn spawn_embedded_watcher_redis(
     redis: Arc<RedisCache>,
 ) -> tokio::task::JoinHandle<()> {
     use futures_util::StreamExt as _;
+
+    // Spawn scheduled invalidation timer tasks.
+    for scheduled in config.scheduled_invalidations.iter().cloned() {
+        let store_clone = Arc::clone(&store);
+        tokio::spawn(async move {
+            let mut ticker = time::interval(scheduled.interval);
+            ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            loop {
+                ticker.tick().await;
+                if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
+                    tracing::error!(
+                        dep_key = %scheduled.dep_key,
+                        error = %e,
+                        "FSR: scheduled invalidation failed"
+                    );
+                }
+            }
+        });
+    }
 
     tokio::spawn(async move {
         let fallback_interval = Duration::from_millis(config.poll_interval_ms);

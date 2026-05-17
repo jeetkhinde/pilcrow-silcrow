@@ -247,6 +247,7 @@ where
                             promote_after_hits: fsr_config.promote_after_hits,
                             patch_debounce_secs: fsr_config.patch_debounce_secs,
                             purge_after_seconds: fsr_config.purge_after_seconds,
+                            scheduled_invalidations: Vec::new(),
                         };
 
                         // If Redis is configured, use the pub/sub-driven watcher and

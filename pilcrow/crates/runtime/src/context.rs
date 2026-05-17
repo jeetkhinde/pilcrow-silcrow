@@ -16,6 +16,7 @@ use headers::HeaderMapExt;
 use pilcrow_core::AppError;
 use serde::Serialize;
 
+use crate::fsr::{FsrHandle, fsr_store_for_handle};
 use crate::i18n::{CurrentLocale, FmtHelper, I18nBundles};
 use crate::isr::IsrHandle;
 use crate::response::headers::*;
@@ -424,6 +425,9 @@ pub struct Req {
     /// ISR cache handle. Use `req.cache.revalidate(path)` or
     /// `req.cache.revalidate_tag(tag)` to bust the cache from within an action.
     pub cache: IsrHandle,
+    /// FSR handle. Use `req.fsr.tombstone(path).await` to mark a promoted route
+    /// as deleted — the next request to that path returns 404.
+    pub fsr: FsrHandle,
     /// The detected locale for this request (e.g. `"en"`, `"de"`).
     ///
     /// Populated by the i18n middleware from the URL prefix. When i18n is not
@@ -590,6 +594,7 @@ impl Req {
             locals: common.locals,
             res: common.res,
             cache: common.cache,
+            fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,
             action: common.action,
@@ -641,6 +646,9 @@ impl Req {
             locals,
             res,
             cache: IsrHandle::default(),
+            fsr: fsr_store_for_handle()
+                .map(FsrHandle::new)
+                .unwrap_or_default(),
             locale,
             i18n,
             action,
@@ -716,6 +724,7 @@ impl Req {
             locals,
             res: Res::default(),
             cache: IsrHandle::default(),
+            fsr: FsrHandle::default(),
             locale: String::new(),
             i18n: None,
             action: None,
@@ -817,6 +826,7 @@ impl ReqBuilder {
             locals: Locals::default(),
             res: Res::default(),
             cache: IsrHandle::default(),
+            fsr: FsrHandle::default(),
             locale: self.locale,
             i18n: None,
             action: None,
@@ -837,6 +847,7 @@ struct CommonParts {
     locals: Locals,
     res: Res,
     cache: IsrHandle,
+    fsr: FsrHandle,
     locale: String,
     i18n: Option<I18nBundles>,
     action: Option<String>,
@@ -891,6 +902,11 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         .cloned()
         .unwrap_or_default();
 
+    // FSR handle — populated from the global store when FSR is configured.
+    let fsr = fsr_store_for_handle()
+        .map(FsrHandle::new)
+        .unwrap_or_default();
+
     // Locale — set by the i18n locale-rewrite middleware; empty when i18n is not configured.
     let locale = parts
         .extensions
@@ -911,6 +927,7 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         locals,
         res,
         cache,
+        fsr,
         locale,
         i18n,
         action,
@@ -951,6 +968,7 @@ impl<S: Send + Sync> FromRequest<S> for Req {
             locals: common.locals,
             res: common.res,
             cache: common.cache,
+            fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,
             action: common.action,

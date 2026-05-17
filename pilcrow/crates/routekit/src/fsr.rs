@@ -86,10 +86,16 @@ impl Parse for DependsOnRouteInput {
 /// Process a `live.rs` file: strip `#[pilcrow::*]` attrs, extract LiveProp fields,
 /// and generate a `from_row()` impl.
 ///
+/// `route_promote_after` comes from the page-level `PROMOTE_AFTER` constant (or
+/// `PRERENDER = true` which maps to `Some(0)`). When `Some`, the generated
+/// `PilcrowLive` impl emits `route_promote_after()` so the runtime prefers the
+/// route-level threshold over any per-field `#[pilcrow::promote_after]` values.
+///
 /// Returns (processed_source, live_fields).
 pub fn process_live_rs(
     path: &Path,
     route_params: &[String],
+    route_promote_after: Option<u32>,
 ) -> io::Result<(String, Vec<LiveField>)> {
     let source = std::fs::read_to_string(path)?;
     let mut file: syn::File = syn::parse_str(&source).map_err(|e| {
@@ -170,7 +176,7 @@ pub fn process_live_rs(
 
     // Generate from_row() impl and append to file.
     if !live_fields.is_empty() {
-        let from_row_impl = generate_from_row_impl(&live_fields);
+        let from_row_impl = generate_from_row_impl(&live_fields, route_promote_after);
         let mut out = file.into_token_stream().to_string();
         out.push('\n');
         out.push_str(&from_row_impl);
@@ -469,7 +475,7 @@ fn parse_runtime_value_expr(expr: &Expr) -> RuntimeValueExpr {
     RuntimeValueExpr::Expr(expr.to_token_stream().to_string())
 }
 
-fn generate_from_row_impl(fields: &[LiveField]) -> String {
+fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>) -> String {
     let mut out = String::from("impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
 ");
     out.push_str("    fn query(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::pilcrow_runtime::fsr::LiveQuery {
@@ -538,6 +544,13 @@ fn generate_from_row_impl(fields: &[LiveField]) -> String {
     }
     out.push_str("        ]\n");
     out.push_str("    }\n");
+    // Emit route_promote_after() only when a page-level PROMOTE_AFTER / PRERENDER = true
+    // was set. The default trait impl returns None, which preserves existing behaviour.
+    if let Some(n) = route_promote_after {
+        out.push_str(&format!(
+            "    fn route_promote_after() -> ::std::option::Option<u32> {{ ::std::option::Option::Some({n}) }}\n"
+        ));
+    }
     out.push_str("}\n");
     out
 }
@@ -699,7 +712,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("promote_after: ::std::option::Option::Some(50)"));
@@ -732,7 +745,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("ticket_priority: ::pilcrow_runtime::fsr::LiveProp"));
@@ -762,7 +775,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // 2 fields × 2 locations (from_row + live_fields) = 4 occurrences.
@@ -787,7 +800,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("\"ticket_priorities:id={}\""));
@@ -807,7 +820,7 @@ mod tests {
             ",
         );
 
-        let err = match process_live_rs(&path, &[]) {
+        let err = match process_live_rs(&path, &[], None) {
             Ok(_) => panic!("missing id param should fail"),
             Err(err) => err,
         };
@@ -834,7 +847,7 @@ mod tests {
             ",
         );
 
-        let (source, fields) = process_live_rs(&path, &[]).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         let audit_note = fields
@@ -858,7 +871,7 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[]).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 1);
@@ -882,7 +895,7 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[]).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 2);
