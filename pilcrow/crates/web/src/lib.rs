@@ -510,15 +510,5 @@ macro_rules! pilcrow_app {
             .await;
         }
 
-        /// Export all pre-rendered pages as static HTML files to `dir`.
-        ///
-        /// Run with `cargo run -- export <dir>` (the scaffold `main.rs` handles this arg).
-        /// Each page with `pub const PRERENDER: bool = true` is written to `<dir><key>/index.html`.
-        async fn pilcrow_export(dir: &str) {
-            ::pilcrow_web::export(dir, |cache| async move {
-                __pilcrow_app::__pilcrow_prerender_all(&cache).await
-            })
-            .await;
-        }
     };
 }

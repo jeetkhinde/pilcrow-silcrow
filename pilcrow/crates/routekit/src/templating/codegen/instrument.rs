@@ -75,14 +75,20 @@ pub fn instrument_frontmatter(
             } else if c.ident == "PRERENDER" {
                 let is_prerender = value_str.trim() == "true";
                 page_options.ssg.prerender = is_prerender;
-                // PRERENDER = true on a FSR route is equivalent to promote_after = 0.
-                // For non-FSR routes the value is unused; no harm setting it eagerly.
-                if is_prerender {
-                    page_options.fsr.promote_after = Some(0);
-                }
                 const_remove_indices.push(index);
             } else if c.ident == "PROMOTE_AFTER" {
                 if let Ok(v) = parse_u64_const(&c.expr) {
+                    if v > u32::MAX as u64 {
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!(
+                                "{source_path}: PROMOTE_AFTER value {v} overflows u32 (max {}). \
+                                 Use a value in 0..={}.",
+                                u32::MAX,
+                                u32::MAX,
+                            ),
+                        ));
+                    }
                     page_options.fsr.promote_after = Some(v as u32);
                 }
                 const_remove_indices.push(index);
@@ -156,6 +162,12 @@ pub fn instrument_frontmatter(
     });
     if has_entries_fn {
         page_options.ssg.has_entries_fn = true;
+    }
+
+    // PRERENDER = true on a FSR route is equivalent to promote_after = 0, but only
+    // when PROMOTE_AFTER was not declared explicitly (explicit value always wins).
+    if page_options.ssg.prerender && page_options.fsr.promote_after.is_none() {
+        page_options.fsr.promote_after = Some(0);
     }
 
     // Discover named action handlers. An action is any `pub` fn in a page's

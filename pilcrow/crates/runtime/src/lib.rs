@@ -11,6 +11,33 @@ pub mod deferred;
 pub(crate) mod dev;
 #[cfg(feature = "live-props")]
 pub mod fsr;
+/// Stub `fsr` module used when the `live-props` feature is disabled.
+///
+/// Provides zero-size `FsrHandle` and a no-op `fsr_store_for_handle` so
+/// `context.rs` compiles without the feature.  All methods are no-ops and
+/// the store always resolves to `None`.
+#[cfg(not(feature = "live-props"))]
+pub(crate) mod fsr {
+    use std::sync::Arc;
+
+    #[derive(Debug)]
+    pub(crate) struct FsrStore;
+
+    #[derive(Clone, Default, Debug)]
+    pub struct FsrHandle {
+        _store: Option<Arc<FsrStore>>,
+    }
+
+    impl FsrHandle {
+        pub(crate) fn new(_store: Arc<FsrStore>) -> Self {
+            Self { _store: Some(_store) }
+        }
+    }
+
+    pub(crate) fn fsr_store_for_handle() -> Option<Arc<FsrStore>> {
+        None
+    }
+}
 pub mod generated_routes;
 pub mod i18n;
 pub mod image;
