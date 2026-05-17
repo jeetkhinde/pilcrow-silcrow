@@ -4,6 +4,17 @@ use std::sync::Arc;
 #[cfg(feature = "live-props-redis")]
 use super::cache::{InvalidatePayload, RedisCache};
 
+/// Result of a hit-count increment on a route-level FSR row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HitStatus {
+    /// The route was marked tombstoned — caller should return 404.
+    Tombstoned,
+    /// This request crossed the `promote_after` threshold for the first time.
+    JustPromoted,
+    /// Normal hit — no threshold crossed, not tombstoned.
+    Normal,
+}
+
 /// Manages `pilcrow_fsr` table operations for FSR slot tracking.
 #[derive(Debug, Clone)]
 pub struct FsrStore {
@@ -107,39 +118,104 @@ impl FsrStore {
 
     /// Increment hit count on the route-level row (slot = '').
     ///
-    /// Returns `true` if this call just crossed the `promote_after` threshold
-    /// for the first time.
-    pub async fn increment_hit(&self, route: &str) -> sqlx::Result<bool> {
-        let row: Option<(i32, bool, Option<i32>)> = sqlx::query_as(
+    /// Returns [`HitStatus::Tombstoned`] when the route has been tombstoned —
+    /// the caller should respond with 404. Returns [`HitStatus::JustPromoted`]
+    /// the first time `hit_count` crosses the `promote_after` threshold.
+    /// Returns [`HitStatus::Normal`] otherwise.
+    pub async fn increment_hit(&self, route: &str) -> sqlx::Result<HitStatus> {
+        let row: Option<(i32, bool, Option<i32>, bool)> = sqlx::query_as(
             r#"
             UPDATE pilcrow_fsr
             SET hit_count = hit_count + 1, last_hit = now()
             WHERE route = $1 AND slot = ''
-            RETURNING hit_count, promoted, promote_after
+            RETURNING hit_count, promoted, promote_after, tombstoned
             "#,
         )
         .bind(route)
         .fetch_optional(&*self.pool)
         .await?;
 
-        let Some((hit_count, already_promoted, promote_after)) = row else {
-            return Ok(false);
+        let Some((hit_count, already_promoted, promote_after, tombstoned)) = row else {
+            return Ok(HitStatus::Normal);
         };
 
-        let just_crossed = if let Some(threshold) = promote_after {
-            !already_promoted && hit_count >= threshold
-        } else {
-            false
-        };
-
-        if just_crossed {
-            sqlx::query("UPDATE pilcrow_fsr SET promoted = TRUE WHERE route = $1 AND slot = ''")
-                .bind(route)
-                .execute(&*self.pool)
-                .await?;
+        if tombstoned {
+            return Ok(HitStatus::Tombstoned);
         }
 
-        Ok(just_crossed)
+        let just_crossed = promote_after
+            .map(|threshold| !already_promoted && hit_count >= threshold)
+            .unwrap_or(false);
+
+        if just_crossed {
+            sqlx::query(
+                "UPDATE pilcrow_fsr SET promoted = TRUE WHERE route = $1 AND slot = ''",
+            )
+            .bind(route)
+            .execute(&*self.pool)
+            .await?;
+            return Ok(HitStatus::JustPromoted);
+        }
+
+        Ok(HitStatus::Normal)
+    }
+
+    /// Mark a route as tombstoned — its baked entity was deleted.
+    ///
+    /// Sets `tombstoned = TRUE` on the route-level row, clears Redis keys for
+    /// the route, and schedules async removal of baked HTML/JSON files from disk.
+    /// Subsequent requests to this route will receive a 404.
+    ///
+    /// ```rust,ignore
+    /// pub async fn delete_ticket(req: Req) -> ActionResult {
+    ///     db::delete_ticket(&req.params["id"]).await?;
+    ///     req.fsr.tombstone(&req.path).await;
+    ///     redirect("/tickets")
+    /// }
+    /// ```
+    pub async fn tombstone(&self, route: &str) -> sqlx::Result<()> {
+        let row: Option<(Option<String>, Option<String>)> = sqlx::query_as(
+            r#"
+            UPDATE pilcrow_fsr
+            SET tombstoned = TRUE, promoted = FALSE, stale = FALSE
+            WHERE route = $1 AND slot = ''
+            RETURNING html_path, json_path
+            "#,
+        )
+        .bind(route)
+        .fetch_optional(&*self.pool)
+        .await?;
+
+        // Clear Redis artifacts for this route.
+        #[cfg(feature = "live-props-redis")]
+        if let Some(ref redis) = self.redis {
+            redis.delete_route_keys(route).await.ok();
+        }
+
+        // Remove baked files from disk asynchronously — non-fatal.
+        if let Some((html_path, json_path)) = row {
+            tokio::spawn(async move {
+                if let Some(p) = html_path {
+                    tokio::fs::remove_file(&p).await.ok();
+                }
+                if let Some(p) = json_path {
+                    tokio::fs::remove_file(&p).await.ok();
+                }
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Returns `true` when the route-level row exists and is tombstoned.
+    pub async fn is_tombstoned(&self, route: &str) -> sqlx::Result<bool> {
+        let row: Option<(bool,)> = sqlx::query_as(
+            "SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = ''",
+        )
+        .bind(route)
+        .fetch_optional(&*self.pool)
+        .await?;
+        Ok(row.map(|(t,)| t).unwrap_or(false))
     }
 
     /// Mark all `pilcrow_fsr` rows whose `depends_on` contains `dep_key` as stale.
@@ -343,13 +419,26 @@ mod tests {
 
     #[test]
     fn stale_slot_fields_cover_snapshot_needs() {
-        // Compile-time check: StaleSlot has all fields needed by the snapshot handler.
         fn _assert_fields(s: StaleSlot) {
             let _: Option<String> = s.query;
             let _: Option<serde_json::Value> = s.query_params;
             let _: Option<String> = s.column_name;
             let _: String = s.slot;
         }
+    }
+
+    #[test]
+    fn hit_status_variants_are_distinct() {
+        assert_ne!(HitStatus::Tombstoned, HitStatus::JustPromoted);
+        assert_ne!(HitStatus::Tombstoned, HitStatus::Normal);
+        assert_ne!(HitStatus::JustPromoted, HitStatus::Normal);
+    }
+
+    #[test]
+    fn hit_status_is_copy() {
+        let s = HitStatus::Tombstoned;
+        let _s2 = s;
+        let _s3 = s;
     }
 }
 

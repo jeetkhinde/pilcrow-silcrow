@@ -132,6 +132,16 @@ mod inner {
                 .query_async(&mut c)
                 .await
         }
+
+        /// `DEL pilcrow:html:<route> pilcrow:slot:<route> pilcrow:json:<route>`
+        ///
+        /// Called by tombstone to evict all cached artifacts for a deleted route.
+        /// Non-fatal: returns Ok even when keys are absent.
+        pub async fn delete_route_keys(&self, route: &str) -> redis::RedisResult<()> {
+            let mut c = self.conn.clone();
+            c.del(&[html_key(route), slot_key(route), json_key(route)])
+                .await
+        }
     }
 
     fn html_key(route: &str) -> String {

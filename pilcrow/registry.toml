@@ -537,15 +537,20 @@ invalid_examples = [
 source_refs = [
   "crates/runtime/src/fsr/",
   "crates/runtime/src/fsr/cache.rs",
+  "crates/runtime/src/fsr/handle.rs",
   "crates/runtime/src/fsr/store.rs",
   "crates/runtime/src/fsr/watcher.rs",
   "crates/routekit/src/fsr.rs",
   "crates/routekit/src/templating/codegen/templates.rs",
   "crates/routekit/src/templating/page_options.rs",
   "crates/runtime/migrations/0001_pilcrow_fsr.sql",
+  "crates/runtime/migrations/0002_pilcrow_fsr_tombstone.sql",
   "crates/web/src/live.rs",
 ]
-test_refs = []
+test_refs = [
+  "crates/runtime/src/fsr/store.rs::tests::hit_status_variants_are_distinct",
+  "crates/runtime/src/fsr/store.rs::tests::hit_status_is_copy",
+]
 validation_rules = [
   "FSR requires live-props Cargo feature.",
   "LiveProp<T> fields must be in a struct implementing PilcrowLive.",
@@ -559,6 +564,9 @@ validation_rules = [
   "live-props-redis Cargo feature enables Redis caching and pub/sub-driven invalidation.",
   "redis_url in [cache] block of pilcrow.toml is required when live-props-redis feature is enabled.",
   "Without live-props-redis, the watcher uses 500ms polling fallback.",
+  "req.fsr.tombstone(path).await marks a promoted route as deleted; next request returns 404.",
+  "tombstone() clears Redis keys (pilcrow:html, pilcrow:slot, pilcrow:json) and removes baked files from disk.",
+  "tombstone() is a no-op when FSR is not configured or the route has no route-level row.",
 ]
 scaffold_templates = []
 

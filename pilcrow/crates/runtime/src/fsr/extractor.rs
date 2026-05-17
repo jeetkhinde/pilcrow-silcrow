@@ -6,7 +6,7 @@ use axum::http::request::Parts;
 use pilcrow_core::AppError;
 use serde_json::Value;
 
-use super::store::FsrStore;
+use super::store::{FsrStore, HitStatus};
 use super::PilcrowLive;
 
 static FSR_STORE: OnceLock<Arc<FsrStore>> = OnceLock::new();
@@ -20,6 +20,13 @@ pub fn register_fsr_store(pool: sqlx::PgPool) -> Arc<FsrStore> {
 
 fn global_fsr_store() -> Option<&'static Arc<FsrStore>> {
     FSR_STORE.get()
+}
+
+/// Returns a clone of the global FSR store for constructing a [`FsrHandle`].
+///
+/// Returns `None` when FSR is not configured (no Postgres connection).
+pub fn fsr_store_for_handle() -> Option<Arc<FsrStore>> {
+    FSR_STORE.get().cloned()
 }
 
 /// Runtime helper called from the generated `FromRequestParts` impl for each `Live` type.
@@ -102,7 +109,17 @@ pub async fn extract_live_from_parts<T: PilcrowLive>(parts: &mut Parts) -> Resul
             .ok();
     }
 
-    store.increment_hit(&route).await.ok();
+    match store.increment_hit(&route).await {
+        Ok(HitStatus::Tombstoned) => {
+            return Err(AppError::NotFound(format!(
+                "route {route} has been tombstoned"
+            )));
+        }
+        Ok(_) => {}
+        Err(e) => {
+            tracing::warn!(route, error = %e, "FSR: increment_hit failed");
+        }
+    }
 
     Ok(live)
 }
