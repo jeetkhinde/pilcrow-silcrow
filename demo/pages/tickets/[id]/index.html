@@ -13,7 +13,8 @@
     .form-row label { font-size: 0.8rem; font-weight: 600; color: #374151; display: block; margin-bottom: 0.25rem; }
     select { padding: 0.45rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; background: #fff; }
     .btn-save { padding: 0.5rem 1.25rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-    .btn-save:hover { background: #1d4ed8; }
+    .btn-save:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-save:disabled { cursor: not-allowed; opacity: 0.7; }
     .back { margin-bottom: 1rem; display: inline-block; color: #2563eb; text-decoration: none; font-size: 0.875rem; }
     .back:hover { text-decoration: underline; }
     .note { margin-top: 2rem; padding: 1rem 1.25rem; background: #f0f9ff; border-left: 4px solid #38bdf8; border-radius: 4px; font-size: 0.875rem; color: #0c4a6e; }
@@ -98,9 +99,15 @@
 
 <script>
   document.getElementById('btn-save').addEventListener('click', async function() {
+    var btn = this;
     var status   = document.getElementById('sel-status').value;
     var priority = document.getElementById('sel-priority').value;
     var msg = document.getElementById('save-msg');
+
+    var originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
     try {
       var res = await fetch('/api/tickets/{{ id }}', {
         method: 'PUT',
@@ -113,6 +120,9 @@
       }
     } catch (e) {
       console.error('save failed', e);
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
     }
   });
 </script>
