@@ -123,41 +123,46 @@ impl FsrStore {
     /// the first time `hit_count` crosses the `promote_after` threshold.
     /// Returns [`HitStatus::Normal`] otherwise.
     pub async fn increment_hit(&self, route: &str) -> sqlx::Result<HitStatus> {
-        let row: Option<(i32, bool, Option<i32>, bool)> = sqlx::query_as(
+        // Skip the write entirely for tombstoned routes (DoS guard) and fold
+        // the promotion flip into the same UPDATE via CASE — single round trip.
+        let row: Option<(i32, bool, Option<i32>)> = sqlx::query_as(
             r#"
             UPDATE pilcrow_fsr
-            SET hit_count = hit_count + 1, last_hit = now()
-            WHERE route = $1 AND slot = ''
-            RETURNING hit_count, promoted, promote_after, tombstoned
+            SET hit_count  = hit_count + 1,
+                last_hit   = now(),
+                promoted   = CASE
+                                 WHEN NOT promoted
+                                      AND promote_after IS NOT NULL
+                                      AND (hit_count + 1) >= promote_after
+                                 THEN TRUE
+                                 ELSE promoted
+                             END
+            WHERE route = $1 AND slot = '' AND NOT tombstoned
+            RETURNING hit_count, promoted, promote_after
             "#,
         )
         .bind(route)
         .fetch_optional(&*self.pool)
         .await?;
 
-        let Some((hit_count, already_promoted, promote_after, tombstoned)) = row else {
-            return Ok(HitStatus::Normal);
-        };
-
-        if tombstoned {
-            return Ok(HitStatus::Tombstoned);
-        }
-
-        let just_crossed = promote_after
-            .map(|threshold| !already_promoted && hit_count >= threshold)
-            .unwrap_or(false);
-
-        if just_crossed {
-            sqlx::query(
-                "UPDATE pilcrow_fsr SET promoted = TRUE WHERE route = $1 AND slot = ''",
+        let Some((hit_count, promoted, promote_after)) = row else {
+            // No row updated: either route has no FSR row, or it is tombstoned.
+            // Distinguish with a cheap read — this path is rare (tombstoned or first visit).
+            let tombstoned: bool = sqlx::query_scalar(
+                "SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = '' LIMIT 1",
             )
             .bind(route)
-            .execute(&*self.pool)
-            .await?;
-            return Ok(HitStatus::JustPromoted);
-        }
+            .fetch_optional(&*self.pool)
+            .await?
+            .unwrap_or(false);
+            return Ok(if tombstoned { HitStatus::Tombstoned } else { HitStatus::Normal });
+        };
 
-        Ok(HitStatus::Normal)
+        let just_promoted = promote_after
+            .map(|threshold| promoted && hit_count >= threshold)
+            .unwrap_or(false);
+
+        Ok(if just_promoted { HitStatus::JustPromoted } else { HitStatus::Normal })
     }
 
     /// Mark a route as tombstoned — its baked entity was deleted.
@@ -174,16 +179,19 @@ impl FsrStore {
     /// }
     /// ```
     pub async fn tombstone(&self, route: &str) -> sqlx::Result<()> {
-        let row: Option<(Option<String>, Option<String>)> = sqlx::query_as(
+        // Update ALL rows for the route (route-level row + every slot row).
+        // Leaving slot rows active would allow the watcher to re-bake them and
+        // recreate Redis/disk artifacts we are about to delete.
+        let rows: Vec<(String, Option<String>, Option<String>)> = sqlx::query_as(
             r#"
             UPDATE pilcrow_fsr
             SET tombstoned = TRUE, promoted = FALSE, stale = FALSE
-            WHERE route = $1 AND slot = ''
-            RETURNING html_path, json_path
+            WHERE route = $1
+            RETURNING slot, html_path, json_path
             "#,
         )
         .bind(route)
-        .fetch_optional(&*self.pool)
+        .fetch_all(&*self.pool)
         .await?;
 
         // Clear Redis artifacts for this route.
@@ -193,7 +201,10 @@ impl FsrStore {
         }
 
         // Remove baked files from disk asynchronously — non-fatal.
-        if let Some((html_path, json_path)) = row {
+        // Only the route-level row (slot = '') carries html_path / json_path.
+        if let Some((_, html_path, json_path)) =
+            rows.into_iter().find(|(slot, _, _)| slot.is_empty())
+        {
             tokio::spawn(async move {
                 if let Some(p) = html_path {
                     tokio::fs::remove_file(&p).await.ok();

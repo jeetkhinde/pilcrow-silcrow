@@ -57,6 +57,9 @@ impl FsrHandle {
         let Some(ref store) = self.store else {
             return false;
         };
-        store.is_tombstoned(route).await.unwrap_or(false)
+        store.is_tombstoned(route).await.unwrap_or_else(|e| {
+            tracing::warn!(route, error = %e, "fsr.is_tombstoned: DB error");
+            false
+        })
     }
 }
