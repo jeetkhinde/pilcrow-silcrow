@@ -79,8 +79,8 @@ impl BaseResponse {
             .typed_insert(SilcrowCache("no-cache".to_string()));
     }
 
-    /// Mark this response as bypassing the ISR cache — the result will not be
-    /// written back to the cache even if the page has `REVALIDATE` set.
+    /// Mark this response as bypassing the SSG cache — the result will not be
+    /// written back to the cache for PRERENDER routes.
     pub fn set_bypass_cache(&mut self) {
         self.bypass_cache = true;
     }

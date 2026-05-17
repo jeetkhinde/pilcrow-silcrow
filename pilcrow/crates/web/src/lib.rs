@@ -43,7 +43,7 @@ pub use pilcrow_client::PilcrowClient;
 pub use pilcrow_macros::handler;
 pub use runtime::island_ssr::IslandSsrWorker;
 pub use runtime::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use runtime::{export, start, start_with_adapter, start_with_prerender};
+pub use runtime::{start, start_with_adapter, start_with_prerender};
 
 /// FSR (Field-Selective Rendering) developer-facing surface.
 ///
@@ -416,13 +416,10 @@ pub mod adapters {
     pub use runtime::adapters::LambdaAdapter;
 }
 
-// ── Async streaming ──────────────────────────────────────────
-pub use runtime::{
-    __live_props_response, AsyncHtml, AsyncHtmlPatch, AsyncValue, AsyncValuePatch, LiveProp,
-    LiveTarget, async_response_combined, async_value_response,
-};
+// ── Live props (old per-route SSE system) ────────────────────
+pub use runtime::{__live_props_response, LiveProp, LiveTarget};
 
-// ── ISR (Incremental Static Regeneration) ────────────────────
+// ── SSG cache ────────────────────────────────────────────────
 pub use runtime::{IsrCache, IsrCacheState, IsrHandle};
 // ── i18n ─────────────────────────────────────────────────────
 pub use runtime::{FmtHelper, I18nBundles};
@@ -438,10 +435,6 @@ pub use runtime::__isr_cache_key;
 pub use runtime::csrf_middleware as __csrf_middleware;
 #[doc(hidden)]
 pub use runtime::tokio;
-#[doc(hidden)]
-pub use runtime::{__async_html_patch_stream, __async_value_patch_stream, __serialize_async_value};
-#[doc(hidden)]
-pub use runtime::{__serialize_page_props, __streaming_props_response};
 #[doc(hidden)]
 pub use tracing;
 
@@ -517,15 +510,5 @@ macro_rules! pilcrow_app {
             .await;
         }
 
-        /// Export all pre-rendered pages as static HTML files to `dir`.
-        ///
-        /// Run with `cargo run -- export <dir>` (the scaffold `main.rs` handles this arg).
-        /// Each page with `pub const PRERENDER: bool = true` is written to `<dir><key>/index.html`.
-        async fn pilcrow_export(dir: &str) {
-            ::pilcrow_web::export(dir, |cache| async move {
-                __pilcrow_app::__pilcrow_prerender_all(&cache).await
-            })
-            .await;
-        }
     };
 }

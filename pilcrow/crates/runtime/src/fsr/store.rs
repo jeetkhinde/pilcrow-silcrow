@@ -159,7 +159,7 @@ impl FsrStore {
         };
 
         let just_promoted = promote_after
-            .map(|threshold| promoted && hit_count >= threshold)
+            .map(|threshold| promoted && (hit_count - 1) < threshold && hit_count >= threshold)
             .unwrap_or(false);
 
         Ok(if just_promoted { HitStatus::JustPromoted } else { HitStatus::Normal })
