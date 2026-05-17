@@ -36,7 +36,7 @@ impl ScheduledInvalidation {
 }
 
 /// Configuration for the embedded FSR watcher.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct WatcherConfig {
     /// How often to poll for stale rows (polling mode or pub/sub fallback).
     pub poll_interval_ms: u64,
@@ -63,6 +63,12 @@ impl WatcherConfig {
             purge_after_seconds: 2_592_000,
             scheduled_invalidations: Vec::new(),
         }
+    }
+}
+
+impl Default for WatcherConfig {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -412,8 +418,11 @@ pub fn spawn_embedded_watcher(
     for scheduled in config.scheduled_invalidations.iter().cloned() {
         let store_clone = Arc::clone(&store);
         tokio::spawn(async move {
-            let mut ticker = time::interval(scheduled.interval);
+            // Guard against zero-duration (tokio::time::interval panics on zero).
+            let interval = scheduled.interval.max(Duration::from_millis(1));
+            let mut ticker = time::interval(interval);
             ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            ticker.tick().await; // skip the immediate first tick at t=0
             loop {
                 ticker.tick().await;
                 if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
@@ -468,8 +477,11 @@ pub fn spawn_embedded_watcher_redis(
     for scheduled in config.scheduled_invalidations.iter().cloned() {
         let store_clone = Arc::clone(&store);
         tokio::spawn(async move {
-            let mut ticker = time::interval(scheduled.interval);
+            // Guard against zero-duration (tokio::time::interval panics on zero).
+            let interval = scheduled.interval.max(Duration::from_millis(1));
+            let mut ticker = time::interval(interval);
             ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            ticker.tick().await; // skip the immediate first tick at t=0
             loop {
                 ticker.tick().await;
                 if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
