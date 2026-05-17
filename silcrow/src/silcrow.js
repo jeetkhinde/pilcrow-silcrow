@@ -838,10 +838,12 @@ function patch(data, root, options = {}) {
   const element = resolveRoot(root);
 
   let transformedData = data;
-  try {
-    transformedData = patchMiddleware.reduce((acc, fn) => fn(safeClone(acc)) ?? acc, safeClone(data));
-  } catch (err) {
-    transformedData = data;
+  if (patchMiddleware.length > 0) {
+    try {
+      transformedData = patchMiddleware.reduce((acc, fn) => fn(safeClone(acc)) ?? acc, safeClone(data));
+    } catch (err) {
+      transformedData = data;
+    }
   }
 
   if (transformedData?._toasts) processToasts(true, transformedData);

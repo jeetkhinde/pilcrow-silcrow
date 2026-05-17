@@ -1,0 +1,3 @@
+## 2024-05-17 - Unconditional Cloning in DOM Patching
+**Learning:** The frontend patching logic `silcrow.js` was unconditionally using `structuredClone` (via `safeClone`) on the entire state object before checking if any middleware was actually registered to process it. This caused massive performance degradation when rendering large lists or complex objects, as cloning happens synchronously on the main thread for every single patch operation, even if no middleware exists.
+**Action:** Always wrap expensive operations like deep cloning in a check verifying that the operation is actually needed (e.g., `if (middleware.length > 0)`). Fast paths for the common case (no middleware) are critical in hot loops.
