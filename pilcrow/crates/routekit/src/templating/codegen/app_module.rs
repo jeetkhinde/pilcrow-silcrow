@@ -420,6 +420,9 @@ pub fn render_generated_app_module(
             }
             // PRERENDER only: startup prerender with in-memory SSG cache.
         }
+        let _fsr_json = page_options_map
+            .get(&entry.symbol)
+            .is_some_and(|o| o.fsr.json);
 
         let pattern_str = entry.pattern.as_str();
         let _ = writeln!(
@@ -486,9 +489,7 @@ pub fn render_generated_app_module(
             ));
             out.push_str(&emit_loading_append(loading_mod, "html"));
             out.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
-        } else if ssg_opts.is_some_and(|o| o.prerender)
-            && page_load.is_some()
-        {
+        } else if ssg_opts.is_some_and(|o| o.prerender) && page_load.is_some() {
             // ── Case 1.5: SSG-only prerendered page ─────────────────────────────
             if let Some(sig) = page_load {
                 out.push_str(&emit_ssg_handler(
@@ -981,7 +982,6 @@ pub fn render_generated_app_module(
     Ok(out)
 }
 
-
 /// Generate and write the app module and API mods files.
 #[allow(clippy::too_many_arguments)]
 pub fn write_generated_app_module(
@@ -1357,7 +1357,6 @@ fn emit_ssg_prerender_dynamic_block(
     out.push_str("    }\n");
     out
 }
-
 
 /// Emit the load → render → cache-store body used by both static and dynamic prerender blocks.
 ///
