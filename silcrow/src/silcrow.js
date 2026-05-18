@@ -838,11 +838,17 @@ function buildMaps(root) {
 }
 
 function patch(data, root, options = {}) {
-  const element = resolveRoot(root);
-
   let transformedData = data;
   try {
-    transformedData = patchMiddleware.reduce((acc, fn) => fn(safeClone(acc)) ?? acc, safeClone(data));
+    if (patchMiddleware.length > 0) {
+      let acc = safeClone(data);
+      for (const fn of patchMiddleware) {
+        acc = fn(acc) ?? acc;
+      }
+      transformedData = acc;
+    } else if (data?._toasts) {
+      transformedData = Array.isArray(data) ? data.slice() : Object.assign({}, data);
+    }
   } catch (err) {
     transformedData = data;
   }
@@ -859,7 +865,7 @@ function patch(data, root, options = {}) {
   ) {
     transformedData = transformedData.data;
   }
-
+  const element = resolveRoot(root);
   let instance = instanceCache.get(element);
   if (!instance || options.invalidate) {
     instance = buildMaps(element);
