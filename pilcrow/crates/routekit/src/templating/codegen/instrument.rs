@@ -20,66 +20,25 @@ pub fn instrument_frontmatter(
 
     // Parse and strip framework-reserved `pub const` declarations before other processing.
     // Handled: TRAILING_SLASH, LAYOUT, PRERENDER, PROMOTE_AFTER, FSR_JSON.
-    // Removed (emit build errors): REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, STREAMING.
     let mut page_options = PageOptions::default();
-    let mut const_remove_indices: Vec<usize> = Vec::new();
-    for (index, item) in file.items.iter().enumerate() {
-        if let syn::Item::Const(c) = item
-            && matches!(c.vis, syn::Visibility::Public(_))
-        {
-            let value_str = c.expr.to_token_stream().to_string();
-            let value = value_str.trim_matches('"').trim_matches('\'');
-            if c.ident == "TRAILING_SLASH" {
-                page_options.trailing_slash = TrailingSlash::from_label(value);
-                const_remove_indices.push(index);
-            } else if c.ident == "LAYOUT" {
-                page_options.layout = if value.trim_matches('"').trim_matches('\'') == "none" {
-                    LayoutOpt::None
-                } else {
-                    LayoutOpt::Inherit
-                };
-                const_remove_indices.push(index);
-            } else if c.ident == "REVALIDATE" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: REVALIDATE is removed. \
-                         Use FSR with ScheduledInvalidation instead: register \
-                         ScheduledInvalidation::new(\"<dep_key>\", Duration::from_secs(N)) \
-                         in WatcherConfig::scheduled_invalidations."
-                    ),
-                ));
-            } else if c.ident == "MAX_STALE" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: MAX_STALE is removed along with the ISR cache. \
-                         Use FSR LiveProp<T> with promote_after for route-level baking."
-                    ),
-                ));
-            } else if c.ident == "CACHE_TAGS" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: CACHE_TAGS is removed. \
-                         Use FSR dep keys and FsrStore::invalidate_dep_key() for targeted invalidation."
-                    ),
-                ));
-            } else if c.ident == "CACHE_VARY" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: CACHE_VARY is removed along with the ISR cache."
-                    ),
-                ));
-            } else if c.ident == "PRERENDER" {
-                let is_prerender = value_str.trim() == "true";
-                page_options.ssg.prerender = is_prerender;
-                const_remove_indices.push(index);
-            } else if c.ident == "PROMOTE_AFTER" {
+    let mut promote_after_err: Option<io::Error> = None;
+    file.items.retain(|item| {
+        let syn::Item::Const(c) = item else { return true };
+        if !matches!(c.vis, syn::Visibility::Public(_)) { return true; }
+        let value_str = c.expr.to_token_stream().to_string();
+        let value = value_str.trim_matches('"').trim_matches('\'');
+        let ident = c.ident.to_string();
+        match ident.as_str() {
+            "TRAILING_SLASH" => { page_options.trailing_slash = TrailingSlash::from_label(value); false }
+            "LAYOUT" => {
+                page_options.layout = if value == "none" { LayoutOpt::None } else { LayoutOpt::Inherit };
+                false
+            }
+            "PRERENDER" => { page_options.ssg.prerender = value_str.trim() == "true"; false }
+            "PROMOTE_AFTER" => {
                 if let Ok(v) = parse_u64_const(&c.expr) {
                     if v > u32::MAX as u64 {
-                        return Err(io::Error::new(
+                        promote_after_err = Some(io::Error::new(
                             io::ErrorKind::InvalidData,
                             format!(
                                 "{source_path}: PROMOTE_AFTER value {v} overflows u32 (max {}). \
@@ -88,44 +47,34 @@ pub fn instrument_frontmatter(
                                 u32::MAX,
                             ),
                         ));
+                    } else {
+                        page_options.fsr.promote_after = Some(v as u32);
                     }
-                    page_options.fsr.promote_after = Some(v as u32);
                 }
-                const_remove_indices.push(index);
-            } else if c.ident == "STREAMING" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: STREAMING is removed. \
-                         Use FSR LiveProp<T> for field-level live updates, or plain SSR."
-                    ),
-                ));
-            } else if c.ident == "FSR_JSON" {
-                page_options.fsr.json = value_str.trim() == "true";
-                const_remove_indices.push(index);
+                false
             }
+            "FSR_JSON" => { page_options.fsr.json = value_str.trim() == "true"; false }
+            _ => true,
         }
-    }
-    // Remove in reverse order to preserve indices.
-    for idx in const_remove_indices.into_iter().rev() {
-        file.items.remove(idx);
-    }
+    });
+    if let Some(err) = promote_after_err { return Err(err); }
 
-    let mut props_indices = Vec::new();
-    for (index, item) in file.items.iter().enumerate() {
-        if let syn::Item::Struct(item_struct) = item
-            && item_struct.ident == "Props"
-        {
-            if !matches!(item_struct.vis, syn::Visibility::Public(_)) {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("frontmatter in {source_path} must declare `pub struct Props`"),
-                ));
-            }
-            props_indices.push(index);
-        }
+    // Validate that any `Props` struct present is public.
+    if file.items.iter().any(|item| {
+        let syn::Item::Struct(s) = item else { return false };
+        s.ident == "Props" && !matches!(s.vis, syn::Visibility::Public(_))
+    }) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("frontmatter in {source_path} must declare `pub struct Props`"),
+        ));
     }
-
+    let props_indices: Vec<usize> = file.items.iter().enumerate()
+        .filter_map(|(i, item)| {
+            let syn::Item::Struct(s) = item else { return None };
+            (s.ident == "Props").then_some(i)
+        })
+        .collect();
     if props_indices.len() > 1 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -137,32 +86,19 @@ pub fn instrument_frontmatter(
 
     // Detect `load()` function signature. Absent means the page/component is static.
     let load_signature = file.items.iter().find_map(|item| {
-        if let syn::Item::Fn(f) = item {
-            if f.sig.ident == "load" {
-                Some(detect_load_signature(&f.sig))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        let syn::Item::Fn(f) = item else { return None };
+        (f.sig.ident == "load").then(|| detect_load_signature(&f.sig))
     });
 
     // Detect `entries()` — marks a dynamic SSG route with an explicit param list.
     // Required signature: `pub async fn entries() -> Vec<...>` (no parameters).
-    let has_entries_fn = file.items.iter().any(|item| {
-        if let syn::Item::Fn(f) = item {
-            f.sig.ident == "entries"
-                && f.sig.asyncness.is_some()
-                && f.sig.inputs.is_empty()
-                && matches!(f.vis, syn::Visibility::Public(_))
-        } else {
-            false
-        }
+    page_options.ssg.has_entries_fn = file.items.iter().any(|item| {
+        let syn::Item::Fn(f) = item else { return false };
+        f.sig.ident == "entries"
+            && f.sig.asyncness.is_some()
+            && f.sig.inputs.is_empty()
+            && matches!(f.vis, syn::Visibility::Public(_))
     });
-    if has_entries_fn {
-        page_options.ssg.has_entries_fn = true;
-    }
 
     // PRERENDER = true on a FSR route is equivalent to promote_after = 0, but only
     // when PROMOTE_AFTER was not declared explicitly (explicit value always wins).
@@ -208,15 +144,7 @@ pub fn instrument_frontmatter(
         };
 
         let is_async = f.sig.asyncness.is_some();
-        let wants_req = f.sig.inputs.iter().any(|arg| {
-            if let syn::FnArg::Typed(pat) = arg {
-                type_last_ident(&pat.ty)
-                    .map(|id| id == "Req")
-                    .unwrap_or(false)
-            } else {
-                false
-            }
-        });
+        let wants_req = sig_wants(&f.sig, "Req");
 
         if in_ui {
             return Err(io::Error::new(
@@ -318,32 +246,24 @@ pub fn instrument_frontmatter(
     }
 
     let has_manual_default = file.items.iter().any(|item| {
-        if let syn::Item::Impl(impl_block) = item
-            && let Some((_, path, _)) = &impl_block.trait_
-        {
-            return path.segments.last().is_some_and(|s| s.ident == "Default");
-        }
-        false
+        let syn::Item::Impl(impl_block) = item else { return false };
+        impl_block.trait_.as_ref()
+            .and_then(|(_, path, _)| path.segments.last())
+            .is_some_and(|s| s.ident == "Default")
     });
 
-    for item in &mut file.items {
-        match item {
-            syn::Item::Struct(item_struct) => ensure_serialize_derive(&mut item_struct.attrs),
-            syn::Item::Enum(item_enum) => ensure_serialize_derive(&mut item_enum.attrs),
-            syn::Item::Union(item_union) => ensure_serialize_derive(&mut item_union.attrs),
-            _ => {}
-        }
-    }
+    file.items.iter_mut().for_each(|item| match item {
+        syn::Item::Struct(s) => ensure_serialize_derive(&mut s.attrs),
+        syn::Item::Enum(e) => ensure_serialize_derive(&mut e.attrs),
+        syn::Item::Union(u) => ensure_serialize_derive(&mut u.attrs),
+        _ => {}
+    });
 
     // If the user didn't declare `pub struct Props`, synthesize a unit struct.
-    let props_index = if let Some(idx) = props_indices.first().copied() {
-        idx
-    } else {
-        file.items.push(parse_quote!(
-            pub struct Props;
-        ));
+    let props_index = props_indices.first().copied().unwrap_or_else(|| {
+        file.items.push(parse_quote!(pub struct Props;));
         file.items.len() - 1
-    };
+    });
 
     // Detect a `live()` fn or `LiveProp` struct — must be done before the mutable borrow.
     let has_live_fn = file.items.iter().any(|item| match item {
@@ -365,30 +285,20 @@ pub fn instrument_frontmatter(
     let own_syn_fields = extract_named_fields(props_struct);
 
     // Detect `LiveProp<T>` fields.
-    let live_fields: Vec<String> = own_syn_fields
-        .iter()
+    let live_fields: Vec<String> = own_syn_fields.iter()
         .filter_map(|f| {
-            if let Some(ident) = &f.ident
-                && type_last_ident(&f.ty)
-                    .map(|id| id == "LiveProp")
-                    .unwrap_or(false)
-            {
-                return Some(ident.to_string());
-            }
-            None
+            let ident = f.ident.as_ref()?;
+            type_last_ident(&f.ty).filter(|id| *id == "LiveProp")?;
+            Some(ident.to_string())
         })
         .collect();
 
     // Rewrite {{ live_field }} → <span :text="live_field">{{ live_field }}</span>
     // for Dom/DomAndStore fields so Silcrow can patch them via SSE.
-    let live_template = if live_fields.is_empty() {
-        std::borrow::Cow::Borrowed(template_source)
-    } else {
-        std::borrow::Cow::Owned(crate::templating::compiler::inject_live_text_spans(
-            template_source,
-            &live_fields,
-        ))
-    };
+    let live_template = (!live_fields.is_empty())
+        .then(|| crate::templating::compiler::inject_live_text_spans(template_source, &live_fields))
+        .map(std::borrow::Cow::Owned)
+        .unwrap_or(std::borrow::Cow::Borrowed(template_source));
     let template_source = live_template.as_ref();
 
     if extra_fields.is_empty() {
@@ -413,44 +323,33 @@ pub fn instrument_frontmatter(
 
     // Check whether the user's code already imports Req to avoid E0252.
     let has_req_import = file.items.iter().any(|item| {
-        if let syn::Item::Use(u) = item {
-            let s = u.to_token_stream().to_string();
-            // ":: Req" matches `use pilcrow_web::Req`, "{ Req" matches grouped imports.
-            s.contains(":: Req") || s.contains("{ Req")
-        } else {
-            false
-        }
+        let syn::Item::Use(u) = item else { return false };
+        let s = u.to_token_stream().to_string();
+        // ":: Req" matches `use pilcrow_web::Req`, "{ Req" matches grouped imports.
+        s.contains(":: Req") || s.contains("{ Req")
     });
 
-    let mut out = String::new();
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::pilcrow_client::PilcrowClient;\n");
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::AppResult;\n");
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::AppResult as PilcrowResult;\n");
-    if !has_req_import {
-        out.push_str("#[allow(unused_imports)]\n");
-        out.push_str("use pilcrow_web::Req;\n");
-    }
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::ActionResult;\n");
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::redirect;\n");
-    out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use pilcrow_web::{ok, ActionResultExt, ResponseExt, ToastLevel};\n");
-    // Make `fragments::prefix::name::render(props)` available without an explicit import.
-    // Not injected for ui/ components since they can't call fragments directly.
-    if !in_ui {
-        out.push_str("#[allow(unused_imports)]\n");
-        out.push_str("use super::fragments;\n");
-    }
-    for item in file.items {
-        out.push_str(&item.into_token_stream().to_string());
-        out.push('\n');
-    }
+    let preamble: String = [
+        "#[allow(unused_imports)]\nuse pilcrow_web::pilcrow_client::PilcrowClient;\n",
+        "#[allow(unused_imports)]\nuse pilcrow_web::AppResult;\n",
+        "#[allow(unused_imports)]\nuse pilcrow_web::AppResult as PilcrowResult;\n",
+    ]
+    .into_iter()
+    .chain((!has_req_import).then_some("#[allow(unused_imports)]\nuse pilcrow_web::Req;\n"))
+    .chain([
+        "#[allow(unused_imports)]\nuse pilcrow_web::ActionResult;\n",
+        "#[allow(unused_imports)]\nuse pilcrow_web::redirect;\n",
+        "#[allow(unused_imports)]\nuse pilcrow_web::{ok, ActionResultExt, ResponseExt, ToastLevel};\n",
+    ])
+    .chain((!in_ui).then_some("#[allow(unused_imports)]\nuse super::fragments;\n"))
+    .collect();
+
+    let body: String = file.items.into_iter()
+        .map(|item| item.into_token_stream().to_string() + "\n")
+        .collect();
+
     Ok(InstrumentedFrontmatter {
-        source: out,
+        source: preamble + &body,
         load_signature,
         own_syn_fields,
         actions,
@@ -462,77 +361,43 @@ pub fn instrument_frontmatter(
     })
 }
 
+/// Returns true if any typed argument in `sig` has a type whose last path segment matches `type_name`.
+fn sig_wants(sig: &syn::Signature, type_name: &str) -> bool {
+    sig.inputs.iter().any(|arg| {
+        let syn::FnArg::Typed(pat) = arg else { return false };
+        type_last_ident(&pat.ty).map(|id| id == type_name).unwrap_or(false)
+    })
+}
+
 /// Inspect a `load()` `fn` signature to decide how the generated handler
 /// should call it: sync vs async, infallible vs `Result`, with/without
 /// `PilcrowClient` injection.
 pub fn detect_load_signature(sig: &syn::Signature) -> LoadSignature {
-    let is_async = sig.asyncness.is_some();
-
-    let returns_result = match &sig.output {
-        syn::ReturnType::Default => false,
-        syn::ReturnType::Type(_, ty) => type_last_ident(ty)
-            .map(|ident| ident == "Result" || ident == "AppResult" || ident == "PilcrowResult")
-            .unwrap_or(false),
-    };
-
-    let wants_client = sig.inputs.iter().any(|arg| {
-        if let syn::FnArg::Typed(pat) = arg {
-            type_last_ident(&pat.ty)
-                .map(|ident| ident == "PilcrowClient")
-                .unwrap_or(false)
-        } else {
-            false
-        }
-    });
-
-    let wants_req = sig.inputs.iter().any(|arg| {
-        if let syn::FnArg::Typed(pat) = arg {
-            type_last_ident(&pat.ty)
-                .map(|ident| ident == "Req")
-                .unwrap_or(false)
-        } else {
-            false
-        }
-    });
-
-    let wants_page = sig.inputs.iter().any(|arg| {
-        if let syn::FnArg::Typed(pat) = arg {
-            type_last_ident(&pat.ty)
-                .map(|ident| ident == "Page")
-                .unwrap_or(false)
-        } else {
-            false
-        }
-    });
-
-    let wants_live = sig.inputs.iter().any(|arg| {
-        if let syn::FnArg::Typed(pat) = arg {
-            type_last_ident(&pat.ty)
-                .map(|ident| ident == "Live")
-                .unwrap_or(false)
-        } else {
-            false
-        }
-    });
-
     LoadSignature {
-        is_async,
-        returns_result,
-        wants_client,
-        wants_req,
-        wants_page,
-        wants_live,
+        is_async: sig.asyncness.is_some(),
+        returns_result: match &sig.output {
+            syn::ReturnType::Default => false,
+            syn::ReturnType::Type(_, ty) => type_last_ident(ty)
+                .map(|id| id == "Result" || id == "AppResult" || id == "PilcrowResult")
+                .unwrap_or(false),
+        },
+        wants_client: sig_wants(sig, "PilcrowClient"),
+        wants_req:    sig_wants(sig, "Req"),
+        wants_page:   sig_wants(sig, "Page"),
+        wants_live:   sig_wants(sig, "Live"),
     }
 }
 
 pub fn inject_props_attrs(props: &mut syn::ItemStruct, template_source: &str) {
-    let mut missing_derives = Vec::<syn::Path>::new();
-    if !has_derive_trait(&props.attrs, &["askama::Template", "Template"]) {
-        missing_derives.push(parse_quote!(askama::Template));
-    }
-    if !has_derive_trait(&props.attrs, &["serde::Serialize", "Serialize"]) {
-        missing_derives.push(parse_quote!(serde::Serialize));
-    }
+    let all: [(&[&str], syn::Path); 2] = [
+        (&["askama::Template", "Template"], parse_quote!(askama::Template)),
+        (&["serde::Serialize", "Serialize"], parse_quote!(serde::Serialize)),
+    ];
+    let missing_derives: Vec<syn::Path> = all
+        .into_iter()
+        .filter(|(candidates, _)| !has_derive_trait(&props.attrs, candidates))
+        .map(|(_, path)| path)
+        .collect();
 
     if !missing_derives.is_empty() {
         props
@@ -570,19 +435,16 @@ pub fn make_merged_props_struct(
     own_fields: &[syn::Field],
     template_source: &str,
 ) -> io::Result<syn::ItemStruct> {
-    // Detect field name collisions between layout Props and page Props up front.
     let layout_names = named_field_names(extra_fields);
     let page_names = named_field_names(own_fields);
-    for name in &page_names {
-        if layout_names.contains(name) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!(
-                    "Props field `{name}` is defined in both the layout and the page — \
-                     rename one of them to avoid a collision in __MergedProps"
-                ),
-            ));
-        }
+    if let Some(name) = page_names.iter().find(|n| layout_names.contains(*n)) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "Props field `{name}` is defined in both the layout and the page — \
+                 rename one of them to avoid a collision in __MergedProps"
+            ),
+        ));
     }
 
     let template_lit = syn::LitStr::new(template_source, Span::call_site());
@@ -597,13 +459,8 @@ pub fn make_merged_props_struct(
     let syn::Fields::Named(ref mut named_fields) = item.fields else {
         unreachable!("just parsed a named struct")
     };
-
-    for f in extra_fields {
-        named_fields.named.push(f.clone());
-    }
-    for f in own_fields {
-        named_fields.named.push(f.clone());
-    }
+    named_fields.named.extend(extra_fields.iter().cloned());
+    named_fields.named.extend(own_fields.iter().cloned());
 
     Ok(item)
 }
@@ -616,27 +473,13 @@ pub fn ensure_serialize_derive(attrs: &mut Vec<syn::Attribute>) {
 }
 
 pub fn has_derive_trait(attrs: &[syn::Attribute], candidates: &[&str]) -> bool {
-    let normalized_candidates = candidates
-        .iter()
-        .map(|candidate| normalize_derive_path(candidate))
-        .collect::<Vec<_>>();
-
-    for attr in attrs {
-        if !attr.path().is_ident("derive") {
-            continue;
-        }
-
-        let tokens = attr.meta.to_token_stream().to_string();
-        let normalized_tokens = normalize_derive_path(&tokens);
-        if normalized_candidates
-            .iter()
-            .any(|candidate| normalized_tokens.contains(candidate))
-        {
-            return true;
-        }
-    }
-
-    false
+    let normalized: Vec<_> = candidates.iter().map(|c| normalize_derive_path(c)).collect();
+    attrs.iter()
+        .filter(|attr| attr.path().is_ident("derive"))
+        .any(|attr| {
+            let tokens = normalize_derive_path(&attr.meta.to_token_stream().to_string());
+            normalized.iter().any(|c| tokens.contains(c))
+        })
 }
 
 pub fn normalize_derive_path(input: &str) -> String {
@@ -655,4 +498,3 @@ fn parse_u64_const(expr: &syn::Expr) -> Result<u64, ()> {
     }
     Err(())
 }
-

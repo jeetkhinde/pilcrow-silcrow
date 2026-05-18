@@ -369,40 +369,6 @@ pub struct Live {
     }
 
     #[test]
-    fn removed_isr_constants_cause_build_errors() {
-        for (constant, snippet) in &[
-            ("REVALIDATE", "pub const REVALIDATE: u64 = 60;"),
-            ("MAX_STALE", "pub const MAX_STALE: u64 = 3600;"),
-            (
-                "CACHE_TAGS",
-                "pub const CACHE_TAGS: &[&str] = &[\"products\"];",
-            ),
-            (
-                "CACHE_VARY",
-                "pub const CACHE_VARY: &[&str] = &[\"x-tenant\"];",
-            ),
-        ] {
-            let frontmatter = format!("{snippet}\npub struct Props {{}}\n");
-            let err = render_generated_templates_module(&[TemplateCodegenInput {
-                module_name: "page_products".to_string(),
-                render_symbol: "render_page_products".to_string(),
-                source_path: "/tmp/src/pages/products.html".to_string(),
-                rust_frontmatter: frontmatter,
-                template_source: "<p>hi</p>".to_string(),
-                layout_chain: vec![],
-                fragment_url_prefix: None,
-                route_params: vec![],
-            }])
-            .expect_err(&format!("{constant} should cause a build error"));
-            assert!(
-                err.to_string().contains(constant),
-                "{constant} error message missing constant name; got: {}",
-                err
-            );
-        }
-    }
-
-    #[test]
     fn ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map() {
         let frontmatter = r#"
 pub const PRERENDER: bool = true;
@@ -498,9 +464,9 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
-    fn streaming_constant_causes_build_error() {
+    fn streaming_constant_is_silently_stripped() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
-        let err = render_generated_templates_module(&[TemplateCodegenInput {
+        let generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),
@@ -510,14 +476,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             fragment_url_prefix: None,
             route_params: vec![],
         }])
-        .expect_err("STREAMING should cause a build error");
-        assert!(
-            err.to_string().contains("STREAMING"),
-            "error message missing STREAMING; got: {}",
-            err
-        );
+        .expect("STREAMING should be ignored, not a build error");
     }
-
 
     #[test]
     fn emit_action_route_uses_custom_error_module_when_provided() {

@@ -31,7 +31,10 @@ pub struct ScheduledInvalidation {
 
 impl ScheduledInvalidation {
     pub fn new(dep_key: impl Into<String>, interval: Duration) -> Self {
-        Self { dep_key: dep_key.into(), interval }
+        Self {
+            dep_key: dep_key.into(),
+            interval,
+        }
     }
 }
 
@@ -511,8 +514,7 @@ pub fn spawn_embedded_watcher_redis(
                     tokio::pin!(msg_stream);
 
                     loop {
-                        match tokio::time::timeout(Duration::from_secs(60), msg_stream.next())
-                            .await
+                        match tokio::time::timeout(Duration::from_secs(60), msg_stream.next()).await
                         {
                             // Invalidation message received — tick immediately.
                             Ok(Some(_)) => {

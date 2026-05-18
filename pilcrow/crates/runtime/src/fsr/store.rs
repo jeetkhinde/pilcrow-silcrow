@@ -155,17 +155,22 @@ impl FsrStore {
             .fetch_optional(&*self.pool)
             .await?
             .unwrap_or(false);
-            return Ok(if tombstoned { HitStatus::Tombstoned } else { HitStatus::Normal });
+            return Ok(if tombstoned {
+                HitStatus::Tombstoned
+            } else {
+                HitStatus::Normal
+            });
         };
 
         let just_promoted = promote_after
-            .map(|threshold| {
-                let t = threshold.max(1);
-                promoted && hit_count.saturating_sub(1) < t && hit_count >= t
-            })
+            .map(|threshold| promoted && hit_count == threshold)
             .unwrap_or(false);
 
-        Ok(if just_promoted { HitStatus::JustPromoted } else { HitStatus::Normal })
+        Ok(if just_promoted {
+            HitStatus::JustPromoted
+        } else {
+            HitStatus::Normal
+        })
     }
 
     /// Mark a route as tombstoned — its baked entity was deleted.
@@ -223,12 +228,11 @@ impl FsrStore {
 
     /// Returns `true` when the route-level row exists and is tombstoned.
     pub async fn is_tombstoned(&self, route: &str) -> sqlx::Result<bool> {
-        let row: Option<(bool,)> = sqlx::query_as(
-            "SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = ''",
-        )
-        .bind(route)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let row: Option<(bool,)> =
+            sqlx::query_as("SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = ''")
+                .bind(route)
+                .fetch_optional(&*self.pool)
+                .await?;
         Ok(row.map(|(t,)| t).unwrap_or(false))
     }
 

@@ -410,20 +410,6 @@ validation_rules = [
 ]
 scaffold_templates = ["silcrow-form"]
 
-[[features]]
-id = "deferred-streams"
-name = "Deferred Streams"
-domain = "pilcrow"
-status = "removed"
-summary = "REMOVED in Slice C. AsyncHtml, AsyncValue<T>, DeferredHtml, and Deferred<T> have been removed. Use FSR (live.rs + LiveProp<T>) for reactive data instead."
-spec = "Removed. AsyncHtml, AsyncValue<T>, async_response_combined, async_value_response, __streaming_props_response, and all deferred field infrastructure have been deleted. Using these types will fail to compile. Migrate to FSR: declare a Live struct in live.rs with LiveProp<T> fields."
-canonical_usage = ""
-constraints = []
-invalid_examples = []
-source_refs = []
-test_refs = []
-validation_rules = []
-scaffold_templates = []
 
 [[features]]
 id = "live-props"
