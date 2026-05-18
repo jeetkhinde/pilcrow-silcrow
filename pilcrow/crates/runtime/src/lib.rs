@@ -86,7 +86,7 @@ pub use response::response::html;
 
 pub use deferred::{__live_props_response, LiveProp, LiveTarget};
 // ── ISR / SSG cache ──────────────────────────────────────────
-pub use isr::{__isr_cache_key, IsrCache, IsrCacheState, IsrHandle};
+pub use isr::{IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────
 pub use context::ReqBuilder;
 pub use validator::Validator;

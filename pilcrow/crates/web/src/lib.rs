@@ -430,8 +430,6 @@ pub use axum;
 #[doc(hidden)]
 pub use pilcrow_client;
 #[doc(hidden)]
-pub use runtime::__isr_cache_key;
-#[doc(hidden)]
 pub use runtime::csrf_middleware as __csrf_middleware;
 #[doc(hidden)]
 pub use runtime::tokio;

@@ -406,9 +406,6 @@ pub fn render_generated_app_module(
         };
 
         let ssg_opts = ssg_config_map.get(&entry.symbol);
-        let _fsr_json = page_options_map
-            .get(&entry.symbol)
-            .is_some_and(|o| o.fsr.json);
 
         // Build-time validation: PRERENDER on a dynamic route requires entries().
         if ssg_opts.is_some_and(|o| o.prerender) && page_load.is_some() {
