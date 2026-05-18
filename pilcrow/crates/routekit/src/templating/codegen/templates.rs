@@ -34,9 +34,6 @@ pub fn render_generated_templates_module(
     let mut load_map = HashMap::new();
     let mut action_map: HashMap<String, Vec<ActionFn>> = HashMap::new();
     let mut page_options_map: HashMap<String, PageOptions> = HashMap::new();
-    let mut deferred_fields_map: HashMap<String, Vec<String>> = HashMap::new();
-    let mut deferred_html_fields_map: HashMap<String, Vec<String>> = HashMap::new();
-    let mut isr_config_map: HashMap<String, IsrOpts> = HashMap::new();
     let mut ssg_config_map: HashMap<String, SsgOpts> = HashMap::new();
     let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
     let mut has_live_fn_map: HashMap<String, bool> = HashMap::new();
@@ -128,20 +125,6 @@ pub fn render_generated_templates_module(
             page_options_map.insert(entry.module_name.clone(), instrumented.page_options.clone());
         }
 
-        if !instrumented.deferred_fields.is_empty() {
-            deferred_fields_map.insert(
-                entry.module_name.clone(),
-                instrumented.deferred_fields.clone(),
-            );
-        }
-
-        if !instrumented.deferred_html_fields.is_empty() {
-            deferred_html_fields_map.insert(
-                entry.module_name.clone(),
-                instrumented.deferred_html_fields.clone(),
-            );
-        }
-
         if !instrumented.live_fields.is_empty() {
             live_fields_map.insert(entry.module_name.clone(), instrumented.live_fields.clone());
         }
@@ -190,12 +173,6 @@ pub fn render_generated_templates_module(
             }
         }
 
-        if instrumented.page_options.isr.is_active() {
-            isr_config_map.insert(
-                entry.module_name.clone(),
-                instrumented.page_options.isr.clone(),
-            );
-        }
 
         if instrumented.page_options.ssg.prerender {
             ssg_config_map.insert(
@@ -330,9 +307,6 @@ pub fn render_generated_templates_module(
         layout_fields_map,
         action_map,
         page_options: page_options_map,
-        deferred_fields_map,
-        deferred_html_fields_map,
-        isr_config_map,
         ssg_config_map,
         live_fields_map,
         has_live_fn_map,
@@ -417,9 +391,6 @@ pub fn write_generated_templates_module(
         layout_fields_map: generated.layout_fields_map,
         action_map: generated.action_map,
         page_options: generated.page_options,
-        deferred_fields_map: generated.deferred_fields_map,
-        deferred_html_fields_map: generated.deferred_html_fields_map,
-        isr_config_map: generated.isr_config_map,
         ssg_config_map: generated.ssg_config_map,
         live_fields_map: generated.live_fields_map,
         has_live_fn_map: generated.has_live_fn_map,

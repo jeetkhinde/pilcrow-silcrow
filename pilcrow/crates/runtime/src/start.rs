@@ -6,9 +6,8 @@ use axum::BoxError;
 use axum::Router;
 use axum::error_handling::HandleErrorLayer;
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
 use pilcrow_core::PilcrowConfig;
-use pilcrow_core::config::config::CacheProvider;
+
 use tower::ServiceBuilder;
 use tower::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
@@ -83,29 +82,9 @@ where
         None
     };
 
-    let isr_cache = Arc::new(match &config.cache.provider {
-        CacheProvider::Memory => IsrCache::new(),
-        CacheProvider::Filesystem => {
-            let dir = config.cache.dir.as_deref().unwrap_or(".pilcrow-cache");
-            tracing::info!("ISR cache: filesystem backend at {dir}");
-            IsrCache::with_persistence(dir)
-        }
-        CacheProvider::Sqlite => {
-            tracing::error!(
-                "ISR cache provider 'sqlite' is not implemented; use memory or filesystem"
-            );
-            eprintln!(
-                "pilcrow: cache provider 'sqlite' is not implemented; use memory or filesystem"
-            );
-            std::process::exit(1);
-        }
-        CacheProvider::Redis => {
-            // Redis is wired as the FSR hot cache below; for the ISR layer we fall
-            // back to in-memory so the server can still start.
-            tracing::info!("ISR cache: using in-memory (Redis is reserved for the FSR layer)");
-            IsrCache::new()
-        }
-    });
+    // ISR cache is in-memory only; filesystem persistence removed in Slice C.
+    let _ = &config.cache; // suppress unused warning while config still exists
+    let isr_cache = Arc::new(IsrCache::new());
 
     let dev_mode = std::env::var("PILCROW_DEV").is_ok();
     let sw_enabled = config.service_worker.enabled && !dev_mode;
@@ -127,10 +106,6 @@ where
             &solid_islands_path,
             axum::routing::get(serve_solid_islands_js),
         );
-
-    if dev_mode {
-        app = app.route("/__pilcrow/isr", axum::routing::get(isr_inspect_handler));
-    }
 
     if sw_enabled {
         app = app.route("/sw.js", axum::routing::get(sw_handler));
@@ -485,48 +460,3 @@ fn load_config_or_exit() -> PilcrowConfig {
     }
 }
 
-/// Export all pre-rendered pages as static HTML files to `dir`.
-///
-/// Runs `prerender_fn` to fill the ISR cache (same as `start_with_prerender`),
-/// then writes each cached entry to `<dir><key>/index.html`.
-///
-/// Call this from a generated `pilcrow_export(dir)` function in the `pilcrow_app!()`
-/// macro, or invoke it directly for custom export flows.
-///
-/// Dynamic routes must declare `pub async fn entries()` for pages with `PRERENDER = true`.
-pub async fn export<F, Fut>(dir: &str, prerender_fn: F)
-where
-    F: FnOnce(Arc<IsrCache>) -> Fut,
-    Fut: Future<Output = ()>,
-{
-    let isr_cache = Arc::new(IsrCache::new());
-    prerender_fn(Arc::clone(&isr_cache)).await;
-
-    let entries = isr_cache.export_entries();
-    let total = entries.len();
-    for (key, html) in entries {
-        let rel = key.trim_start_matches('/');
-        let out_path = if rel.is_empty() {
-            std::path::Path::new(dir).join("index.html")
-        } else {
-            std::path::Path::new(dir).join(rel).join("index.html")
-        };
-        if let Some(parent) = out_path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        match std::fs::write(&out_path, html) {
-            Ok(()) => println!("  exported {key} → {}", out_path.display()),
-            Err(e) => eprintln!("  failed to write {}: {e}", out_path.display()),
-        }
-    }
-    println!("export complete: {total} pages → {dir}");
-}
-
-async fn isr_inspect_handler(
-    axum::Extension(handle): axum::Extension<IsrHandle>,
-) -> axum::response::Response {
-    match handle.__arc() {
-        Some(cache) => axum::Json(cache.snapshot()).into_response(),
-        None => (StatusCode::OK, axum::Json(serde_json::json!([]))).into_response(),
-    }
-}

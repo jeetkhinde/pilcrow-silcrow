@@ -1,25 +1,3 @@
-/// ISR options parsed from `pub const` declarations in code-behind files.
-///
-/// All constants are stripped from the emitted module — they never reach runtime code.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct IsrOpts {
-    /// Cache TTL in seconds (`REVALIDATE`). `None` means ISR is disabled for this page.
-    pub revalidate: Option<u64>,
-    /// Maximum stale age in seconds before falling back to blocking render (`MAX_STALE`).
-    pub max_stale: Option<u64>,
-    /// Tag names for group invalidation (`CACHE_TAGS`).
-    pub cache_tags: Vec<String>,
-    /// Locals keys whose values scope the cache key (`CACHE_VARY`).
-    pub cache_vary: Vec<String>,
-}
-
-impl IsrOpts {
-    /// `true` when this page has ISR enabled (i.e. `REVALIDATE` is set).
-    pub fn is_active(&self) -> bool {
-        self.revalidate.is_some()
-    }
-}
-
 /// SSG options parsed from `pub const` declarations in code-behind files.
 ///
 /// All constants are stripped from the emitted module — they never reach runtime code.
@@ -61,9 +39,7 @@ impl FsrOpts {
 /// ```rust,ignore
 /// pub const TRAILING_SLASH: &str = "always"; // "always" | "never" | "ignore"
 /// pub const LAYOUT: &str = "none";           // opt out of all layout wrapping
-/// pub const REVALIDATE: u64 = 60;            // ISR: cache TTL in seconds
 /// pub const PRERENDER: bool = true;          // SSG: pre-render at server startup (FSR: sets promote_after = 0)
-/// pub const STREAMING: bool = true;          // SSR Streaming: shell renders immediately, page data streamed
 /// pub const FSR_JSON: bool = true;           // FSR: opt in to baked JSON alongside baked HTML
 /// pub const PROMOTE_AFTER: u32 = 100;        // FSR: override per-field promote_after for the whole route
 /// ```
@@ -71,12 +47,7 @@ impl FsrOpts {
 pub struct PageOptions {
     pub trailing_slash: TrailingSlash,
     pub layout: LayoutOpt,
-    pub isr: IsrOpts,
     pub ssg: SsgOpts,
-    /// Whether the page uses SSR Streaming: layout loads run immediately, page `load()` is
-    /// spawned in the background, and the shell renders before data arrives. The resolved
-    /// `Props` are streamed as a single `Silcrow.patch()` call once `load()` completes.
-    pub streaming: bool,
     /// FSR options — populated when a `live.rs` companion file is present.
     pub fsr: FsrOpts,
 }

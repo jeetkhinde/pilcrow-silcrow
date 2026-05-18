@@ -105,12 +105,6 @@ pub struct GeneratedTemplatesModule {
     pub action_map: HashMap<String, Vec<ActionFn>>,
     /// Map from page module_name to its per-page options (`TRAILING_SLASH`, etc.).
     pub page_options: HashMap<String, PageOptions>,
-    /// Map from page module_name to its `Deferred<T>` (JSON patch) field names.
-    pub deferred_fields_map: HashMap<String, Vec<String>>,
-    /// Map from page module_name to its `DeferredHtml` (HTML slot) field names.
-    pub deferred_html_fields_map: HashMap<String, Vec<String>>,
-    /// Map from page module_name to its ISR configuration (only for pages with `REVALIDATE`).
-    pub isr_config_map: HashMap<String, IsrOpts>,
     /// Map from page module_name to its SSG configuration (only for pages with `PRERENDER = true`).
     pub ssg_config_map: HashMap<String, SsgOpts>,
     /// Map from page module_name to its `LiveProp<T>` field names.
@@ -147,10 +141,6 @@ pub struct InstrumentedFrontmatter {
     /// Per-page options parsed from `pub const` declarations and stripped from output.
     /// `page_options.ssg.has_entries_fn` is set when `pub async fn entries()` is detected.
     pub page_options: PageOptions,
-    /// Names of `Deferred<T>` (JSON patch) fields in `Props`, in declaration order.
-    pub deferred_fields: Vec<String>,
-    /// Names of `DeferredHtml` (HTML slot) fields in `Props`, in declaration order.
-    pub deferred_html_fields: Vec<String>,
     /// Names of `LiveProp<T>` fields in `Props`, in declaration order.
     pub live_fields: Vec<String>,
     /// True when a `live()` fn or `LiveProp` struct is present in the frontmatter.

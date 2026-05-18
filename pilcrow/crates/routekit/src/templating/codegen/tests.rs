@@ -369,81 +369,37 @@ pub struct Live {
     }
 
     #[test]
-    fn isr_constants_are_stripped_from_emitted_module() {
-        let frontmatter = r#"
-pub const REVALIDATE: u64 = 60;
-pub const MAX_STALE: u64 = 3600;
-pub const CACHE_TAGS: &[&str] = &["products", "inventory"];
-pub const CACHE_VARY: &[&str] = &["tenant_id"];
-pub const PRERENDER: bool = true;
-
-pub struct Props {
-    pub products: Vec<String>,
-}
-
-pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
-    Ok(Props { products: vec![] })
-}
-"#;
-        let generated = render_generated_templates_module(&[TemplateCodegenInput {
-            module_name: "page_products".to_string(),
-            render_symbol: "render_page_products".to_string(),
-            source_path: "/tmp/src/pages/products.html".to_string(),
-            rust_frontmatter: frontmatter.to_string(),
-            template_source: "{% for p in products %}<p>{{ p }}</p>{% endfor %}".to_string(),
-            layout_chain: vec![],
-            fragment_url_prefix: None,
-            route_params: vec![],
-        }])
-        .expect("should generate with ISR constants");
-
-        let src = &generated.source;
-
-        // ISR constants must not appear in the emitted module source.
-        assert!(
-            !src.contains("REVALIDATE"),
-            "REVALIDATE leaked into emitted source"
-        );
-        assert!(
-            !src.contains("MAX_STALE"),
-            "MAX_STALE leaked into emitted source"
-        );
-        assert!(
-            !src.contains("CACHE_TAGS"),
-            "CACHE_TAGS leaked into emitted source"
-        );
-        assert!(
-            !src.contains("CACHE_VARY"),
-            "CACHE_VARY leaked into emitted source"
-        );
-        assert!(
-            !src.contains("PRERENDER"),
-            "PRERENDER leaked into emitted source"
-        );
-
-        // Props and load() must still be emitted.
-        assert!(src.contains("pub struct Props"), "Props was stripped");
-        assert!(src.contains("pub async fn load"), "load() was stripped");
-
-        // ISR config must be recorded in the ISR map.
-        let isr = generated
-            .isr_config_map
-            .get("page_products")
-            .expect("page_products should have ISR config");
-        assert_eq!(isr.revalidate, Some(60));
-        assert_eq!(isr.max_stale, Some(3600));
-        assert_eq!(
-            isr.cache_tags,
-            vec!["products".to_string(), "inventory".to_string()]
-        );
-        assert_eq!(isr.cache_vary, vec!["tenant_id".to_string()]);
-
-        // PRERENDER is now in the SSG map, not in ISrOpts.
-        let ssg = generated
-            .ssg_config_map
-            .get("page_products")
-            .expect("page_products should have SSG config");
-        assert!(ssg.prerender);
+    fn removed_isr_constants_cause_build_errors() {
+        for (constant, snippet) in &[
+            ("REVALIDATE", "pub const REVALIDATE: u64 = 60;"),
+            ("MAX_STALE", "pub const MAX_STALE: u64 = 3600;"),
+            (
+                "CACHE_TAGS",
+                "pub const CACHE_TAGS: &[&str] = &[\"products\"];",
+            ),
+            (
+                "CACHE_VARY",
+                "pub const CACHE_VARY: &[&str] = &[\"x-tenant\"];",
+            ),
+        ] {
+            let frontmatter = format!("{snippet}\npub struct Props {{}}\n");
+            let err = render_generated_templates_module(&[TemplateCodegenInput {
+                module_name: "page_products".to_string(),
+                render_symbol: "render_page_products".to_string(),
+                source_path: "/tmp/src/pages/products.html".to_string(),
+                rust_frontmatter: frontmatter,
+                template_source: "<p>hi</p>".to_string(),
+                layout_chain: vec![],
+                fragment_url_prefix: None,
+                route_params: vec![],
+            }])
+            .expect_err(&format!("{constant} should cause a build error"));
+            assert!(
+                err.to_string().contains(constant),
+                "{constant} error message missing constant name; got: {}",
+                err
+            );
+        }
     }
 
     #[test]
@@ -485,8 +441,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         assert!(ssg.prerender);
         assert!(!ssg.has_entries_fn);
 
-        // Must NOT be in the ISR map.
-        assert!(!generated.isr_config_map.contains_key("page_about"));
+        // ISR is removed; no isr_config_map to check.
     }
 
     #[test]
@@ -527,7 +482,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
-    fn non_isr_page_has_no_isr_config() {
+    fn non_ssg_page_has_no_ssg_config() {
         let generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_index".to_string(),
             render_symbol: "render_page_index".to_string(),
@@ -539,200 +494,30 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             route_params: vec![],
         }])
         .expect("should generate");
-        assert!(generated.isr_config_map.get("page_index").is_none());
+        assert!(generated.ssg_config_map.get("page_index").is_none());
     }
 
     #[test]
-    fn streaming_constant_is_stripped_and_recorded_in_page_options() {
-        let frontmatter = r#"
-pub const STREAMING: bool = true;
-pub struct Props { pub title: String }
-pub async fn load(_req: Req) -> AppResult<Props> {
-    Ok(Props { title: "hi".into() })
-}
-"#;
-        let generated = render_generated_templates_module(&[TemplateCodegenInput {
+    fn streaming_constant_causes_build_error() {
+        let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),
             rust_frontmatter: frontmatter.to_string(),
-            template_source: "<h1>:text</h1>".to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
         }])
-        .expect("should generate with STREAMING constant");
-
-        // STREAMING must not appear in the emitted source.
+        .expect_err("STREAMING should cause a build error");
         assert!(
-            !generated.source.contains("STREAMING"),
-            "STREAMING leaked into emitted source"
-        );
-
-        // streaming flag must be recorded in page_options.
-        let opts = generated
-            .page_options
-            .get("page_about")
-            .expect("page_about in options");
-        assert!(opts.streaming);
-
-        // Props::default() must be derivable (Default injected automatically).
-        assert!(
-            generated.source.contains("derive"),
-            "Default should be injected for streaming"
+            err.to_string().contains("STREAMING"),
+            "error message missing STREAMING; got: {}",
+            err
         );
     }
 
-    #[test]
-    fn streaming_handler_emits_spawn_and_patch_script() {
-        let page_route = GeneratedPageRoute {
-            pattern: "/products".to_string(),
-            template_path: "/tmp/src/pages/products.html".to_string(),
-            symbol: "page_products".to_string(),
-            render_symbol: "render_page_products".to_string(),
-            route_params: vec![],
-            param_matchers: HashMap::new(),
-        };
-        let load_sig = LoadSignature {
-            is_async: true,
-            returns_result: true,
-            wants_client: false,
-            wants_req: true,
-            wants_page: false,
-            wants_live: false,
-        };
-        let mut load_map: HashMap<String, Option<LoadSignature>> = HashMap::new();
-        load_map.insert("page_products".to_string(), Some(load_sig));
-
-        let mut page_opts: HashMap<String, PageOptions> = HashMap::new();
-        page_opts.insert(
-            "page_products".to_string(),
-            PageOptions {
-                streaming: true,
-                ..Default::default()
-            },
-        );
-
-        let source = render_generated_app_module(
-            &[page_route],
-            &[],
-            &AppCodegenMaps {
-                load_map: &load_map,
-                layout_fields_map: &HashMap::new(),
-                error_module_for_page: &HashMap::new(),
-                not_found_module: None,
-                loading_module_for_page: &HashMap::new(),
-                action_map: &HashMap::new(),
-                page_options_map: &page_opts,
-                deferred_fields_map: &HashMap::new(),
-                deferred_html_fields_map: &HashMap::new(),
-                isr_config_map: &HashMap::new(),
-                ssg_config_map: &HashMap::new(),
-                live_fields_map: &HashMap::new(),
-                has_live_fn_map: &HashMap::new(),
-                fsr_live_source_map: &HashMap::new(),
-                fsr_live_fields_map: &HashMap::new(),
-            },
-            HookFlags::default(),
-            false,
-            false,
-        )
-        .expect("streaming app module should render");
-
-        // Must spawn page load in background.
-        assert!(
-            source.contains("tokio::spawn"),
-            "STREAMING handler must spawn page load"
-        );
-        // Must use __streaming_props_response.
-        assert!(
-            source.contains("__streaming_props_response"),
-            "must use streaming response"
-        );
-        // Must inject the window.__ps shim.
-        assert!(source.contains("window.__ps"), "must inject streaming shim");
-        // Must serialize page props.
-        assert!(
-            source.contains("__serialize_page_props"),
-            "must serialize props"
-        );
-        // Must apply resp_handle.
-        assert!(
-            source.contains("__resp_handle.apply_to"),
-            "must apply response handle"
-        );
-    }
-
-    #[test]
-    fn render_generated_app_module_reports_invalid_streaming_config() {
-        let page_route = GeneratedPageRoute {
-            pattern: "/products".to_string(),
-            template_path: "/tmp/src/pages/products.html".to_string(),
-            symbol: "page_products".to_string(),
-            render_symbol: "render_page_products".to_string(),
-            route_params: vec![],
-            param_matchers: HashMap::new(),
-        };
-        let load_sig = LoadSignature {
-            is_async: true,
-            returns_result: true,
-            wants_client: false,
-            wants_req: true,
-            wants_page: false,
-            wants_live: false,
-        };
-        let mut load_map: HashMap<String, Option<LoadSignature>> = HashMap::new();
-        load_map.insert("page_products".to_string(), Some(load_sig));
-
-        let mut page_opts: HashMap<String, PageOptions> = HashMap::new();
-        page_opts.insert(
-            "page_products".to_string(),
-            PageOptions {
-                streaming: true,
-                ..Default::default()
-            },
-        );
-        let mut isr_opts: HashMap<String, IsrOpts> = HashMap::new();
-        isr_opts.insert(
-            "page_products".to_string(),
-            IsrOpts {
-                revalidate: Some(60),
-                ..Default::default()
-            },
-        );
-
-        let err = render_generated_app_module(
-            &[page_route],
-            &[],
-            &AppCodegenMaps {
-                load_map: &load_map,
-                layout_fields_map: &HashMap::new(),
-                error_module_for_page: &HashMap::new(),
-                not_found_module: None,
-                loading_module_for_page: &HashMap::new(),
-                action_map: &HashMap::new(),
-                page_options_map: &page_opts,
-                deferred_fields_map: &HashMap::new(),
-                deferred_html_fields_map: &HashMap::new(),
-                isr_config_map: &isr_opts,
-                ssg_config_map: &HashMap::new(),
-                live_fields_map: &HashMap::new(),
-                has_live_fn_map: &HashMap::new(),
-                fsr_live_source_map: &HashMap::new(),
-                fsr_live_fields_map: &HashMap::new(),
-            },
-            HookFlags::default(),
-            false,
-            false,
-        )
-        .expect_err("invalid streaming + ISR config should be reported");
-
-        let message = err.to_string();
-        assert!(message.contains("invalid Pilcrow route configuration"));
-        assert!(message.contains("route: /products"));
-        assert!(message.contains("STREAMING = true is incompatible with REVALIDATE"));
-        assert!(message.contains("suggested fix:"));
-    }
 
     #[test]
     fn emit_action_route_uses_custom_error_module_when_provided() {
