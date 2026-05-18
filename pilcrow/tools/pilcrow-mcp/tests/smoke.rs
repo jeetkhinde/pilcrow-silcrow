@@ -262,6 +262,29 @@ fn smoke_list_features_returns_features() {
         "list_features should return non-empty content"
     );
 }
+#[test]
+fn smoke_list_features_surfaces_fsr_redis_requirements() {
+    let mut client = McpClient::spawn();
+    let resp = client.call_tool("list_features", json!({ "domain": "pilcrow" }));
+    assert!(resp["error"].is_null(), "list_features errored: {resp}");
+    let body = resp.to_string();
+    assert!(
+        body.contains("\"id\":\"fsr\""),
+        "missing fsr summary: {resp}"
+    );
+    assert!(
+        body.contains("live-props-redis"),
+        "fsr summary should mention live-props-redis: {resp}"
+    );
+    assert!(
+        body.contains("Redis cache/pub-sub") || body.contains("Redis mode uses pub/sub"),
+        "fsr summary should mention Redis pub/sub: {resp}"
+    );
+    assert!(
+        body.contains("[fsr].redis_url"),
+        "fsr summary should mention [fsr].redis_url: {resp}"
+    );
+}
 
 /// Knowledge / registry group — feature spec
 #[test]
@@ -269,6 +292,29 @@ fn smoke_get_feature_spec_for_ssr_pages() {
     let mut client = McpClient::spawn();
     let resp = client.call_tool("get_feature_spec", json!({ "id": "ssr-pages" }));
     assert!(resp["error"].is_null(), "get_feature_spec errored: {resp}");
+}
+
+#[test]
+fn smoke_get_feature_spec_for_fsr_keeps_redis_contract() {
+    let mut client = McpClient::spawn();
+    let resp = client.call_tool("get_feature_spec", json!({ "id": "fsr" }));
+    assert!(resp["error"].is_null(), "get_feature_spec errored: {resp}");
+    let body = resp.to_string();
+    for expected in [
+        "live-props-redis",
+        "Redis is the hot path",
+        "Postgres is the truth layer",
+        "disk is async recovery",
+        "pilcrow:invalidate",
+        "pilcrow:patch",
+        "500ms polling",
+        "[fsr]",
+    ] {
+        assert!(
+            body.contains(expected),
+            "fsr spec should include {expected:?}: {resp}"
+        );
+    }
 }
 
 /// Knowledge / registry group — React production pattern
