@@ -115,6 +115,79 @@ spawn_embedded_watcher(store, WatcherConfig {
 
 ---
 
+## Design Decisions (locked)
+
+### TODO #6 — Layout-aware navigation: route-segment diffing
+
+**Decision date:** 2026-05-19  
+**Status:** Locked — do not re-open without strong reason.
+
+#### What is built
+
+When Pilcrow's file-based router processes a request, it already knows the full layout stack for every route:
+
+```
+routes/
+  _layout.html          ← root shell   (layout level "/")
+  tickets/
+    _layout.html        ← tickets shell (layout level "/tickets")
+    [id]/
+      page.html         ← only this changes on /tickets/1 → /tickets/2
+```
+
+The codegen auto-injects two attributes at layout boundary points — no developer annotation required:
+
+- `data-ps-layout="<pattern>"` on the root element of each layout's rendered output, identifying which layout level owns that shell.
+- `data-ps-slot="<child-pattern>"` on the element inside the layout where its child route renders (the page insertion point).
+
+Example rendered HTML for `/tickets/1`:
+
+```html
+<body>
+  <div data-ps-layout="/">
+    <nav>…</nav>
+    <div data-ps-layout="/tickets">
+      <aside>…</aside>
+      <main data-ps-slot="/tickets/:id">
+        <!-- page.html content -->
+      </main>
+    </div>
+  </div>
+</body>
+```
+
+#### Navigation flow
+
+On a Silcrow-intercepted link to `/tickets/2`:
+
+1. Silcrow reads all `data-ps-layout` values already in the DOM → `["/" , "/tickets"]`
+2. Sends `X-PS-Present: /,/tickets` with the navigation request
+3. Server walks the route tree: root layout shared ✓, tickets layout shared ✓, page differs ✗
+4. Server renders and returns **only** the `page.html` fragment (no layout wrappers, no `<html>`/`<body>`)
+5. Silcrow swaps the element matching `[data-ps-slot="/tickets/:id"]` with the fragment
+
+Full-page fallback: if `X-PS-Present` is absent (first load, non-JS, direct URL) the server renders the complete page normally. No special case needed — the attributes are just ignored.
+
+#### What was rejected
+
+| Idea | Why rejected |
+|------|-------------|
+| Auto-inject `data-ps-slot` on every component boundary (`<Products/>` → `data-ps-slot="Products"`) | Component names are not unique per page; position-based fallback IDs (`Products-0`) break on template changes |
+| `data-ps-stable` compiler-inferred attribute | "Layout stable" (same `_layout.html` file) is deterministic. "Content stable" (LeftTicketPanel with ticket-specific data) is not — only the developer knows |
+| Inject a `<script>` to annotate the DOM at page load | The server knows the structure at render time; re-deriving it client-side adds execution overhead and a new failure mode |
+| Centralized `<script id="__ps_route__" type="application/json">` block | Functionally identical to attributes but with worse co-location; Silcrow would need to find it by ID instead of reading the attribute on the element it is about to swap |
+
+#### Implementation layers
+
+| Layer | Work |
+|-------|------|
+| `_layout.html` template compiler (`pilcrow-routekit`) | Emit `data-ps-layout="<pattern>"` on layout root; emit `data-ps-slot="<child-pattern>"` on the child insertion point |
+| Request handler (`pilcrow-runtime`) | Read `X-PS-Present` header; walk route tree to find deepest shared prefix; render only the delta fragment; set `Content-Type: text/html; x-ps-fragment=1` |
+| Silcrow.js | On link intercept: collect `data-ps-layout` values; send `X-PS-Present`; receive fragment; swap `[data-ps-slot="<pattern>"]` |
+
+Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/42`) — they are stable across navigations to different records on the same route.
+
+---
 
 ## TODO Backlog
 
@@ -125,7 +198,7 @@ spawn_embedded_watcher(store, WatcherConfig {
 | 3 | Timer-based watcher — fires `invalidate_dep_key` on a schedule (replaces REVALIDATE TTL) | ✅ Done (Slice B — `ScheduledInvalidation` + `WatcherConfig::scheduled_invalidations`) |
 | 4 | Deprecate and remove: STREAMING, REVALIDATE, MAX_STALE, `Deferred<T>`, `DeferredHtml`, ISR cache inspect endpoint, filesystem ISR cache, combined PRERENDER+REVALIDATE, Static Export | ✅ Done (Slice C) |
 | 5 | s-boost opt-out by default — auto-skip external origin, download, `mailto:`, hash-only, `s-boost="false"` | ⬜ Pending |
-| 6 | Layout-aware navigation — three-mode system (JSON / fragment / full) driven by `X-Pilcrow-Layout` header; `data-ps-slot` markers emitted by codegen | ⬜ Pending |
+| 6 | Layout-aware navigation — route-segment diffing; `data-ps-layout` / `data-ps-slot` auto-injected by codegen at layout boundaries; `X-PS-Present` header drives delta-only server renders | ⬜ Pending |
 | 7 | Scroll behaviour per mode — full→top, fragment→main-top, JSON→preserve | ⬜ Pending |
 | 8 | `<pilcrow:head>` always runs on fragment / JSON nav | ⬜ Pending |
 | 9 | History state stores layout hash | ⬜ Pending |
