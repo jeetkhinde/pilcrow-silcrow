@@ -133,8 +133,6 @@ pub async fn fsr_hub_handler(
 
     let after_ttl = FuturesStreamExt::take_until(rx, ttl_fut);
     let stream = tokio_stream::StreamExt::filter_map(after_ttl, move |msg| {
-        let subscribed_route = subscribed_route.clone();
-        let subscribed_slots = subscribed_slots.clone();
         match msg {
             Ok(patch) => {
                 if patch.route != subscribed_route {
