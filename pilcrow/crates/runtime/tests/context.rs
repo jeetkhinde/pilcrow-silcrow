@@ -521,9 +521,7 @@ async fn req_for_test_drives_load_fn() {
 fn mutation_id_echo_app() -> Router {
     Router::new().route(
         "/",
-        get(|req: Req| async move {
-            req.mutation_id().unwrap_or("none").to_owned()
-        }),
+        get(|req: Req| async move { req.mutation_id().unwrap_or("none").to_owned() }),
     )
 }
 

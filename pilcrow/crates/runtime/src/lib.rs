@@ -30,7 +30,9 @@ pub(crate) mod fsr {
 
     impl FsrHandle {
         pub(crate) fn new(_store: Arc<FsrStore>) -> Self {
-            Self { _store: Some(_store) }
+            Self {
+                _store: Some(_store),
+            }
         }
     }
 

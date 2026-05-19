@@ -6,8 +6,8 @@ use axum::http::request::Parts;
 use pilcrow_core::AppError;
 use serde_json::Value;
 
-use super::store::{FsrStore, HitStatus};
 use super::PilcrowLive;
+use super::store::{FsrStore, HitStatus};
 
 static FSR_STORE: OnceLock<Arc<FsrStore>> = OnceLock::new();
 
@@ -56,10 +56,7 @@ pub async fn extract_live_from_parts<T: PilcrowLive>(parts: &mut Parts) -> Resul
     let live_query = T::query(&params_map);
 
     // Execute via row_to_json (same pattern as watcher).
-    let json_sql = format!(
-        "SELECT row_to_json(t) AS __row FROM ({}) t",
-        live_query.sql
-    );
+    let json_sql = format!("SELECT row_to_json(t) AS __row FROM ({}) t", live_query.sql);
     let mut q = sqlx::query_scalar::<_, Value>(&json_sql);
     for p in &live_query.params {
         let s = match p {
@@ -89,8 +86,8 @@ pub async fn extract_live_from_parts<T: PilcrowLive>(parts: &mut Parts) -> Resul
     let query_params_json = Value::Array(live_query.params.clone());
 
     // Prefer the route-level PROMOTE_AFTER / PRERENDER constant over per-field values.
-    let route_promote_after = T::route_promote_after()
-        .or_else(|| fields.first().and_then(|f| f.promote_after));
+    let route_promote_after =
+        T::route_promote_after().or_else(|| fields.first().and_then(|f| f.promote_after));
     store
         .ensure_route_row(&route, route_promote_after)
         .await

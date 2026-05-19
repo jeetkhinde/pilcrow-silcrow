@@ -459,4 +459,3 @@ fn load_config_or_exit() -> PilcrowConfig {
         }
     }
 }
-
