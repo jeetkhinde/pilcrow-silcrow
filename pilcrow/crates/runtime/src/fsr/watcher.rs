@@ -99,8 +99,15 @@ pub async fn watcher_tick(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    for slot_row in stale {
-        let value = match re_execute_query(store, &slot_row).await {
+    // Phase 1: run all DB queries in parallel (read-only, safe to fan out).
+    let results = futures_util::future::join_all(
+        stale.iter().map(|slot_row| re_execute_query(store, slot_row)),
+    )
+    .await;
+
+    // Phase 2: patch files and broadcast sequentially to avoid same-route write races.
+    for (slot_row, result) in stale.iter().zip(results) {
+        let value = match result {
             Ok(v) => v,
             Err(e) => {
                 tracing::warn!(
@@ -156,8 +163,15 @@ pub async fn watcher_tick_redis(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    for slot_row in stale {
-        let value = match re_execute_query(store, &slot_row).await {
+    // Phase 1: run all DB queries in parallel (read-only, safe to fan out).
+    let results = futures_util::future::join_all(
+        stale.iter().map(|slot_row| re_execute_query(store, slot_row)),
+    )
+    .await;
+
+    // Phase 2: patch files, Redis, and SSE sequentially to avoid same-route write races.
+    for (slot_row, result) in stale.iter().zip(results) {
+        let value = match result {
             Ok(v) => v,
             Err(e) => {
                 tracing::warn!(
