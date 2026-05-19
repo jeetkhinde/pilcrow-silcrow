@@ -1,0 +1,13 @@
+{"type":"server-started","port":65364,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:65364","screen_dir":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content","state_dir":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/state"}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/nav-modes.html"}
+{"source":"user-event","type":"click","text":"B\n    \n      Server always decides, no client hint\n      Routes declare their layout; the server knows at render time which mode is appropriate. Client sends a plain request, gets the mode in the response header. Simpler — no hash negotiation.","choice":"server-decides","id":null,"timestamp":1779224868845}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/waiting-1.html"}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/head-transport.html"}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/waiting-2.html"}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/design-overview.html"}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/fragment-target.html"}
+{"source":"user-event","type":"click","text":"A\n      \n        Drop data-ps-slot entirely\n        Fragment nav always uses s-target (same as today). No codegen change needed for slot markers. X-Pilcrow-Layout only signals response shape — not target.","choice":"drop-slot","id":null,"timestamp":1779226952631}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/global-boost.html"}
+{"source":"user-event","type":"click","text":"A\n      \n        Remove s-boost entirely\n        It was only an opt-in enabler. Now that boost is global, the attribute has no meaning. Containers that want to scope s-target just use s-target directly. Clean break.","choice":"remove-sboost","id":null,"timestamp":1779227252283}
+{"type":"screen-added","file":"/Users/jagjeet/Development/workspaces/pilcrow-silcrow/.superpowers/brainstorm/9867-1779224617/content/final-design.html"}
+{"type":"server-stopped","reason":"idle timeout"}

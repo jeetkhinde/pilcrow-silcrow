@@ -1,0 +1,51 @@
+<h2>&lt;pilcrow:head&gt; on Fragment / JSON Nav</h2>
+<p class="subtitle">The server knows each page's &lt;pilcrow:head&gt; content at render time. How should it travel with a fragment response so the client can update &lt;title&gt;, meta tags, etc.?</p>
+
+<div class="section">
+  <p>For a full navigation, the head is already in the HTML. For fragment/JSON nav, the body is swapped but <code>&lt;head&gt;</code> is not touched — so <code>&lt;title&gt;</code> and meta tags go stale unless we explicitly push updates.</p>
+</div>
+
+<div class="options">
+
+  <div class="option" data-choice="template-tag" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Inline <code>&lt;template data-ps-head&gt;</code></h3>
+      <p>Codegen prepends a hidden <code>&lt;template data-ps-head&gt;…&lt;/template&gt;</code> to every page body. For fragment responses, Silcrow extracts it before injecting the slot and applies each child node to <code>document.head</code> (replacing same-keyed nodes by <code>name</code>/<code>property</code>).</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Zero new endpoints</li><li>Full-page responses carry it too — one code path</li><li>Inspectable in DevTools</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Adds a small hidden element to every page body</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="response-header" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Separate response header <code>X-Pilcrow-Head</code></h3>
+      <p>Server encodes the head content as JSON in an <code>X-Pilcrow-Head</code> response header. Silcrow reads it and applies to <code>document.head</code> after the swap.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Fragment body is clean — no hidden elements</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Headers have size limits — breaks with large head blocks</li><li>HTML in a header needs escaping</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="dedicated-slot" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Named slot in rendered body: <code>data-ps-slot="head"</code></h3>
+      <p>Codegen wraps the rendered <code>&lt;pilcrow:head&gt;</code> output in a live <code>&lt;div data-ps-slot="head" hidden&gt;</code> at the top of <code>&lt;body&gt;</code>. Fragment nav replaces this slot too. Silcrow reads it and mirrors into <code>document.head</code>.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Same slot mechanism as main content</li><li>Persistent — always available after load</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Slightly heavier — hidden div always in DOM</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <p class="label">Note — what "applies to document.head" means</p>
+  <p style="font-size:0.85rem;color:var(--text-secondary)">Silcrow would: set <code>document.title</code>, upsert <code>&lt;meta name="description"&gt;</code> by <code>name</code>/<code>property</code> attribute, replace <code>&lt;link rel="canonical"&gt;</code>. It would NOT remove head nodes that weren't in the new head — to avoid breaking analytics scripts etc.</p>
+</div>

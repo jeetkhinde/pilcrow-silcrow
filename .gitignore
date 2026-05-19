@@ -14,7 +14,6 @@ graphify-out/
 
 node_modules/
 .pilcrow-baked/
-
 # Cargo lock file (for libraries)
 /Cargo.lock
 # IDE / Editor files

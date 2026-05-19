@@ -1,0 +1,78 @@
+<h2>Global Boost — Opt-Out Model</h2>
+<p class="subtitle">Every anchor is boosted by default. <code>no-boost</code> opts out. No containers needed.</p>
+
+<div class="section">
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">BEFORE — opt-in</div>
+      <div class="mockup-body" style="font-family:monospace;font-size:0.78rem;padding:0.75rem;line-height:1.7">
+        <span style="color:#6b7280">&lt;!-- need a container wrapper --&gt;</span><br>
+        &lt;div <strong style="color:var(--accent)">s-boost</strong>&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/dashboard"&gt;Dashboard&lt;/a&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/settings"&gt;Settings&lt;/a&gt;<br>
+        &lt;/div&gt;<br><br>
+        <span style="color:#6b7280">&lt;!-- outside container = not boosted --&gt;</span><br>
+        &lt;a href="/logout"&gt;Logout&lt;/a&gt;<br><br>
+        <span style="color:#6b7280">&lt;!-- partial swap via container --&gt;</span><br>
+        &lt;div <strong style="color:var(--accent)">s-boost s-target="#detail"</strong>&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/t/1"&gt;Ticket 1&lt;/a&gt;<br>
+        &lt;/div&gt;
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">AFTER — opt-out</div>
+      <div class="mockup-body" style="font-family:monospace;font-size:0.78rem;padding:0.75rem;line-height:1.7">
+        <span style="color:#6b7280">&lt;!-- no wrapper needed, all boosted --&gt;</span><br>
+        &lt;a href="/dashboard"&gt;Dashboard&lt;/a&gt;<br>
+        &lt;a href="/settings"&gt;Settings&lt;/a&gt;<br><br>
+        <span style="color:#6b7280">&lt;!-- explicit opt-out --&gt;</span><br>
+        &lt;a href="/logout" <strong style="color:#ef4444">no-boost</strong>&gt;Logout&lt;/a&gt;<br><br>
+        <span style="color:#6b7280">&lt;!-- partial swap: s-target on anchor or container --&gt;</span><br>
+        &lt;div <strong style="color:#8b5cf6">s-target="#detail"</strong>&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/t/1"&gt;Ticket 1&lt;/a&gt;<br>
+        &lt;/div&gt;
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Target resolution (unchanged logic, new lookup order)</div>
+  <div style="background:var(--code-bg);border-radius:8px;padding:0.75rem 1rem;font-family:monospace;font-size:0.82rem;line-height:1.9">
+    1. anchor.getAttribute("s-target")          <span style="color:#6b7280">// anchor-level wins</span><br>
+    2. anchor.closest("[s-target]")              <span style="color:#6b7280">// inherit from nearest ancestor</span><br>
+    3. document.body                             <span style="color:#6b7280">// fallback — full page swap</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Auto-skip rules (safety — unchanged)</div>
+  <table style="width:100%;font-size:0.83rem;border-collapse:collapse">
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.35rem 0.5rem"><code>no-boost</code> attribute</td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — developer opt-out</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.35rem 0.5rem">External origin</td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — cross-origin</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.35rem 0.5rem"><code>download</code> attribute</td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — file download</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.35rem 0.5rem"><code>target="_blank"</code></td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — new tab</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.35rem 0.5rem"><code>href</code> starts with <code>#</code></td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — hash only</td></tr>
+    <tr><td style="padding:0.35rem 0.5rem"><code>mailto:</code>, <code>tel:</code>, other non-http</td><td style="padding:0.35rem 0.5rem;color:#ef4444">skip — non-navigable</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="label">What happens to <code>s-boost</code> attribute?</div>
+  <div class="options">
+    <div class="option" data-choice="remove-sboost" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Remove <code>s-boost</code> entirely</h3>
+        <p>It was only an opt-in enabler. Now that boost is global, the attribute has no meaning. Containers that want to scope <code>s-target</code> just use <code>s-target</code> directly. Clean break.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="keep-sboost-as-scope" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Keep <code>s-boost</code> as a scope/target container (no-op enabler)</h3>
+        <p>Old markup keeps working. <code>s-boost</code> is now just a scoping marker — links inside it still get boosted (they would anyway), and <code>s-target</code> on it still applies. Migration path for existing code.</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,97 @@
+<h2>Slice D — Three Navigation Modes</h2>
+<p class="subtitle">How should s-boost navigation decide which mode to use?</p>
+
+<div class="section">
+  <p>The plan says the mode is driven by an <code>X-Pilcrow-Layout</code> <em>response</em> header. That means <strong>the server decides</strong> on each response. The client uses whatever the server says.</p>
+  <p>Here's what each mode means in practice:</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+
+  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div style="background:var(--accent);color:#fff;padding:0.5rem 1rem;font-weight:600;font-size:0.85rem;letter-spacing:0.05em">MODE A — FULL</div>
+    <div style="padding:1rem">
+      <div class="mockup" style="margin:0 0 0.75rem">
+        <div class="mockup-header">Page</div>
+        <div class="mockup-body" style="padding:0.5rem">
+          <div class="mock-nav" style="font-size:0.7rem;padding:0.3rem">Nav</div>
+          <div style="background:#3b82f620;border:2px dashed #3b82f6;padding:0.5rem;margin-top:0.4rem;font-size:0.7rem;text-align:center">Entire body replaced</div>
+        </div>
+      </div>
+      <ul style="font-size:0.8rem;margin:0;padding-left:1.2rem;color:var(--text-secondary)">
+        <li>Whole <code>&lt;body&gt;</code> swapped</li>
+        <li>Nav re-rendered from response</li>
+        <li>Current behavior today</li>
+        <li>Scroll → top</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div style="background:#8b5cf6;color:#fff;padding:0.5rem 1rem;font-weight:600;font-size:0.85rem;letter-spacing:0.05em">MODE B — FRAGMENT</div>
+    <div style="padding:1rem">
+      <div class="mockup" style="margin:0 0 0.75rem">
+        <div class="mockup-header">Page</div>
+        <div class="mockup-body" style="padding:0.5rem">
+          <div class="mock-nav" style="font-size:0.7rem;padding:0.3rem">Nav (preserved)</div>
+          <div style="background:#8b5cf620;border:2px dashed #8b5cf6;padding:0.5rem;margin-top:0.4rem;font-size:0.7rem;text-align:center">Only main slot replaced</div>
+        </div>
+      </div>
+      <ul style="font-size:0.8rem;margin:0;padding-left:1.2rem;color:var(--text-secondary)">
+        <li>Only <code>data-ps-slot="main"</code> swapped</li>
+        <li>Nav, sidebar stay alive</li>
+        <li>Server sends fragment HTML</li>
+        <li>Scroll → main-top</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div style="background:#10b981;color:#fff;padding:0.5rem 1rem;font-weight:600;font-size:0.85rem;letter-spacing:0.05em">MODE C — JSON</div>
+    <div style="padding:1rem">
+      <div class="mockup" style="margin:0 0 0.75rem">
+        <div class="mockup-header">Page</div>
+        <div class="mockup-body" style="padding:0.5rem">
+          <div class="mock-nav" style="font-size:0.7rem;padding:0.3rem">Nav (preserved)</div>
+          <div style="background:#10b98120;border:2px dashed #10b981;padding:0.5rem;margin-top:0.4rem;font-size:0.7rem;text-align:center">Atoms patched in-place</div>
+        </div>
+      </div>
+      <ul style="font-size:0.8rem;margin:0;padding-left:1.2rem;color:var(--text-secondary)">
+        <li>Server returns JSON props</li>
+        <li>Silcrow patches bound elements</li>
+        <li>Zero HTML re-render</li>
+        <li>Scroll preserved</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="section">
+  <p><strong>How the server signals the mode:</strong> the server sets <code>X-Pilcrow-Layout: fragment</code> or <code>X-Pilcrow-Layout: json</code> on the response. No header = full (current default).</p>
+  <p><strong>Key question:</strong> Does the client need to tell the server what layout it has (so the server can decide intelligently), or does the server always know from the route?</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="client-hint" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Client sends layout hash</h3>
+      <p>s-boost adds <code>X-Pilcrow-Layout: &lt;hash&gt;</code> to the request. Server compares hashes — if same layout, returns fragment/JSON instead of full. Enables smart same-layout shortcutting.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="server-decides" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Server always decides, no client hint</h3>
+      <p>Routes declare their layout; the server knows at render time which mode is appropriate. Client sends a plain request, gets the mode in the response header. Simpler — no hash negotiation.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="request-header" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Client requests a mode</h3>
+      <p>s-boost sends <code>X-Pilcrow-Nav: fragment</code> on every boosted request. Server honours it if it can. Explicit opt-in per request rather than per route.</p>
+    </div>
+  </div>
+</div>

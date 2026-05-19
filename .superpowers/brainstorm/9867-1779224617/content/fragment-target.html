@@ -1,0 +1,79 @@
+<h2>Fragment Mode — Corrected Mental Model</h2>
+<p class="subtitle">The server controls WHAT HTML is returned. The <code>s-target</code> controls WHERE it lands. Same as today.</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">Ticket App Layout</div>
+    <div class="mockup-body" style="padding:0.75rem">
+      <div class="mock-nav" style="font-size:0.75rem">Top Nav (preserved — not swapped)</div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <div class="mock-sidebar" style="font-size:0.75rem;min-width:100px">Left Nav<br><small>(preserved)</small></div>
+        <div style="flex:1;display:flex;gap:0.5rem">
+          <div style="flex:1;border:2px solid #8b5cf6;border-radius:6px;padding:0.5rem;font-size:0.75rem">
+            <strong>Left pane</strong><br>
+            <div style="background:var(--code-bg);padding:0.3rem;border-radius:4px;margin-top:0.4rem;font-family:monospace;font-size:0.7rem">&lt;div s-boost<br>&nbsp;&nbsp;s-target="#right-pane"&gt;<br>&nbsp;&nbsp;&lt;a href="/t/1"&gt;Ticket 1&lt;/a&gt;<br>&lt;/div&gt;</div>
+          </div>
+          <div style="flex:2;border:2px dashed #10b981;border-radius:6px;padding:0.5rem;font-size:0.75rem">
+            <strong id="right-pane">Right pane</strong> <span style="color:#10b981;font-size:0.7rem">← only this swapped</span><br>
+            <div style="background:#10b98115;padding:0.4rem;border-radius:4px;margin-top:0.4rem;font-size:0.7rem">Ticket detail content<br><small>injected here by s-target="#right-pane"</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">What changes with fragment mode</div>
+  <table style="width:100%;font-size:0.83rem;border-collapse:collapse">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:0.4rem 0.5rem;color:var(--text-secondary)">Aspect</th>
+        <th style="text-align:left;padding:0.4rem 0.5rem;color:var(--text-secondary)">Today (full response)</th>
+        <th style="text-align:left;padding:0.4rem 0.5rem;color:#8b5cf6">Fragment mode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.4rem 0.5rem"><strong>Response</strong></td>
+        <td style="padding:0.4rem 0.5rem">Full page HTML (with layout shell)</td>
+        <td style="padding:0.4rem 0.5rem;color:#8b5cf6">Only page content HTML (no shell)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.4rem 0.5rem"><strong>Target</strong></td>
+        <td style="padding:0.4rem 0.5rem"><code>s-target</code> or body</td>
+        <td style="padding:0.4rem 0.5rem;color:#8b5cf6"><code>s-target</code> or body — <em>unchanged</em></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.4rem 0.5rem"><strong>Head update</strong></td>
+        <td style="padding:0.4rem 0.5rem">Head already in response HTML</td>
+        <td style="padding:0.4rem 0.5rem;color:#8b5cf6"><code>&lt;template data-ps-head&gt;</code> in fragment</td>
+      </tr>
+      <tr>
+        <td style="padding:0.4rem 0.5rem"><strong>Signal</strong></td>
+        <td style="padding:0.4rem 0.5rem">No header</td>
+        <td style="padding:0.4rem 0.5rem;color:#8b5cf6"><code>X-Pilcrow-Layout: fragment</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="label">Implication for data-ps-slot</div>
+  <div class="options" style="margin-top:0.75rem">
+    <div class="option" data-choice="drop-slot" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Drop <code>data-ps-slot</code> entirely</h3>
+        <p>Fragment nav always uses <code>s-target</code> (same as today). No codegen change needed for slot markers. <code>X-Pilcrow-Layout</code> only signals response shape — not target.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="slot-as-default" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Keep <code>data-ps-slot</code> as fallback default</h3>
+        <p>If no <code>s-target</code> is set on a boost element, Silcrow looks for <code>[data-ps-slot="main"]</code> as the default swap target instead of <code>document.body</code>. Developer opts in by putting it in their layout. <code>s-target</code> always wins when present.</p>
+      </div>
+    </div>
+  </div>
+</div>
