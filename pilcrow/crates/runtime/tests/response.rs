@@ -224,11 +224,7 @@ fn response_ext_patch_target_accumulates() {
 #[test]
 fn response_ext_patch_target_with_mutation_includes_mutation_id() {
     let resp = navigate("/")
-        .patch_target_with_mutation(
-            "#counter",
-            &serde_json::json!({"count": 5}),
-            "mut-123",
-        )
+        .patch_target_with_mutation("#counter", &serde_json::json!({"count": 5}), "mut-123")
         .into_response();
     let hdr = header_str(&resp, "silcrow-patch").unwrap_or("");
     let parsed: Vec<serde_json::Value> = serde_json::from_str(hdr).expect("parse patch header");

@@ -75,7 +75,9 @@ pub struct IsrCache {
 
 impl IsrCache {
     pub fn new() -> Self {
-        Self { map: Arc::new(DashMap::new()) }
+        Self {
+            map: Arc::new(DashMap::new()),
+        }
     }
 
     /// Check the cache state for a given key.
@@ -203,5 +205,9 @@ pub fn __isr_cache_key(
         .collect::<Vec<_>>()
         .join("&");
 
-    if qs.is_empty() { path.to_string() } else { format!("{path}?{qs}") }
+    if qs.is_empty() {
+        path.to_string()
+    } else {
+        format!("{path}?{qs}")
+    }
 }

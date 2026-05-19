@@ -263,21 +263,24 @@ impl FsrStore {
 
         #[cfg(feature = "live-props-redis")]
         if let Some(ref redis) = self.redis {
-            for route in &routes {
+            let futures = routes.iter().map(|route| {
                 let payload = InvalidatePayload {
                     route: route.clone(),
                     slots: vec![],
                     deps: vec![dep_key.to_string()],
                 };
-                if let Err(e) = redis.publish_invalidate(&payload).await {
-                    tracing::warn!(
-                        dep_key,
-                        route,
-                        error = %e,
-                        "FsrStore: Redis publish_invalidate failed"
-                    );
+                async move {
+                    if let Err(e) = redis.publish_invalidate(&payload).await {
+                        tracing::warn!(
+                            dep_key,
+                            route,
+                            error = %e,
+                            "FsrStore: Redis publish_invalidate failed"
+                        );
+                    }
                 }
-            }
+            });
+            futures_util::future::join_all(futures).await;
         }
 
         Ok(routes)

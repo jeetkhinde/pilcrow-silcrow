@@ -623,10 +623,7 @@ impl Req {
         let path = parts.uri.path().to_owned();
         let headers = parts.headers.clone();
         let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
-        let mutation_id = parts
-            .headers
-            .typed_get::<SilcrowMutationId>()
-            .map(|h| h.0);
+        let mutation_id = parts.headers.typed_get::<SilcrowMutationId>().map(|h| h.0);
         let action = extract_action_from_query(parts.uri.query());
         let query = parse_query_multi(parts.uri.query());
         let locale = parts
@@ -870,10 +867,7 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
     let headers = parts.headers.clone();
     let path = parts.uri.path().to_owned();
     let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
-    let mutation_id = parts
-        .headers
-        .typed_get::<SilcrowMutationId>()
-        .map(|h| h.0);
+    let mutation_id = parts.headers.typed_get::<SilcrowMutationId>().map(|h| h.0);
 
     // Shared per-request Locals: first extraction creates and inserts;
     // subsequent ones share the same Arc.

@@ -103,7 +103,11 @@ impl SilcrowEvent {
 
     /// Tag a `patch` event with a client-side mutation id so the client can confirm it.
     pub fn with_mutation_id(mut self, mutation_id: impl Into<String>) -> Self {
-        if let EventKind::Patch { mutation_id: ref mut mid, .. } = self.kind {
+        if let EventKind::Patch {
+            mutation_id: ref mut mid,
+            ..
+        } = self.kind
+        {
             *mid = Some(mutation_id.into());
         }
         self
@@ -130,7 +134,11 @@ impl From<SilcrowEvent> for Event {
     fn from(evt: SilcrowEvent) -> Event {
         let id = evt.id;
         match evt.kind {
-            EventKind::Patch { data, target, mutation_id } => match data {
+            EventKind::Patch {
+                data,
+                target,
+                mutation_id,
+            } => match data {
                 Err(e) => {
                     tracing::warn!("SilcrowEvent::patch dropped — serialization failed: {e}");
                     Event::default().comment("pilcrow:serialize_error")

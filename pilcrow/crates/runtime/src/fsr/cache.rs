@@ -80,10 +80,7 @@ mod inner {
         }
 
         /// `HGETALL pilcrow:slot:<route>`
-        pub async fn get_slots(
-            &self,
-            route: &str,
-        ) -> redis::RedisResult<HashMap<String, String>> {
+        pub async fn get_slots(&self, route: &str) -> redis::RedisResult<HashMap<String, String>> {
             let mut c = self.conn.clone();
             c.hgetall(slot_key(route)).await
         }
@@ -99,10 +96,7 @@ mod inner {
         }
 
         /// `GET pilcrow:json:<route>`
-        pub async fn get_json(
-            &self,
-            route: &str,
-        ) -> redis::RedisResult<Option<serde_json::Value>> {
+        pub async fn get_json(&self, route: &str) -> redis::RedisResult<Option<serde_json::Value>> {
             let mut c = self.conn.clone();
             let s: Option<String> = c.get(json_key(route)).await?;
             Ok(s.and_then(|s| serde_json::from_str(&s).ok()))
