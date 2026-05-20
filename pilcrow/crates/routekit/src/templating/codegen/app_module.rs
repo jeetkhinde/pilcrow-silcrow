@@ -62,7 +62,7 @@ fn emit_ps_fragment_check(layout_chain: &[String], slot: &str) -> String {
     let _ = writeln!(s, "            const __PS_SLOT: &str = {slot_lit};");
     s.push_str("            let __is_ps_fragment = req.headers.get(\"x-ps-present\")\n");
     s.push_str("                .and_then(|v| v.to_str().ok())\n");
-    s.push_str("                .map(|present| __PS_LAYOUT_CHAIN.iter().all(|p| present.split(',').map(str::trim).any(|h| h == *p)))\n");
+    s.push_str("                .map(|present| { let __layouts: ::std::collections::HashSet<&str> = present.split(',').map(str::trim).collect(); __PS_LAYOUT_CHAIN.iter().all(|p| __layouts.contains(p)) })\n");
     s.push_str("                .unwrap_or(false);\n");
     s.push_str("            let html = if __is_ps_fragment {\n");
     s.push_str(
@@ -71,6 +71,34 @@ fn emit_ps_fragment_check(layout_chain: &[String], slot: &str) -> String {
     s.push_str("            } else {\n");
     s.push_str("                html\n");
     s.push_str("            };\n");
+    s
+}
+
+/// Emit the if/else block that:
+/// - When `__is_ps_fragment`: returns fragment response with x-ps-fragment=1 content-type,
+///   applying __resp_handle when `needs_req` is true.
+/// - Otherwise: returns full-page Html response, applying __resp_handle when `needs_req` is true.
+///
+/// Callers must have already emitted `emit_ps_fragment_check(...)` before this.
+fn emit_ps_response(needs_req: bool) -> String {
+    let mut s = String::new();
+    s.push_str("            if __is_ps_fragment {\n");
+    if needs_req {
+        s.push_str("                let mut __response = (::pilcrow_web::StatusCode::OK, [(::pilcrow_web::axum::http::header::CONTENT_TYPE, \"text/html; x-ps-fragment=1\")], html).into_response();\n");
+        s.push_str("                __resp_handle.apply_to(&mut __response);\n");
+        s.push_str("                __response\n");
+    } else {
+        s.push_str("                (::pilcrow_web::StatusCode::OK, [(::pilcrow_web::axum::http::header::CONTENT_TYPE, \"text/html; x-ps-fragment=1\")], html).into_response()\n");
+    }
+    s.push_str("            } else {\n");
+    if needs_req {
+        s.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
+        s.push_str("            __resp_handle.apply_to(&mut __response);\n");
+        s.push_str("            __response\n");
+    } else {
+        s.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
+    }
+    s.push_str("            }\n");
     s
 }
 
