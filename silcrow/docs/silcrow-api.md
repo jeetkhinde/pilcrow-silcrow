@@ -44,6 +44,9 @@
 - `s-sse`
 - `s-ws`
 - `s-wss`
+- `data-pilcrow-live="<url>"` — auto-injected by Pilcrow codegen for pages with `LiveProp<T>` fields; Silcrow discovers this element and opens a managed SSE connection to `url`. Do not write manually.
+- `data-pilcrow-list="<field>"` — marks a list container; `list-patch` events target rows within this element by `data-pilcrow-key`. Auto-injected by Pilcrow codegen (Slice F).
+- `data-pilcrow-key="<key>"` — marks a list row with its unique key; targeted by `list-patch` events. Auto-injected by Pilcrow codegen (Slice F).
 
 **Atoms / Store**
 - `s-bind`
@@ -83,6 +86,8 @@
 - `invalidate`
 - `navigate`
 - `custom`
+- `live` — payload: flat JSON object `{ "<field>": <value>, ... }`. Patches all `[data-pilcrow-live-field="field"]` text nodes. Emitted by Pilcrow's per-page SSE route (`/__pilcrow/live{pattern}`) for `LiveProp<T>` fields.
+- `list-patch` — payload: `{ "list": "<field>", "key": "<row_key>", "<changed_field>": <value>, ... }`. Silcrow finds `[data-pilcrow-list="field"]` then `[data-pilcrow-key="row_key"]` within it, and calls `patch(changes, row)`.
 
 ## WebSocket Message Types
 
