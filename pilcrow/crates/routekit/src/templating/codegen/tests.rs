@@ -243,6 +243,86 @@ pub struct Live {
         );
     }
 
+    #[test]
+    fn live_anchor_emits_data_pilcrow_live_element() {
+        use super::app_module::{AppCodegenMaps, render_generated_app_module};
+        use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
+        use std::collections::HashMap;
+
+        let page_entry = GeneratedPageRoute {
+            pattern: "/dashboard".to_string(),
+            template_path: "/tmp/src/pages/dashboard.html".to_string(),
+            symbol: "page_dashboard".to_string(),
+            render_symbol: "render_page_dashboard".to_string(),
+            route_params: vec![],
+            param_matchers: HashMap::new(),
+        };
+
+        let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
+        live_fields_map.insert(
+            "page_dashboard".to_string(),
+            vec!["counter".to_string()],
+        );
+
+        let mut load_map: HashMap<String, Option<crate::templating::codegen::LoadSignature>> =
+            HashMap::new();
+        load_map.insert(
+            "page_dashboard".to_string(),
+            Some(crate::templating::codegen::LoadSignature {
+                is_async: true,
+                wants_client: false,
+                wants_req: true,
+                wants_page: false,
+                wants_live: false,
+                returns_result: true,
+            }),
+        );
+
+        let maps = AppCodegenMaps {
+            load_map: &load_map,
+            layout_fields_map: &HashMap::new(),
+            error_module_for_page: &HashMap::new(),
+            not_found_module: None,
+            loading_module_for_page: &HashMap::new(),
+            action_map: &HashMap::new(),
+            page_options_map: &HashMap::new(),
+            ssg_config_map: &HashMap::new(),
+            live_fields_map: &live_fields_map,
+            has_live_fn_map: &HashMap::new(),
+            fsr_live_source_map: &HashMap::new(),
+            fsr_live_fields_map: &HashMap::new(),
+            layout_chain_ids_map: &HashMap::new(),
+            page_slot_map: &HashMap::new(),
+        };
+
+        let source = render_generated_app_module(
+            &[page_entry],
+            &[],
+            &maps,
+            HookFlags {
+                has_handle: false,
+                has_handle_error: false,
+                has_init: false,
+            },
+            false,
+            false,
+        )
+        .expect("render_generated_app_module should succeed");
+
+        assert!(
+            source.contains("data-pilcrow-live"),
+            "expected data-pilcrow-live anchor element, got:\n{source}"
+        );
+        assert!(
+            !source.contains("__LIVE_SHIM"),
+            "__LIVE_SHIM should not appear in generated source"
+        );
+        assert!(
+            !source.contains("window.__pilcrow_live_patch"),
+            "inline patch function should not appear in generated source"
+        );
+    }
+
     fn mk_temp_root(prefix: &str) -> PathBuf {
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
