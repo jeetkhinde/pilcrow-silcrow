@@ -38,6 +38,23 @@ pub struct Props {}
             color: #444;
         }
 
+        /* Skip Link */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #000;
+            color: white;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.2s;
+            text-decoration: none;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
         /* Nav */
         nav {
             display: flex;
@@ -52,10 +69,16 @@ pub struct Props {}
             color: #555;
             font-weight: 500;
             font-size: 0.95rem;
+            border-radius: 4px;
         }
 
         nav a:hover {
             color: #000;
+        }
+
+        nav a:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
         }
 
         /* Category filter */
@@ -176,8 +199,11 @@ pub struct Props {}
 </head>
 
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <Nav />
-    <slot />
+    <main id="main-content">
+        <slot />
+    </main>
     <script src="{{ pilcrow_web::assets::assets::silcrow_js_path() }}" defer></script>
 </body>
 
