@@ -26,7 +26,35 @@ fn find_slot_div<'a>(html: &'a str, slot_pattern: &str) -> Option<&'a str> {
     let mut depth = 1usize;
     let mut i = 0;
     let inner = &html[after..];
+    let mut in_raw = false; // true when inside <script> or <style> content
     while i < inner.len() {
+        // Track entry into raw-text elements (script/style) to skip their content.
+        if !in_raw && inner[i..].starts_with("<script") {
+            if let Some(close) = inner[i..].find('>') {
+                i += close + 1;
+                in_raw = true;
+                continue;
+            }
+        }
+        if !in_raw && inner[i..].starts_with("<style") {
+            if let Some(close) = inner[i..].find('>') {
+                i += close + 1;
+                in_raw = true;
+                continue;
+            }
+        }
+        if in_raw {
+            if inner[i..].starts_with("</script>") {
+                i += 9;
+                in_raw = false;
+            } else if inner[i..].starts_with("</style>") {
+                i += 8;
+                in_raw = false;
+            } else {
+                i += inner[i..].chars().next().map_or(1, |c| c.len_utf8());
+            }
+            continue;
+        }
         if inner[i..].starts_with("<div") {
             let nc = inner[i + 4..].chars().next();
             if nc.map_or(false, |c| c == '>' || c == ' ' || c == '\n' || c == '\t' || c == '/') {
@@ -77,5 +105,15 @@ mod tests {
         let result = extract_ps_fragment(html, "/a");
         assert!(result.contains(r#"<div data-ps-slot="/a">"#));
         assert!(result.contains("deep"));
+    }
+
+    #[test]
+    fn script_content_with_div_string_does_not_confuse_scanner() {
+        let html = r#"<div data-ps-slot="/a"><script>var x = "</div>";</script><p>real</p></div>"#;
+        let result = find_slot_div(html, "/a");
+        assert!(result.is_some(), "should find slot");
+        let s = result.unwrap();
+        assert!(s.contains("real"), "should include real content: {s}");
+        assert!(s.ends_with("</div>"), "should close at correct div: {s}");
     }
 }

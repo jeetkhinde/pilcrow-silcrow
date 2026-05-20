@@ -571,17 +571,7 @@ pub fn render_generated_app_module(
             if !ps_layout_chain.is_empty() {
                 if let Some(slot) = ps_page_slot {
                     out.push_str(&emit_ps_fragment_check(ps_layout_chain, slot));
-                    out.push_str("            if __is_ps_fragment {\n");
-                    out.push_str("                (::pilcrow_web::StatusCode::OK, [(::pilcrow_web::axum::http::header::CONTENT_TYPE, \"text/html; x-ps-fragment=1\")], html).into_response()\n");
-                    out.push_str("            } else {\n");
-                    if needs_req {
-                        out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
-                        out.push_str("            __resp_handle.apply_to(&mut __response);\n");
-                        out.push_str("            __response\n");
-                    } else {
-                        out.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
-                    }
-                    out.push_str("            }\n");
+                    out.push_str(&emit_ps_response(needs_req));
                 } else if needs_req {
                     out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
                     out.push_str("            __resp_handle.apply_to(&mut __response);\n");
@@ -845,13 +835,7 @@ pub fn render_generated_app_module(
                 if !ps_layout_chain.is_empty() {
                     if let Some(slot) = ps_page_slot {
                         out.push_str(&emit_ps_fragment_check(ps_layout_chain, slot));
-                        out.push_str("            if __is_ps_fragment {\n");
-                        out.push_str("                (::pilcrow_web::StatusCode::OK, [(::pilcrow_web::axum::http::header::CONTENT_TYPE, \"text/html; x-ps-fragment=1\")], html).into_response()\n");
-                        out.push_str("            } else {\n");
-                        out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
-                        out.push_str("            __resp_handle.apply_to(&mut __response);\n");
-                        out.push_str("            __response\n");
-                        out.push_str("            }\n");
+                        out.push_str(&emit_ps_response(true)); // live props branch always has needs_req=true
                     } else {
                         out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
                         out.push_str("            __resp_handle.apply_to(&mut __response);\n");
