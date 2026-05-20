@@ -1752,7 +1752,10 @@ function isSafeBoostHref(anchor) {
   try {
     const url = new URL(href, location.origin);
     if (url.protocol === "mailto:" || url.protocol === "tel:") return false;
-    return url.origin === location.origin;
+    if (url.origin !== location.origin) return false;
+    // Don't intercept same-page hash jumps; let the browser handle native scrolling.
+    if (url.hash && url.pathname === location.pathname) return false;
+    return true;
   } catch (e) {
     return false;
   }
@@ -1763,7 +1766,7 @@ function resolveBoostTarget(anchor) {
   const sel = anchor.getAttribute("s-target");
   if (sel) {
     const t = document.querySelector(sel);
-    if (t) return t;
+    if (t) return {el: t, selector: sel};
   }
   // 2. closest ancestor with [s-target]
   const parent = anchor.closest("[s-target]");
@@ -1771,10 +1774,10 @@ function resolveBoostTarget(anchor) {
     const sel2 = parent.getAttribute("s-target");
     if (sel2) {
       const t2 = document.querySelector(sel2);
-      if (t2) return t2;
+      if (t2) return {el: t2, selector: sel2};
     }
   }
-  return document.body;
+  return {el: document.body, selector: null};
 }
 
 function getBoostTarget(boostEl) {
@@ -2079,14 +2082,14 @@ function applyFragment(fragmentHtml) {
 
   // 2. Extract slot div and swap
   const slotEl = parseFragmentSlot(fragmentHtml);
-  if (!slotEl) return;
+  if (!slotEl) return false;
   const slotPattern = slotEl.getAttribute("data-ps-slot");
   const domSlot = slotPattern
     ? document.querySelector(`[data-ps-slot="${CSS.escape(slotPattern)}"]`)
     : null;
-  if (domSlot) {
-    safeSetHTML(domSlot, slotEl.innerHTML, {allowStyleTags: false});
-  }
+  if (!domSlot) return false;
+  safeSetHTML(domSlot, slotEl.innerHTML, {allowStyleTags: false});
+  return true;
 }
 
 // ── Core Navigate ──────────────────────────────────────────
@@ -2098,11 +2101,12 @@ async function navigate(url, options = {}) {
     trigger = "click",
     skipHistory = false,
     sourceEl = null,
+    targetSelector: explicitTargetSelector = null,
   } = options;
 
   const fullUrl = new URL(url, location.origin).href;
   let targetEl = target || document.body;
-  const targetSelector = sourceEl?.getAttribute("s-target") || null;
+  const targetSelector = explicitTargetSelector || sourceEl?.getAttribute("s-target") || null;
   const shouldPushHistory = !skipHistory && !targetSelector && method === "GET";
 
   const event = new CustomEvent("silcrow:navigate", {
@@ -2127,7 +2131,8 @@ async function navigate(url, options = {}) {
   showLoading(targetEl);
 
   try {
-    let cached = method === "GET" ? cacheGet(fullUrl) : null;
+    const navCacheKey = method === "GET" ? fullUrl + "|" + (collectLayoutPatterns() || "") : null;
+    let cached = navCacheKey ? cacheGet(navCacheKey) : null;
 
     let text, contentType, redirected = false, finalUrl = fullUrl, pushUrl = null;
     let sideEffects = null;
@@ -2171,8 +2176,8 @@ async function navigate(url, options = {}) {
       contentType = response.headers.get("Content-Type") || "";
 
       const cacheControl = response.headers.get("silcrow-cache");
-      if (method === "GET" && !redirected && cacheControl !== "no-cache") {
-        cacheSet(fullUrl, {text, contentType, ts: Date.now()});
+      if (method === "GET" && !redirected && cacheControl !== "no-cache" && navCacheKey) {
+        cacheSet(navCacheKey, {text, contentType, ts: Date.now()});
       }
 
       if (method !== "GET") {
@@ -2216,7 +2221,12 @@ async function navigate(url, options = {}) {
       swapExecuted = true;
       if (isFragment) {
         // PS fragment: swap only the changed slot, update head
-        applyFragment(text);
+        const applied = applyFragment(text);
+        if (!applied) {
+          // Slot absent in current DOM — fall back to full browser navigation.
+          window.location.assign(finalUrl);
+          return;
+        }
       } else if (isJSON) {
         patch(swapContent, targetEl);
       } else {
@@ -2332,15 +2342,17 @@ async function onClick(e) {
 
   e.preventDefault();
   const boostedUrl = new URL(anchor.getAttribute("href"), location.origin).href;
-  const inflight = preloadInflight.get(boostedUrl);
+  const boostCacheKey = boostedUrl + "|" + (collectLayoutPatterns() || "");
+  const inflight = preloadInflight.get(boostCacheKey);
   if (inflight) await inflight;
 
   // Target resolution: anchor[s-target] → closest([s-target]) → document.body
-  const targetEl = resolveBoostTarget(anchor);
+  const {el: targetEl, selector: boostTargetSelector} = resolveBoostTarget(anchor);
 
   navigate(boostedUrl, {
     method: "GET",
     target: targetEl,
+    targetSelector: boostTargetSelector,
     skipHistory: anchor.hasAttribute("s-skip-history"),
     sourceEl: anchor,
     trigger: "click",
@@ -2406,10 +2418,14 @@ function onPopState(e) {
 
 // ── Preload Handler ────────────────────────────────────────
 function startPreload(url, wantsHTML) {
-  if (responseCache.has(url) || preloadInflight.has(url)) return;
+  const cacheKey = url + "|" + (collectLayoutPatterns() || "");
+  if (responseCache.has(cacheKey) || preloadInflight.has(cacheKey)) return;
   const controller = new AbortController();
+  const present = collectLayoutPatterns();
+  const fetchHeaders = {"silcrow-target": "true", "Accept": wantsHTML ? "text/html" : "application/json"};
+  if (present) fetchHeaders["X-PS-Present"] = present;
   const promise = fetch(url, {
-    headers: {"silcrow-target": "true", "Accept": wantsHTML ? "text/html" : "application/json"},
+    headers: fetchHeaders,
     signal: controller.signal,
   })
     .then((r) => {
@@ -2423,12 +2439,12 @@ function startPreload(url, wantsHTML) {
       if (!entry) return;
       const {text, contentType, cacheControl} = entry;
       if (cacheControl !== "no-cache") {
-        cacheSet(url, {text, contentType, ts: Date.now()});
+        cacheSet(cacheKey, {text, contentType, ts: Date.now()});
       }
     })
     .catch(() => {})
-    .finally(() => preloadInflight.delete(url));
-  preloadInflight.set(url, promise);
+    .finally(() => preloadInflight.delete(cacheKey));
+  preloadInflight.set(cacheKey, promise);
 }
 
 function onMouseEnter(e) {

@@ -1292,22 +1292,18 @@ fn inject_ps_nav_markers(template: &str, head_inner: Option<&str>) -> String {
     // Process iteratively until no more remain (supports multiple nesting levels).
     for _ in 0..16 {
         const LO: &str = "__PS_LAYOUT_OPEN__";
-        const LS: &str = "__"; // separator after id
+        const LS: &str = "__";
         const LC: &str = "__PS_LAYOUT_CLOSE__";
-        let Some(lo_pos) = out.find(LO) else { break };
+        let Some(lo_pos) = out.rfind(LO) else { break };
         let id_start = lo_pos + LO.len();
         let Some(sep_off) = out[id_start..].find(LS) else { break };
-        let id = &out[id_start..id_start + sep_off].to_string();
+        let id = out[id_start..id_start + sep_off].to_string();
         let content_start = id_start + sep_off + LS.len();
         let Some(lc_off) = out[content_start..].find(LC) else { break };
-        let content = &out[content_start..content_start + lc_off].to_string();
+        let content = &out[content_start..content_start + lc_off];
         let replacement = format!("<div data-ps-layout=\"{id}\">{content}</div>");
-        out = format!(
-            "{}{}{}",
-            &out[..lo_pos],
-            replacement,
-            &out[content_start + lc_off + LC.len()..]
-        );
+        let end = content_start + lc_off + LC.len();
+        out.replace_range(lo_pos..end, &replacement);
     }
 
     // Replace slot marker: __PS_SLOT_OPEN__<pat>__...__PS_SLOT_CLOSE__
@@ -4237,5 +4233,22 @@ pub const LAYOUT: &str = "none";
             "head content stripped"
         );
         assert!(rendered.contains("<p>Body only</p>"), "body preserved");
+    }
+}
+
+#[cfg(test)]
+mod nav_marker_tests {
+    use super::inject_ps_nav_markers;
+
+    #[test]
+    fn nested_layout_markers_process_inside_out() {
+        let input = "__PS_LAYOUT_OPEN__/__OUTER__PS_LAYOUT_OPEN__/tickets__INNER__PS_LAYOUT_CLOSE____PS_LAYOUT_CLOSE__";
+        let result = inject_ps_nav_markers(input, None);
+        assert!(result.contains(r#"data-ps-layout="/""#), "outer missing: {result}");
+        assert!(result.contains(r#"data-ps-layout="/tickets""#), "inner missing: {result}");
+        // Inner must be nested inside outer
+        let outer_start = result.find(r#"data-ps-layout="/""#).unwrap();
+        let inner_start = result.find(r#"data-ps-layout="/tickets""#).unwrap();
+        assert!(inner_start > outer_start, "inner should be nested inside outer: {result}");
     }
 }
