@@ -150,6 +150,20 @@ The Askama template preprocessing uses plain-text sentinel strings (`__PS_SLOT_O
 
 ---
 
+### Slice E — SSE anchor + keyed list wire format  ✅ DONE
+
+**TODOs #11–#12**: `data-pilcrow-live` DOM anchor replaces inline LiveProp SSE script; `list-patch` SSE event type added.
+
+| Layer | File | What changed |
+|-------|------|--------------|
+| Rust | `pilcrow/crates/runtime/src/sse/server_sent_events.rs` | `EventKind::ListPatch`; `SilcrowEvent::list_patch(list, key, data)`; wire: `event: list-patch` + `{list, key, ...fields}` |
+| Codegen | `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` | Removed `__LIVE_SHIM` + inline EventSource script; injects `<div data-pilcrow-live="/__pilcrow/live{path}" style="display:none">` before `</body>` |
+| JS | `silcrow/src/silcrow.js` | `initLiveElements()` scans `[data-pilcrow-live]`; `connectSseHub()` adds `live` + `list-patch` listeners; post-swap re-scan + MutationObserver cleanup extended |
+| Docs | `silcrow/docs/silcrow-api.md` | `data-pilcrow-live`, `data-pilcrow-list`, `data-pilcrow-key` attributes; `live` and `list-patch` SSE events |
+| Registry | `pilcrow/registry.toml` | `sse-anchor` + `list-patch-wire-format` feature entries |
+
+---
+
 ## Design Decisions (locked)
 
 ### TODO #6 — Layout-aware navigation: route-segment diffing
@@ -238,8 +252,8 @@ Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/
 | 8 | `<pilcrow:head>` always runs on fragment / full page nav | ✅ Done (Slice D) |
 | 9 | History state stores layout hash | ✅ Done (Slice D) |
 | 10 | View Transitions API wraps all three nav modes | ✅ Done (Slice D) |
-| 11 | One SSE per page enforced — one `data-pilcrow-live` anchor per page; all producers merge via `select_all` | ⬜ Pending |
-| 12 | Keyed list patch wire format — `{ list, key, ...changed_fields }` SSE message; client targets `data-pilcrow-key` rows | ⬜ Pending |
+| 11 | One SSE per page enforced — one `data-pilcrow-live` anchor per page; all producers merge via `select_all` | ✅ Done (Slice E) |
+| 12 | Keyed list patch wire format — `{ list, key, ...changed_fields }` SSE message; client targets `data-pilcrow-key` rows | ✅ Done (Slice E) |
 | 13 | `#[pilcrow::key]` and `#[pilcrow::live]` field attributes — bare fields bake static HTML | ⬜ Pending |
 | 14 | List broadcast producer — one server-side producer per live list | ⬜ Pending |
 | 15 | Silcrow splits into cacheable same-origin modules at `/__pilcrow/runtime/` | ⬜ Pending |
@@ -258,7 +272,7 @@ Slice A  (done)   — #1, #20   Tombstone + progress file
 Slice B           — #2, #3    Collapse PRERENDER into FSR + timer watcher
 Slice C           — #4        Remove deprecated rendering paths
 Slice D           — #5–#10    Layout-aware navigation (s-boost, three-mode, scroll, head, history, view-transitions)
-Slice E           — #11, #12  One SSE per page + keyed list wire format
+Slice E  (done)   — #11, #12  One SSE per page + keyed list wire format
 Slice F           — #13–#14   #[pilcrow::key] / #[pilcrow::live] macros + list producer
 Slice G           — #15–#16   Silcrow module split + inline_runtime config
 Slice H           — #17–#19   Scroll-aware windowed baking + HTML chunk baking + Vec<T> list DX

@@ -796,31 +796,13 @@ pub fn render_generated_app_module(
                     out.push_str("                format!(\"{}{}\", __FSR_SCRIPT, html)\n");
                     out.push_str("            };\n");
                 }
-                // ── Live props: inject shim + s-sse anchor ────────────────────
+                // ── Live props: inject data-pilcrow-live anchor ───────────────
+                // Silcrow's initLiveElements() discovers [data-pilcrow-live] and
+                // manages the SSE connection and live-event patching.
                 if !live_fields.is_empty() && !has_fsr {
-                    let live_shim_str = "window.__pilcrow_live_patch=function(data){if(!data||typeof data!=='object')return;Object.keys(data).forEach(function(k){var v=data[k];document.querySelectorAll('[data-pilcrow-live-field=\"'+k+'\"]').forEach(function(n){n.textContent=v==null?'':String(v)})})}";
-                    let live_shim_tag = format!("<script>{live_shim_str}</script>");
-                    let live_shim_lit = rust_string(&live_shim_tag);
-                    let _ = writeln!(
-                        out,
-                        "            const __LIVE_SHIM: &str = {live_shim_lit};"
-                    );
-                    out.push_str(
-                        "            let html = if let Some(__pos) = html.find(\"</head>\") {\n",
-                    );
-                    out.push_str("                let mut __s = String::with_capacity(html.len() + __LIVE_SHIM.len());\n");
-                    out.push_str("                __s.push_str(&html[..__pos]);\n");
-                    out.push_str("                __s.push_str(__LIVE_SHIM);\n");
-                    out.push_str("                __s.push_str(&html[__pos..]);\n");
-                    out.push_str("                __s\n");
-                    out.push_str("            } else {\n");
-                    out.push_str("                format!(\"{}{}\", __LIVE_SHIM, html)\n");
-                    out.push_str("            };\n");
                     out.push_str("            let html = {\n");
-                    out.push_str("                let __live_anchor = format!(\"<script>(function(){{var es=new EventSource(\\\"/__pilcrow/live{}\\\");es.addEventListener(\\\"live\\\",function(e){{try{{window.__pilcrow_live_patch(JSON.parse(e.data))}}catch(x){{}}}});}})()</script>\", __live_path);\n");
-                    out.push_str(
-                        "                if let Some(__pos) = html.rfind(\"</body>\") {\n",
-                    );
+                    out.push_str("                let __live_anchor = format!(\"<div data-pilcrow-live=\\\"/__pilcrow/live{}\\\" style=\\\"display:none\\\"></div>\", __live_path);\n");
+                    out.push_str("                if let Some(__pos) = html.rfind(\"</body>\") {\n");
                     out.push_str("                    let mut __s = String::with_capacity(html.len() + __live_anchor.len());\n");
                     out.push_str("                    __s.push_str(&html[..__pos]);\n");
                     out.push_str("                    __s.push_str(&__live_anchor);\n");

@@ -1272,6 +1272,45 @@ function connectSseHub(hub) {
     }
   });
 
+  es.addEventListener("live", function (e) {
+    try {
+      const data = JSON.parse(e.data);
+      if (!data || typeof data !== "object" || Array.isArray(data)) return;
+      Object.keys(data).forEach(function (k) {
+        const v = data[k];
+        document.querySelectorAll('[data-pilcrow-live-field="' + k + '"]').forEach(function (n) {
+          n.textContent = v == null ? "" : String(v);
+        });
+      });
+    } catch (err) {
+      warn("Failed to parse SSE live event: " + err.message);
+    }
+  });
+
+  es.addEventListener("list-patch", function (e) {
+    try {
+      const payload = JSON.parse(e.data);
+      if (!payload || typeof payload !== "object") return;
+      const listName = payload.list;
+      const key = String(payload.key);
+      if (!listName || payload.key == null) return;
+      const container = document.querySelector(
+        '[data-pilcrow-list="' + CSS.escape(listName) + '"]'
+      );
+      if (!container) return;
+      const row = container.querySelector(
+        '[data-pilcrow-key="' + CSS.escape(key) + '"]'
+      );
+      if (!row) return;
+      const changes = Object.assign({}, payload);
+      delete changes.list;
+      delete changes.key;
+      patch(changes, row);
+    } catch (err) {
+      warn("Failed to parse SSE list-patch event: " + err.message);
+    }
+  });
+
   es.onerror = function () {
     es.close();
     hub.es = null;
@@ -1372,13 +1411,19 @@ function destroyAllLive() {
  * Strict protocol enforcement.
  */
 function initLiveElements() {
-  // 1. Server-Sent Events (SSE)
+  // 1. Pilcrow-injected live prop anchor (auto-injected by codegen)
+  document.querySelectorAll("[data-pilcrow-live]").forEach(el => {
+    const url = el.getAttribute("data-pilcrow-live");
+    if (url) openLive(el, url);
+  });
+
+  // 2. Server-Sent Events (SSE)
   document.querySelectorAll("[s-sse]").forEach(el => {
     const url = el.getAttribute("s-sse");
     if (url) openLive(el, url);
   });
 
-  // 2. WebSockets (WS/WSS)
+  // 3. WebSockets (WS/WSS)
   document.querySelectorAll("[s-ws], [s-wss]").forEach(el => {
     const url = el.getAttribute("s-ws") || el.getAttribute("s-wss");
     if (url) openWsLive(el, url);
@@ -2026,9 +2071,13 @@ function finalizeNavigation(ctx) {
     })
   );
 
-  // Re-initialize any [s-sse] elements that arrived in the swapped content.
+  // Re-initialize any live connection elements that arrived in the swapped content.
   // The MutationObserver cleans up removed elements; this connects the new ones.
   if (targetEl) {
+    targetEl.querySelectorAll("[data-pilcrow-live]").forEach(function (el) {
+      const url = el.getAttribute("data-pilcrow-live");
+      if (url) openLive(el, url);
+    });
     targetEl.querySelectorAll("[s-sse]").forEach(function (el) {
       const url = el.getAttribute("s-sse");
       if (url) openLive(el, url);
@@ -2604,7 +2653,7 @@ function init() {
         unbindElementAtoms(removed);
 
         if (removed.querySelectorAll) {
-          for (const child of removed.querySelectorAll("[s-sse], [s-ws], [s-wss]")) {
+          for (const child of removed.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]")) {
             cleanupLiveNode(child);
           }
           for (const child of removed.querySelectorAll("[s-bind]")) {
