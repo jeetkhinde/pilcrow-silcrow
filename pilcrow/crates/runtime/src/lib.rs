@@ -48,6 +48,7 @@ pub mod isr;
 #[cfg(feature = "live-props")]
 pub mod live_props;
 pub mod middleware;
+pub mod nav;
 pub mod response;
 pub mod sse;
 pub mod start;
@@ -87,6 +88,7 @@ pub use axum;
 pub use response::response::html;
 
 pub use deferred::{__live_props_response, LiveProp, LiveTarget};
+pub use nav::extract_ps_fragment;
 // ── ISR / SSG cache ──────────────────────────────────────────
 pub use isr::{IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────

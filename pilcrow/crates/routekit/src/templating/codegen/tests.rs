@@ -89,6 +89,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("template module should generate");
 
@@ -112,6 +114,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("synthesized Props should compile");
 
@@ -138,6 +142,8 @@ mod tests {
                 optional: false,
                 catch_all: false,
             }],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("typed page params should generate");
 
@@ -162,6 +168,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect_err("duplicate props should fail");
 
@@ -197,6 +205,8 @@ pub struct Live {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect_err("mismatched FSR live slots should fail");
 
@@ -390,6 +400,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("should generate with PRERENDER constant");
 
@@ -436,6 +448,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("should generate with entries fn");
 
@@ -458,6 +472,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("should generate");
         assert!(generated.ssg_config_map.get("page_index").is_none());
@@ -475,6 +491,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("STREAMING should be ignored, not a build error");
     }

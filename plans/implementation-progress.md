@@ -115,6 +115,41 @@ spawn_embedded_watcher(store, WatcherConfig {
 
 ---
 
+### Slice D — Layout-aware navigation  ✅ DONE
+
+**TODOs #5–#10**: Global boost, layout-aware nav, scroll modes, head template, history hash, View Transitions.
+
+**Files changed:**
+| File | Change |
+|------|--------|
+| `pilcrow/crates/runtime/src/nav.rs` | NEW — `extract_ps_fragment()` extracts `<template data-ps-head>` + `<div data-ps-slot>` from full HTML |
+| `pilcrow/crates/runtime/src/lib.rs` | Added `pub mod nav; pub use nav::extract_ps_fragment;` |
+| `pilcrow/crates/web/src/lib.rs` | Re-exports `extract_ps_fragment` |
+| `pilcrow/crates/routekit/src/templating/pipeline.rs` | Helper fns `layout_id_from_path`, `page_slot_pattern`, `extract_pilcrow_head_inner`, `inject_ps_nav_markers`; sentinel-based PS marker injection + post-expansion replacement; new fields `layout_chain_ids`, `page_slot`, `ps_head_inner` on `HtmlModuleSource` + `PreprocessedHtmlFile` |
+| `pilcrow/crates/routekit/src/templating/codegen/types.rs` | Added `layout_chain_ids: Vec<String>` and `page_slot: Option<String>` to `TemplateCodegenInput` |
+| `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` | Added `layout_chain_ids_map`, `page_slot_map` to `AppCodegenMaps`; `emit_ps_fragment_check()` helper; fragment-response branching in all three handler cases |
+| `pilcrow/crates/routekit/src/templating/codegen/tests.rs` | Updated all `TemplateCodegenInput` literals with new fields |
+| `silcrow/src/silcrow.js` | Global boost (no `s-boost` container required); `no-boost` opt-out; `resolveBoostTarget`; `collectLayoutPatterns`; `X-PS-Present` header in `buildFetchOptions`; `applyFragment`, `applyHeadTemplate`, `extractHeadTemplate`, `parseFragmentSlot` helpers; fragment detection + swap in `navigate`; head template applied on full page nav; View Transitions API wrapper; scroll-mode-aware `finalizeNavigation`; `layoutHash` in `history.pushState` |
+| `silcrow/docs/silcrow-api.md` | Added `no-boost`, `data-ps-layout`, `data-ps-slot`, `X-PS-Present`, fragment content-type |
+| `pilcrow/registry.toml` | Added `layout-aware-navigation` feature entry |
+
+**Behaviour:**
+
+1. Every `<a href>` to a same-origin URL is intercepted unless it has `no-boost`, `target="_blank"`, `download`, or a `mailto:`/`tel:` protocol.
+2. On navigation, Silcrow reads all `[data-ps-layout]` values from the DOM and sends them as `X-PS-Present: /,/tickets` (comma-separated).
+3. The server checks whether all layout IDs in the target route's chain are present. If yes, it calls `extract_ps_fragment()` and returns `Content-Type: text/html; x-ps-fragment=1`.
+4. Silcrow detects the fragment content-type, calls `applyFragment()` which swaps `[data-ps-slot="<pattern>"]` and upserts head elements.
+5. On full-page nav, `<template data-ps-head>` in the new body is parsed and head elements are upserted.
+6. Scroll: full-page → top, fragment → top (body target), fragment → preserve (element target).
+7. History state includes `layoutHash` for layout-aware back/forward.
+8. All swaps are wrapped in `document.startViewTransition()` when available.
+
+**PS marker injection detail:**
+
+The Askama template preprocessing uses plain-text sentinel strings (`__PS_SLOT_OPEN__pat__`, `__PS_SLOT_CLOSE__`, etc.) that survive the named-slot distribution system. After `expand_known_components`, `inject_ps_nav_markers()` replaces them with real `<div data-ps-slot>`, `<div data-ps-layout>`, and `<template data-ps-head>` elements.
+
+---
+
 ## Design Decisions (locked)
 
 ### TODO #6 — Layout-aware navigation: route-segment diffing
@@ -197,12 +232,12 @@ Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/
 | 2 | Unify `PRERENDER = true` → `promote_after = 0, prebake = true`; collapse `emit_ssg_handler` / `emit_isr_handler` into FSR path | ✅ Done (Slice B — route-level PROMOTE_AFTER constant + PRERENDER→FSR mapping; full emit_ssg collapse deferred to Slice C) |
 | 3 | Timer-based watcher — fires `invalidate_dep_key` on a schedule (replaces REVALIDATE TTL) | ✅ Done (Slice B — `ScheduledInvalidation` + `WatcherConfig::scheduled_invalidations`) |
 | 4 | Deprecate and remove: STREAMING, REVALIDATE, MAX_STALE, `Deferred<T>`, `DeferredHtml`, ISR cache inspect endpoint, filesystem ISR cache, combined PRERENDER+REVALIDATE, Static Export | ✅ Done (Slice C) |
-| 5 | s-boost opt-out by default — auto-skip external origin, download, `mailto:`, hash-only, `s-boost="false"` | ⬜ Pending |
-| 6 | Layout-aware navigation — route-segment diffing; `data-ps-layout` / `data-ps-slot` auto-injected by codegen at layout boundaries; `X-PS-Present` header drives delta-only server renders | ⬜ Pending |
-| 7 | Scroll behaviour per mode — full→top, fragment→main-top, JSON→preserve | ⬜ Pending |
-| 8 | `<pilcrow:head>` always runs on fragment / JSON nav | ⬜ Pending |
-| 9 | History state stores layout hash | ⬜ Pending |
-| 10 | View Transitions API wraps all three nav modes | ⬜ Pending |
+| 5 | s-boost opt-out by default — auto-skip external origin, download, `mailto:`, hash-only, `no-boost` attribute | ✅ Done (Slice D) |
+| 6 | Layout-aware navigation — route-segment diffing; `data-ps-layout` / `data-ps-slot` auto-injected by codegen at layout boundaries; `X-PS-Present` header drives delta-only server renders | ✅ Done (Slice D) |
+| 7 | Scroll behaviour per mode — full→top, fragment→main-top, JSON→preserve | ✅ Done (Slice D) |
+| 8 | `<pilcrow:head>` always runs on fragment / full page nav | ✅ Done (Slice D) |
+| 9 | History state stores layout hash | ✅ Done (Slice D) |
+| 10 | View Transitions API wraps all three nav modes | ✅ Done (Slice D) |
 | 11 | One SSE per page enforced — one `data-pilcrow-live` anchor per page; all producers merge via `select_all` | ⬜ Pending |
 | 12 | Keyed list patch wire format — `{ list, key, ...changed_fields }` SSE message; client targets `data-pilcrow-key` rows | ⬜ Pending |
 | 13 | `#[pilcrow::key]` and `#[pilcrow::live]` field attributes — bare fields bake static HTML | ⬜ Pending |

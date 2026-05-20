@@ -838,11 +838,17 @@ function buildMaps(root) {
 }
 
 function patch(data, root, options = {}) {
-  const element = resolveRoot(root);
-
   let transformedData = data;
   try {
-    transformedData = patchMiddleware.reduce((acc, fn) => fn(safeClone(acc)) ?? acc, safeClone(data));
+    if (patchMiddleware.length > 0) {
+      let acc = safeClone(data);
+      for (const fn of patchMiddleware) {
+        acc = fn(acc) ?? acc;
+      }
+      transformedData = acc;
+    } else if (data?._toasts) {
+      transformedData = Array.isArray(data) ? data.slice() : Object.assign({}, data);
+    }
   } catch (err) {
     transformedData = data;
   }
@@ -859,7 +865,7 @@ function patch(data, root, options = {}) {
   ) {
     transformedData = transformedData.data;
   }
-
+  const element = resolveRoot(root);
   let instance = instanceCache.get(element);
   if (!instance || options.invalidate) {
     instance = buildMaps(element);
@@ -1738,16 +1744,37 @@ function getTarget(el) {
 
 // ── Boost helpers ──────────────────────────────────────────
 function isSafeBoostHref(anchor) {
+  if (anchor.hasAttribute("no-boost")) return false;
   const href = anchor.getAttribute("href");
   if (!href || href.startsWith("#")) return false;
   if (anchor.hasAttribute("download")) return false;
   if (anchor.getAttribute("target") === "_blank") return false;
   try {
     const url = new URL(href, location.origin);
+    if (url.protocol === "mailto:" || url.protocol === "tel:") return false;
     return url.origin === location.origin;
   } catch (e) {
     return false;
   }
+}
+
+function resolveBoostTarget(anchor) {
+  // 1. anchor[s-target] attribute
+  const sel = anchor.getAttribute("s-target");
+  if (sel) {
+    const t = document.querySelector(sel);
+    if (t) return t;
+  }
+  // 2. closest ancestor with [s-target]
+  const parent = anchor.closest("[s-target]");
+  if (parent) {
+    const sel2 = parent.getAttribute("s-target");
+    if (sel2) {
+      const t2 = document.querySelector(sel2);
+      if (t2) return t2;
+    }
+  }
+  return document.body;
 }
 
 function getBoostTarget(boostEl) {
@@ -1850,6 +1877,17 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
   }
 }
 
+// ── Layout-Aware Navigation Helpers ───────────────────────
+function collectLayoutPatterns() {
+  const els = document.querySelectorAll("[data-ps-layout]");
+  const patterns = [];
+  els.forEach(function(el) {
+    const v = el.getAttribute("data-ps-layout");
+    if (v) patterns.push(v);
+  });
+  return patterns.length > 0 ? patterns.join(",") : "";
+}
+
 // ── Fetch Request Construction ─────────────────────────────
 function buildFetchOptions(method, body, wantsHTML, signal) {
   const opts = {
@@ -1860,6 +1898,12 @@ function buildFetchOptions(method, body, wantsHTML, signal) {
     },
     signal,
   };
+
+  // Add X-PS-Present for GET requests (layout-aware navigation)
+  if (method === "GET") {
+    const present = collectLayoutPatterns();
+    if (present) opts.headers["X-PS-Present"] = present;
+  }
 
   if (body) {
     if (body instanceof FormData) {
@@ -1938,22 +1982,36 @@ function prepareSwapContent(text, contentType, targetSelector) {
 // ── Post-Swap Finalization ─────────────────────────────────
 function finalizeNavigation(ctx) {
   const {pushUrl, redirected, finalUrl, fullUrl, shouldPushHistory,
-    trigger, targetSelector, targetEl, sideEffects} = ctx;
+    trigger, targetSelector, targetEl, sideEffects, isFragment} = ctx;
 
   processSideEffectHeaders(sideEffects, targetEl);
 
+  // #9: Include layoutHash in history state for layout-aware back/forward
   const finalHistoryUrl = pushUrl || (redirected ? finalUrl : fullUrl);
   if (shouldPushHistory && trigger !== "popstate") {
+    const layoutHash = collectLayoutPatterns();
     history.pushState(
-      {silcrow: true, url: finalHistoryUrl, targetSelector},
+      {silcrow: true, url: finalHistoryUrl, targetSelector, layoutHash, scrollY: window.scrollY},
       "",
       finalHistoryUrl
     );
   }
 
+  // #7: Scroll behavior per mode
+  // - Full page (no slot): scroll to top
+  // - Fragment to body slot: scroll to top
+  // - Fragment to element slot: no scroll (preserve position)
+  // - JSON: preserve (no scroll)
+  // - Popstate: restore saved scrollY
   if (trigger === "popstate") {
     const saved = (history.state || {}).scrollY;
     window.scrollTo(0, saved || 0);
+  } else if (isFragment) {
+    // Fragment nav: scroll to top only if target is document.body
+    if (targetEl === document.body) {
+      window.scrollTo(0, 0);
+    }
+    // else: element swap, preserve scroll position
   } else if (shouldPushHistory) {
     window.scrollTo(0, 0);
   }
@@ -1972,6 +2030,62 @@ function finalizeNavigation(ctx) {
       const url = el.getAttribute("s-sse");
       if (url) openLive(el, url);
     });
+  }
+}
+
+// ── PS Fragment Helpers ────────────────────────────────────
+function extractHeadTemplate(html) {
+  const match = html.match(/<template data-ps-head>([\s\S]*?)<\/template>/);
+  return match ? match[1] : null;
+}
+
+function applyHeadTemplate(headHtml) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = headHtml;
+  const nodes = Array.from(tpl.content.childNodes);
+  nodes.forEach(function(node) {
+    if (node.nodeType !== 1) return; // Element nodes only
+    const tag = node.tagName.toLowerCase();
+    if (tag === "title") {
+      document.title = node.textContent;
+    } else if (tag === "meta") {
+      const name = node.getAttribute("name") || node.getAttribute("property");
+      if (name) {
+        const escaped = name.replace(/"/g, '\\"');
+        const existing = document.head.querySelector(
+          `meta[name="${escaped}"], meta[property="${escaped}"]`
+        );
+        if (existing) existing.replaceWith(node.cloneNode(true));
+        else document.head.appendChild(node.cloneNode(true));
+      }
+    } else if (tag === "link" && node.getAttribute("rel") === "canonical") {
+      const existing = document.head.querySelector("link[rel=canonical]");
+      if (existing) existing.replaceWith(node.cloneNode(true));
+      else document.head.appendChild(node.cloneNode(true));
+    }
+  });
+}
+
+function parseFragmentSlot(html) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  return tpl.content.querySelector("[data-ps-slot]");
+}
+
+function applyFragment(fragmentHtml) {
+  // 1. Extract and apply head template
+  const headHtml = extractHeadTemplate(fragmentHtml);
+  if (headHtml) applyHeadTemplate(headHtml);
+
+  // 2. Extract slot div and swap
+  const slotEl = parseFragmentSlot(fragmentHtml);
+  if (!slotEl) return;
+  const slotPattern = slotEl.getAttribute("data-ps-slot");
+  const domSlot = slotPattern
+    ? document.querySelector(`[data-ps-slot="${CSS.escape(slotPattern)}"]`)
+    : null;
+  if (domSlot) {
+    safeSetHTML(domSlot, slotEl.innerHTML, {allowStyleTags: false});
   }
 }
 
@@ -2088,30 +2202,49 @@ async function navigate(url, options = {}) {
       );
     }
 
+    // Detect PS fragment response
+    const isFragment = contentType.includes("x-ps-fragment=1");
+
     // Prepare and execute swap
-    const {swapContent, isJSON} = prepareSwapContent(text, contentType, targetSelector);
+    const {swapContent, isJSON} = isFragment
+      ? {swapContent: text, isJSON: false}
+      : prepareSwapContent(text, contentType, targetSelector);
 
     let swapExecuted = false;
     const proceed = () => {
       if (swapExecuted) return;
       swapExecuted = true;
-      if (isJSON) {
+      if (isFragment) {
+        // PS fragment: swap only the changed slot, update head
+        applyFragment(text);
+      } else if (isJSON) {
         patch(swapContent, targetEl);
       } else {
         safeSetHTML(targetEl, swapContent, {
           allowStyleTags: method === "GET" && !targetSelector && targetEl === document.body,
         });
+        // #8: Apply head updates from <template data-ps-head> in full page nav
+        if (!isJSON && !isFragment && targetEl === document.body) {
+          const headTplEl = targetEl.querySelector("template[data-ps-head]");
+          if (headTplEl) applyHeadTemplate(headTplEl.innerHTML);
+        }
       }
     };
 
     const beforeSwap = new CustomEvent("silcrow:before-swap", {
       bubbles: true,
       cancelable: true,
-      detail: {url: finalUrl, target: targetEl, content: swapContent, isJSON, proceed},
+      detail: {url: finalUrl, target: targetEl, content: swapContent, isJSON, isFragment, proceed},
     });
 
     if (!document.dispatchEvent(beforeSwap)) return;
-    if (!swapExecuted) proceed();
+
+    // #10: Wrap swap in View Transitions API if available
+    if (document.startViewTransition) {
+      document.startViewTransition(() => { if (!swapExecuted) proceed(); });
+    } else {
+      if (!swapExecuted) proceed();
+    }
 
     // Mirror top-level GET JSON into the route atom for headless consumers.
     // Skip fragment swaps (s-target set), non-GET, and HTML responses.
@@ -2127,7 +2260,7 @@ async function navigate(url, options = {}) {
     finalizeNavigation({
       pushUrl, redirected, finalUrl, fullUrl,
       shouldPushHistory, trigger, targetSelector, targetEl,
-      sideEffects,
+      sideEffects, isFragment,
     });
 
   } catch (err) {
@@ -2193,20 +2326,21 @@ async function onClick(e) {
     return;
   }
 
-  // 2. s-boost: intercept plain <a href> inside boosted containers
+  // 2. Global boost: intercept all same-origin <a href> unless no-boost
   const anchor = e.target.closest("a[href]");
   if (!anchor || !isSafeBoostHref(anchor)) return;
-  const boostEl = anchor.closest("[s-boost]");
-  if (!boostEl) return;
 
   e.preventDefault();
   const boostedUrl = new URL(anchor.getAttribute("href"), location.origin).href;
   const inflight = preloadInflight.get(boostedUrl);
   if (inflight) await inflight;
 
+  // Target resolution: anchor[s-target] → closest([s-target]) → document.body
+  const targetEl = resolveBoostTarget(anchor);
+
   navigate(boostedUrl, {
     method: "GET",
-    target: getBoostTarget(boostEl),
+    target: targetEl,
     skipHistory: anchor.hasAttribute("s-skip-history"),
     sourceEl: anchor,
     trigger: "click",
@@ -2308,8 +2442,8 @@ function onMouseEnter(e) {
     return;
   }
 
-  // s-boost: preload plain anchors with s-preload inside boosted containers
-  if (el.tagName === "A" && isSafeBoostHref(el) && el.closest("[s-boost]")) {
+  // Global boost: preload plain anchors with s-preload
+  if (el.tagName === "A" && isSafeBoostHref(el)) {
     const url = new URL(el.getAttribute("href"), location.origin).href;
     startPreload(url, el.hasAttribute("s-html"));
   }

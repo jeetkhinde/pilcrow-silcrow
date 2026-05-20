@@ -10,6 +10,7 @@ public/
 pilcrow/target/
 silcrow/node_modules
 graphify-out/
+.claude/worktrees/
 
 
 node_modules/
