@@ -2265,3 +2265,65 @@ test_refs = [
 ]
 validation_rules = []
 scaffold_templates = []
+
+[[features]]
+id = "layout-aware-navigation"
+name = "Layout-Aware Navigation (PS Fragment)"
+domain = "silcrow"
+status = "stable"
+summary = "Global boost interception, X-PS-Present header, fragment-only responses, head template hoisting, scroll management, history layout hash, and View Transitions API integration."
+spec = """
+Pilcrow codegen emits `data-ps-layout=\"<id>\"` wrapper divs for every layout level and a
+`data-ps-slot=\"<pattern>\"` wrapper on the page content. A `<template data-ps-head>` element
+holds head content that should be applied during fragment navigation.
+
+On every enhanced GET request, Silcrow collects all `[data-ps-layout]` values in the current
+DOM and sends them as `X-PS-Present: /,/tickets` (comma-separated). The generated Rust handler
+checks whether every layout-chain ID is present and, if so, calls `extract_ps_fragment(&html, slot)`
+which returns only the matching `[data-ps-slot]` div plus any `<template data-ps-head>`. The
+response carries `Content-Type: text/html; x-ps-fragment=1`.
+
+Silcrow's `navigate()` detects the `x-ps-fragment=1` content-type flag and calls `applyFragment()`
+which swaps only the `[data-ps-slot]` element in the live DOM and runs `applyHeadTemplate()` to
+merge `<template data-ps-head>` contents into `<head>`. Full-page navigations also apply head
+templates.
+
+Scroll behaviour: full-page to scroll to top; fragment targeting body to scroll to top; fragment
+targeting a specific element to preserve scroll. JSON responses always preserve scroll.
+
+`history.pushState` state includes `{ layoutHash: [...ids] }` for restoration on popstate.
+
+All DOM swaps are wrapped in `document.startViewTransition()` when the browser supports it,
+falling back to a direct swap otherwise.
+
+All same-origin `<a>` links are intercepted by default (global boost). Individual anchors opt out
+with the `no-boost` attribute. `mailto:` and `tel:` links are never intercepted.
+"""
+constraints = [
+  "data-ps-layout and data-ps-slot wrappers are auto-injected by codegen — do not write them manually.",
+  "X-PS-Present header is only sent on GET requests when layout wrappers are present in the DOM.",
+  "Fragment extraction requires every layout-chain ID to be present in X-PS-Present; partial matches serve the full page.",
+  "no-boost attribute opts a single anchor out of global boost interception.",
+  "pilcrow:head section must use <pilcrow:head> component tag in page templates (not raw <head>).",
+]
+invalid_examples = [
+  "Manually writing data-ps-layout or data-ps-slot attributes in page templates",
+  "Expecting fragment responses when only some (not all) layout IDs are in X-PS-Present",
+  "Using <head> tags inside page templates expecting them to be hoisted — use <pilcrow:head> instead",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs — inject_ps_nav_markers, layout_id_from_path, page_slot_pattern",
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_ps_fragment_check",
+  "crates/routekit/src/templating/codegen/types.rs — TemplateCodegenInput layout_chain_ids/page_slot",
+  "crates/runtime/src/nav.rs — extract_ps_fragment, find_slot_div, find_head_template",
+  "crates/runtime/assets/silcrow.js — collectLayoutPatterns, extractHeadTemplate, applyHeadTemplate, parseFragmentSlot, applyFragment",
+]
+test_refs = [
+  "crates/runtime/src/nav.rs — extract_ps_fragment_returns_slot_and_head, extract_ps_fragment_fallback_full_html, extract_ps_fragment_nested_divs",
+  "crates/routekit/src/templating/codegen/tests.rs",
+]
+validation_rules = [
+  "Fragment navigation requires both data-ps-layout wrappers and a data-ps-slot element in the rendered HTML.",
+  "The no-boost attribute on an anchor prevents Silcrow from intercepting that link.",
+]
+scaffold_templates = []

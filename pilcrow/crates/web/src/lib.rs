@@ -34,6 +34,9 @@ pub use runtime::{
 // ── Assets ───────────────────────────────────────────────────
 pub use runtime::assets;
 
+// ── Layout-aware navigation ───────────────────────────────────
+pub use runtime::extract_ps_fragment;
+
 // ── Domain primitives (from pilcrow-core) ────────────────────
 pub use pilcrow_core::{
     ApiEnvelope, AppError, AppResult, BackendConfig, HookError, Meta, PilcrowConfig, WebConfig,
