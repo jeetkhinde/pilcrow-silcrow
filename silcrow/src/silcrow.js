@@ -562,21 +562,35 @@ const URL_BINDING_PROPS = new Set([
   "poster", "cite", "background"
 ]);
 
-const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
 // ── Internal Utilities ──────────────────────────────────────
+
+// Caches path string → split segments so repeated lookups skip regex + split.
+// Stores null for paths that fail validation so they short-circuit on reuse.
+const pathCache = new Map();
 
 function resolvePath(obj, path) {
   if (typeof obj !== "object" || obj === null) return undefined;
-  if (!isValidPath(path)) return undefined;
-  const parts = path.split(".");
+
+  let parts = pathCache.get(path);
+  if (parts === undefined) {
+    if (!PATH_RE.test(path)) {
+      pathCache.set(path, null);
+      return undefined;
+    }
+    parts = path.split(".");
+    pathCache.set(path, parts);
+  } else if (parts === null) {
+    return undefined;
+  }
+
   let cur = obj;
-  for (const part of parts) {
-    if (BLOCKED_KEYS.has(part)) return undefined;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "__proto__" || part === "constructor" || part === "prototype") return undefined;
     if (!Object.prototype.hasOwnProperty.call(cur, part)) return undefined;
     cur = cur[part];
     if (cur === null || cur === undefined) {
-      return parts.indexOf(part) === parts.length - 1 ? cur : undefined;
+      return i === parts.length - 1 ? cur : undefined;
     }
   }
   return cur;
