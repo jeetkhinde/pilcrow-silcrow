@@ -46,14 +46,12 @@ pub fn expand(input: TokenStream) -> TokenStream {
             if !attr.path().is_ident("pilcrow") {
                 continue;
             }
-            // Parse `#[pilcrow(key)]` or `#[pilcrow(live)]`.
             let Ok(meta_list) = attr.meta.require_list() else { continue };
-            let tokens_str = meta_list.tokens.to_string();
-            let trimmed = tokens_str.trim();
-            if trimmed == "key" {
+            let Ok(arg) = meta_list.parse_args::<syn::Ident>() else { continue };
+            if arg == "key" {
                 key_count += 1;
                 key_field = Some((ident, &field.ty));
-            } else if trimmed == "live" {
+            } else if arg == "live" {
                 live_fields.push((ident, &field.ty));
             }
         }
@@ -68,17 +66,23 @@ pub fn expand(input: TokenStream) -> TokenStream {
         .into();
     }
 
-    let key_impl: TokenStream2 = match key_field {
-        Some((ident, _ty)) => quote! {
-            fn pilcrow_key(&self) -> ::std::string::String {
-                self.#ident.to_string()
-            }
-        },
-        None => quote! {
-            fn pilcrow_key(&self) -> ::std::string::String {
-                ::std::string::String::new()
-            }
-        },
+    // P1B: missing #[pilcrow(key)] is a compile error, not a silent empty key.
+    let key_ident = match key_field {
+        Some((ident, _ty)) => ident,
+        None => {
+            return syn::Error::new_spanned(
+                &input.ident,
+                "PilcrowListRow: exactly one field must be annotated #[pilcrow(key)]",
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let key_impl: TokenStream2 = quote! {
+        fn pilcrow_key(&self) -> ::std::string::String {
+            self.#key_ident.to_string()
+        }
     };
 
     let live_impls: TokenStream2 = {
@@ -103,8 +107,10 @@ pub fn expand(input: TokenStream) -> TokenStream {
         }
     };
 
+    // P1A: use ::pilcrow_web::live::ListRow — the stable consumer-facing path.
+    // ::runtime:: only resolves inside pilcrow-web itself where the dep is aliased.
     quote! {
-        impl #impl_generics ::runtime::live_props::ListRow
+        impl #impl_generics ::pilcrow_web::live::ListRow
             for #struct_name #ty_generics #where_clause
         {
             #key_impl

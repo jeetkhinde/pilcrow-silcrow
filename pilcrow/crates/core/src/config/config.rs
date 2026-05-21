@@ -92,10 +92,20 @@ impl Default for FsrConfig {
 }
 
 /// Runtime client-side feature configuration (mirrors the build-time `[client]` table).
+///
+/// ```toml
+/// [client]
+/// inline_runtime = true  # embed Silcrow JS inline instead of <script src>
+/// ```
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ClientRuntimeConfig {
     #[serde(default)]
     pub react: ReactRuntimeConfig,
+    /// Embed the Silcrow runtime inline in each HTML response rather than serving it
+    /// from `/__pilcrow/runtime/silcrow.{hash}.js`. Eliminates the extra HTTP request
+    /// at the cost of a larger initial HTML payload. Default: `false`.
+    #[serde(default)]
+    pub inline_runtime: bool,
 }
 
 /// Runtime React island configuration.
@@ -235,7 +245,7 @@ pub struct ServiceWorkerConfig {
     #[serde(default)]
     pub precache: Vec<String>,
     /// URL substrings to exclude from service worker interception.
-    /// `/_silcrow/` and `/__pilcrow/` are always excluded.
+    /// `/__pilcrow/` is always excluded (covers all Pilcrow runtime assets).
     #[serde(default)]
     pub exclude: Vec<String>,
     /// URL to serve when a request fails and no cached response exists.

@@ -204,7 +204,7 @@ pub struct Props {}
     <main id="main-content">
         <slot />
     </main>
-    <script src="{{ pilcrow_web::assets::assets::silcrow_js_path() }}" defer></script>
+    {{ pilcrow_web::assets::assets::script_tag()|safe }}
 </body>
 
 </html>

@@ -62,6 +62,9 @@ where
     let bind_addr = web_bind_addr(&config);
     let http = reqwest::Client::new();
 
+    // Apply [client] settings before any template render can call script_tag().
+    crate::assets::assets::set_inline_runtime(config.client.inline_runtime);
+
     // Load i18n bundles when [i18n] is configured in Pilcrow.toml.
     let i18n_bundles: Option<I18nBundles> = if !config.i18n.locales.is_empty() {
         let locales_dir = std::env::current_dir()
