@@ -2394,3 +2394,81 @@ test_refs = [
   "crates/runtime/src/sse/server_sent_events.rs — list_patch_serialises_with_all_fields, list_patch_numeric_key_serialises",
 ]
 scaffold_templates = []
+
+[[features]]
+id = "key-live-field-attrs"
+name = "PilcrowListRow Derive — #[pilcrow(key)] and #[pilcrow(live)]"
+domain = "pilcrow"
+status = "stable"
+summary = "#[derive(PilcrowListRow)] implements the ListRow trait on item structs. #[pilcrow(key)] marks the unique row key field; #[pilcrow(live)] marks live-updatable fields whose current values are included in list-patch SSE events."
+spec = """
+Annotate an item struct with #[derive(PilcrowListRow)] and mark fields:
+- #[pilcrow(key)]  — exactly one field; its to_string() value becomes the row key.
+- #[pilcrow(live)] — zero or more fields; their serde_json values are included
+  in ListBroadcast::send_row's list-patch payload.
+
+The derive generates:
+  impl ListRow for MyStruct {
+      fn pilcrow_key(&self) -> String { self.id.to_string() }
+      fn pilcrow_live_fields(&self) -> Vec<(&'static str, Value)> { ... }
+  }
+
+Fields without either annotation are rendered as static HTML only — they are not
+included in live updates.
+"""
+constraints = [
+  "Exactly one field may be annotated #[pilcrow(key)]; a struct with zero key fields emits an empty string key.",
+  "All #[pilcrow(live)] field types must implement serde::Serialize.",
+  "The derive attribute helper is registered as 'pilcrow' — not as separate 'key'/'live' idents.",
+]
+invalid_examples = [
+  "#[pilcrow::key] — not valid; use #[pilcrow(key)] (the helper attr is 'pilcrow', not a module path)",
+  "Multiple #[pilcrow(key)] fields on the same struct",
+]
+source_refs = [
+  "crates/macros/src/list_row_derive.rs — expand()",
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — send_row_broadcasts_key_and_live_fields",
+]
+scaffold_templates = []
+
+[[features]]
+id = "list-broadcast-producer"
+name = "ListBroadcast — Server-Side List Patch Producer"
+domain = "pilcrow"
+status = "stable"
+summary = "ListBroadcast is a clone-safe broadcast channel for keyed list row changes. send_row<T: ListRow> extracts the key and live fields from a typed row and fans out a ListPatchEvent to all SSE subscribers."
+spec = """
+Register as an Axum Extension at startup. Mutation handlers call send_row or send_patch
+when a row changes. SSE handlers subscribe and relay events as SilcrowEvent::list_patch.
+
+  // Startup
+  let lb = ListBroadcast::new(256);
+  app.layer(Extension(lb.clone()));
+
+  // Mutation
+  lb.send_row("tickets", &updated_ticket);  // T: ListRow
+
+  // SSE route handler
+  let mut rx = lb.subscribe();
+  match rx.recv().await {
+      Ok(ev) => emit.send(SilcrowEvent::list_patch(ev.list_name, ev.key, ev.fields)).await?,
+      Err(RecvError::Lagged(_)) => continue,
+      Err(RecvError::Closed) => break Ok(()),
+  }
+"""
+constraints = [
+  "ListBroadcast is Clone and cheap to clone — it wraps a tokio::sync::broadcast::Sender<ListPatchEvent>.",
+  "Events may be dropped if subscribers lag behind by more than the capacity; handle RecvError::Lagged by continuing.",
+  "send_row and send_patch are no-ops (not panics) when there are no active subscribers.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — ListBroadcast, ListPatchEvent",
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — send_row_broadcasts_key_and_live_fields, send_patch_broadcasts_raw_fields, multiple_subscribers_all_receive, clone_shares_same_channel",
+]
+scaffold_templates = []

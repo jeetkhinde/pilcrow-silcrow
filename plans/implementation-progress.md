@@ -164,6 +164,58 @@ The Askama template preprocessing uses plain-text sentinel strings (`__PS_SLOT_O
 
 ---
 
+### Slice F — `#[pilcrow(key)]` / `#[pilcrow(live)]` attributes + ListBroadcast  ✅ DONE
+
+**TODOs #13–#14**: `#[derive(PilcrowListRow)]` macro; `ListBroadcast` runtime type.
+
+| Layer | File | What changed |
+|-------|------|--------------|
+| Macro | `pilcrow/crates/macros/src/list_row_derive.rs` | NEW — `PilcrowListRow` derive; reads `#[pilcrow(key)]` and `#[pilcrow(live)]` helper attrs |
+| Macro | `pilcrow/crates/macros/src/lib.rs` | `derive_pilcrow_list_row` registered with `attributes(pilcrow)` |
+| Runtime | `pilcrow/crates/runtime/src/live_props/list_row.rs` | NEW — `ListRow` trait: `pilcrow_key()` + `pilcrow_live_fields()` |
+| Runtime | `pilcrow/crates/runtime/src/live_props/list_broadcast.rs` | NEW — `ListBroadcast`, `ListPatchEvent`; `send_row<T: ListRow>`, `send_patch`, `subscribe()` |
+| Runtime | `pilcrow/crates/runtime/src/live_props/mod.rs` | Export `ListRow`, `ListBroadcast`, `ListPatchEvent` |
+| Runtime | `pilcrow/crates/runtime/src/lib.rs` | Re-export under `live-props` feature gate |
+| Registry | `pilcrow/registry.toml` | `key-live-field-attrs` + `list-broadcast-producer` entries |
+
+**DX surface:**
+```rust
+// Item struct in page.rs frontmatter
+#[derive(PilcrowListRow)]
+pub struct TicketRow {
+    #[pilcrow(key)]
+    pub id: i64,
+    #[pilcrow(live)]
+    pub status: String,
+    pub title: String,  // static — rendered once
+}
+
+// Mutation handler
+lb.send_row("tickets", &updated_ticket);  // fans out to all SSE subscribers
+
+// SSE route handler
+let mut rx = lb.subscribe();
+match rx.recv().await {
+    Ok(ev) => emit.send(SilcrowEvent::list_patch(ev.list_name, ev.key, ev.fields)).await?,
+    Err(RecvError::Lagged(_)) => continue,
+    Err(RecvError::Closed) => break Ok(()),
+}
+```
+
+**Template (developer writes manually for now; auto-injection deferred to Slice H):**
+```html
+<ul data-pilcrow-list="tickets">
+  {% for ticket in tickets %}
+  <li data-pilcrow-key="{{ ticket.id }}">
+    {{ ticket.title }}
+    <span data-pilcrow-live-field="status">{{ ticket.status }}</span>
+  </li>
+  {% endfor %}
+</ul>
+```
+
+---
+
 ## Design Decisions (locked)
 
 ### TODO #6 — Layout-aware navigation: route-segment diffing
@@ -254,8 +306,8 @@ Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/
 | 10 | View Transitions API wraps all three nav modes | ✅ Done (Slice D) |
 | 11 | One SSE per page enforced — one `data-pilcrow-live` anchor per page; all producers merge via `select_all` | ✅ Done (Slice E) |
 | 12 | Keyed list patch wire format — `{ list, key, ...changed_fields }` SSE message; client targets `data-pilcrow-key` rows | ✅ Done (Slice E) |
-| 13 | `#[pilcrow::key]` and `#[pilcrow::live]` field attributes — bare fields bake static HTML | ⬜ Pending |
-| 14 | List broadcast producer — one server-side producer per live list | ⬜ Pending |
+| 13 | `#[pilcrow::key]` and `#[pilcrow::live]` field attributes — bare fields bake static HTML | ✅ Done (Slice F) |
+| 14 | List broadcast producer — one server-side producer per live list | ✅ Done (Slice F) |
 | 15 | Silcrow splits into cacheable same-origin modules at `/__pilcrow/runtime/` | ⬜ Pending |
 | 16 | `inline_runtime = true` config option in `Pilcrow.toml` | ⬜ Pending |
 | 17 | Scroll-aware windowed record baking — cursor requests trigger background Redis pre-bake of next window | ⬜ Pending |
