@@ -35,8 +35,12 @@ pub async fn serve_silcrow_js() -> Response {
 }
 
 pub fn silcrow_js_path() -> String {
-    let hash = crc32fast::hash(SILCROW_JS.as_bytes());
-    format!("/__pilcrow/runtime/silcrow.{hash:08x}.js")
+    static PATH: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    PATH.get_or_init(|| {
+        let hash = crc32fast::hash(SILCROW_JS.as_bytes());
+        format!("/__pilcrow/runtime/silcrow.{hash:08x}.js")
+    })
+    .clone()
 }
 
 pub fn react_islands_js_path() -> String {
@@ -119,17 +123,32 @@ mod tests {
     fn script_tag_external_by_default() {
         set_inline_runtime(false);
         let tag = script_tag();
-        assert!(tag.contains("src="), "external: tag should have src attribute: {tag}");
-        assert!(tag.contains("/__pilcrow/runtime/"), "external: should use new path: {tag}");
-        assert!(!tag.contains(SILCROW_JS), "external: should not embed JS: {tag}");
+        assert!(
+            tag.contains("src="),
+            "external: tag should have src attribute: {tag}"
+        );
+        assert!(
+            tag.contains("/__pilcrow/runtime/"),
+            "external: should use new path: {tag}"
+        );
+        assert!(
+            !tag.contains(SILCROW_JS),
+            "external: should not embed JS: {tag}"
+        );
     }
 
     #[test]
     fn script_tag_inline_when_flag_set() {
         set_inline_runtime(true);
         let tag = script_tag();
-        assert!(!tag.contains("src="), "inline: tag should not have src attribute: {tag}");
-        assert!(tag.starts_with("<script>"), "inline: should be a plain <script> tag: {tag}");
+        assert!(
+            !tag.contains("src="),
+            "inline: tag should not have src attribute: {tag}"
+        );
+        assert!(
+            tag.starts_with("<script>"),
+            "inline: should be a plain <script> tag: {tag}"
+        );
         set_inline_runtime(false); // reset for other tests
     }
 }

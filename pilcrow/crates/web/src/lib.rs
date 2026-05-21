@@ -9,8 +9,8 @@ pub use runtime::response::response::{
 pub use runtime::response::response::{form_errors, json, navigate, ok, redirect, status};
 
 // ── Request handling ─────────────────────────────────────────
-pub use runtime::{FormMap, Locals, Next, Page, Req, Res};
 pub use runtime::SilcrowMutationId;
+pub use runtime::{FormMap, Locals, Next, Page, Req, Res};
 
 // ── Status & response primitives ─────────────────────────────
 pub use runtime::Response;
@@ -53,6 +53,9 @@ pub use runtime::{start, start_with_adapter, start_with_prerender};
 /// Import all live types and macros with: `use pilcrow::live::*;`
 #[cfg(feature = "live-props")]
 pub mod live;
+
+#[cfg(feature = "live-props")]
+pub use pilcrow_macros::PilcrowListRow;
 
 /// Experimental APIs that may change before stabilization.
 #[cfg(feature = "experimental-baked-pages")]
@@ -510,6 +513,5 @@ macro_rules! pilcrow_app {
             })
             .await;
         }
-
     };
 }
