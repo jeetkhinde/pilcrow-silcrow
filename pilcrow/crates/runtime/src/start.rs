@@ -65,6 +65,9 @@ where
     // Apply [client] settings before any template render can call script_tag().
     crate::assets::assets::set_inline_runtime(config.client.inline_runtime);
 
+    // Register the local base URL for prebake_next() / prebake::trigger().
+    crate::prebake::set_local_base(format!("http://127.0.0.1:{}", config.web.port));
+
     // Load i18n bundles when [i18n] is configured in Pilcrow.toml.
     let i18n_bundles: Option<I18nBundles> = if !config.i18n.locales.is_empty() {
         let locales_dir = std::env::current_dir()

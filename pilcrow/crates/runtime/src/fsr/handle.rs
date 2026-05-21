@@ -62,4 +62,16 @@ impl FsrHandle {
             false
         })
     }
+
+    /// Trigger a background pre-bake of the given path.
+    ///
+    /// Spawns a fire-and-forget GET to the local server at `path`, warming the
+    /// FSR/HTTP cache before the user navigates there. Typical use: call this
+    /// at the end of a paginated handler with the next cursor URL.
+    ///
+    /// No-op when [`crate::prebake::set_local_base`] has not been called (i.e.
+    /// before `start_with_adapter` runs in tests or when the server is not yet up).
+    pub fn prebake_next(&self, path: &str) {
+        crate::prebake::trigger(path);
+    }
 }
