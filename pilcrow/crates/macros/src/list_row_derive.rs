@@ -46,13 +46,34 @@ pub fn expand(input: TokenStream) -> TokenStream {
             if !attr.path().is_ident("pilcrow") {
                 continue;
             }
-            let Ok(meta_list) = attr.meta.require_list() else { continue };
-            let Ok(arg) = meta_list.parse_args::<syn::Ident>() else { continue };
+            let Ok(meta_list) = attr.meta.require_list() else {
+                return syn::Error::new_spanned(
+                    &attr.meta,
+                    "PilcrowListRow: expected #[pilcrow(key)] or #[pilcrow(live)]",
+                )
+                .to_compile_error()
+                .into();
+            };
+            let Ok(arg) = meta_list.parse_args::<syn::Ident>() else {
+                return syn::Error::new_spanned(
+                    &attr.meta,
+                    "PilcrowListRow: expected a single identifier; use #[pilcrow(key)] or #[pilcrow(live)]",
+                )
+                .to_compile_error()
+                .into();
+            };
             if arg == "key" {
                 key_count += 1;
                 key_field = Some((ident, &field.ty));
             } else if arg == "live" {
                 live_fields.push((ident, &field.ty));
+            } else {
+                return syn::Error::new_spanned(
+                    &arg,
+                    format!("PilcrowListRow: unknown annotation `{arg}`; expected `key` or `live`"),
+                )
+                .to_compile_error()
+                .into();
             }
         }
     }

@@ -95,7 +95,10 @@ impl ListBroadcast {
         key: impl Into<String>,
         fields: impl serde::Serialize,
     ) {
-        let fields = serde_json::to_value(fields).unwrap_or(serde_json::Value::Null);
+        let fields = match serde_json::to_value(fields) {
+            Ok(v @ serde_json::Value::Object(_)) => v,
+            _ => return, // non-object payloads are invalid for list-patch; drop silently
+        };
         let _ = self.sender.send(ListPatchEvent {
             list_name: list_name.to_string(),
             key: key.into(),
@@ -180,5 +183,37 @@ mod tests {
         let mut rx = lb.subscribe();
         lb2.send_patch("items", "5", serde_json::json!({"count": 3}));
         assert_eq!(rx.try_recv().unwrap().list_name, "items");
+    }
+
+    #[test]
+    fn send_patch_non_object_number_is_dropped() {
+        let lb = ListBroadcast::new(16);
+        let mut rx = lb.subscribe();
+        lb.send_patch("tickets", "1", 42u32);
+        assert!(rx.try_recv().is_err(), "number payload should not emit an event");
+    }
+
+    #[test]
+    fn send_patch_non_object_string_is_dropped() {
+        let lb = ListBroadcast::new(16);
+        let mut rx = lb.subscribe();
+        lb.send_patch("tickets", "1", "closed");
+        assert!(rx.try_recv().is_err(), "string payload should not emit an event");
+    }
+
+    #[test]
+    fn send_patch_non_object_array_is_dropped() {
+        let lb = ListBroadcast::new(16);
+        let mut rx = lb.subscribe();
+        lb.send_patch("tickets", "1", serde_json::json!([1, 2, 3]));
+        assert!(rx.try_recv().is_err(), "array payload should not emit an event");
+    }
+
+    #[test]
+    fn send_patch_non_object_null_is_dropped() {
+        let lb = ListBroadcast::new(16);
+        let mut rx = lb.subscribe();
+        lb.send_patch("tickets", "1", serde_json::Value::Null);
+        assert!(rx.try_recv().is_err(), "null payload should not emit an event");
     }
 }
