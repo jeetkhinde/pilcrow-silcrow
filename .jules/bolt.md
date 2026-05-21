@@ -1,0 +1,3 @@
+## 2025-05-20 - Memoizing Silcrow Path Lookups
+**Learning:** The frontend's `resolvePath` function runs repeatedly for every colon-binding update (e.g., `:href`) and list iteration. The function was using a regex match (`PATH_RE.test`) and string split (`path.split(".")`) on every call. Furthermore, it used `indexOf` to detect the end of the path list, which was both slower and could incorrectly trigger on duplicate path segments (e.g. `a.b.a`).
+**Action:** Implemented an unbounded `Map` to cache the string paths mapped to their split array form. This completely eliminates the regex and string-split penalty on hot path lookups and improves traversal loop speed by replacing the `indexOf` check with a direct array index length comparison.
