@@ -17,6 +17,7 @@
 use std::sync::OnceLock;
 
 static LOCAL_BASE: OnceLock<String> = OnceLock::new();
+static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 /// Set the local base URL used by [`trigger`].
 ///
@@ -29,12 +30,15 @@ pub fn set_local_base(base: impl Into<String>) {
 /// Spawn a background GET request to `path` on the local server.
 ///
 /// The response is silently discarded — the purpose is to warm the FSR cache so the
-/// next real request finds a cache hit. No-op if [`set_local_base`] has not been called.
+/// next real request finds a cache hit. No-op if [`set_local_base`] has not been called
+/// or if there is no active Tokio runtime.
 pub fn trigger(path: impl Into<String>) {
     let Some(base) = LOCAL_BASE.get() else { return };
+    let Ok(handle) = tokio::runtime::Handle::try_current() else { return };
     let url = format!("{}{}", base, path.into());
-    tokio::spawn(async move {
-        let _ = reqwest::get(&url).await;
+    let client = CLIENT.get_or_init(reqwest::Client::new).clone();
+    handle.spawn(async move {
+        let _ = client.get(&url).send().await;
     });
 }
 

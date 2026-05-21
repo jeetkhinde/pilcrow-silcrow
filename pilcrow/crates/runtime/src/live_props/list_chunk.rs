@@ -54,7 +54,7 @@ pub trait ListChunkCache: Send + Sync + 'static {
 /// All chunks are lost on process restart.
 #[derive(Debug, Default)]
 pub struct InMemoryListChunkCache {
-    inner: RwLock<HashMap<(String, String), String>>,
+    inner: RwLock<HashMap<String, HashMap<String, String>>>,
 }
 
 impl InMemoryListChunkCache {
@@ -65,37 +65,38 @@ impl InMemoryListChunkCache {
 
 impl ListChunkCache for InMemoryListChunkCache {
     fn get(&self, list_name: &str, key: &str) -> Option<String> {
-        self.inner
-            .read()
-            .ok()?
-            .get(&(list_name.to_string(), key.to_string()))
-            .cloned()
+        self.inner.read().ok()?.get(list_name)?.get(key).cloned()
     }
 
     fn set(&self, list_name: &str, key: &str, html: String) {
         if let Ok(mut map) = self.inner.write() {
-            map.insert((list_name.to_string(), key.to_string()), html);
+            map.entry(list_name.to_string()).or_default().insert(key.to_string(), html);
         }
     }
 
     fn invalidate(&self, list_name: &str, key: &str) {
         if let Ok(mut map) = self.inner.write() {
-            map.remove(&(list_name.to_string(), key.to_string()));
+            if let Some(inner) = map.get_mut(list_name) {
+                inner.remove(key);
+            }
         }
     }
 
     fn invalidate_list(&self, list_name: &str) {
         if let Ok(mut map) = self.inner.write() {
-            map.retain(|(l, _), _| l != list_name);
+            map.remove(list_name);
         }
     }
 }
 
 /// Returns the canonical Redis key for a list chunk.
 ///
-/// Format: `pilcrow:chunk:{list_name}:{row_key}`
+/// Format: `pilcrow:chunk:{list_name}:{row_key}` where each segment has `:` percent-encoded
+/// to prevent collisions between `("a:b","c")` and `("a","b:c")`.
 pub fn list_chunk_key(list_name: &str, row_key: &str) -> String {
-    format!("pilcrow:chunk:{list_name}:{row_key}")
+    let list = list_name.replace(':', "%3A");
+    let key = row_key.replace(':', "%3A");
+    format!("pilcrow:chunk:{list}:{key}")
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -150,6 +151,11 @@ mod tests {
     #[test]
     fn list_chunk_key_format() {
         assert_eq!(list_chunk_key("tickets", "42"), "pilcrow:chunk:tickets:42");
-        assert_eq!(list_chunk_key("orders", "order:99"), "pilcrow:chunk:orders:order:99");
+        assert_eq!(list_chunk_key("orders", "order:99"), "pilcrow:chunk:orders:order%3A99");
+    }
+
+    #[test]
+    fn list_chunk_key_no_collision() {
+        assert_ne!(list_chunk_key("a:b", "c"), list_chunk_key("a", "b:c"));
     }
 }
