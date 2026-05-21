@@ -65,9 +65,6 @@ where
     // Apply [client] settings before any template render can call script_tag().
     crate::assets::assets::set_inline_runtime(config.client.inline_runtime);
 
-    // Register the local base URL for prebake_next() / prebake::trigger().
-    crate::prebake::set_local_base(format!("http://127.0.0.1:{}", config.web.port));
-
     // Load i18n bundles when [i18n] is configured in Pilcrow.toml.
     let i18n_bundles: Option<I18nBundles> = if !config.i18n.locales.is_empty() {
         let locales_dir = std::env::current_dir()
@@ -357,7 +354,15 @@ where
     // SSR placeholder middleware — no-op when no worker Extension is present.
     let app = app.layer(axum::middleware::from_fn(island_ssr_middleware));
 
-    adapter.serve(&bind_addr, app).await;
+    adapter.serve(&bind_addr, app, Box::new(|actual| {
+        // Normalize 0.0.0.0 (all-interfaces bind) to loopback for local prebake requests.
+        let base = if let Some(port) = actual.strip_prefix("0.0.0.0:") {
+            format!("http://127.0.0.1:{port}")
+        } else {
+            format!("http://{actual}")
+        };
+        crate::prebake::set_local_base(base);
+    })).await;
 }
 
 /// Replace `__PILCROW_REACT_SSR_{id}__` placeholders in HTML responses.

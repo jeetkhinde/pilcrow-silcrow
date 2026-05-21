@@ -2555,8 +2555,11 @@ After serving cursor window N, call prebake_next with the URL for window N+1.
 A Tokio task spawns a GET to http://127.0.0.1:{port}{path}; the response is
 silently discarded. No-op if set_local_base has not been called.
 
-The local base URL is set once at startup by start_with_adapter:
-  prebake::set_local_base(format!("http://127.0.0.1:{}", config.web.port))
+The local base URL is set once at startup by start_with_adapter via the
+on_bind callback passed to PilcrowAdapter::serve(). Each adapter calls
+on_bind with its actual bound address (from listener.local_addr()), so
+port-scanning (TokioAdapter) and $PORT env-var rewriting (PortEnvAdapter)
+are handled correctly. LambdaAdapter drops the callback.
 
 pub async fn load(req: Req) -> AppResult<Props> {
     let tickets = db::tickets_page(&cursor).await?;
@@ -2574,7 +2577,7 @@ constraints = [
 source_refs = [
   "crates/runtime/src/prebake.rs — set_local_base, trigger",
   "crates/runtime/src/fsr/handle.rs — FsrHandle::prebake_next",
-  "crates/runtime/src/start.rs — set_local_base call",
+  "crates/runtime/src/start.rs — on_bind closure passed to adapter.serve",
 ]
 test_refs = [
   "crates/runtime/src/prebake.rs — trigger_is_noop_without_base, set_local_base_accepts_valid_url",
