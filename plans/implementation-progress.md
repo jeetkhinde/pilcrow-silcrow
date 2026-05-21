@@ -164,6 +164,34 @@ The Askama template preprocessing uses plain-text sentinel strings (`__PS_SLOT_O
 
 ---
 
+### Slice G — Silcrow runtime URL unification + `inline_runtime` config  ✅ DONE
+
+**TODOs #15–#16**: Move silcrow.js to `/__pilcrow/runtime/`; `inline_runtime = true` config option.
+
+| Layer | File | What changed |
+|-------|------|--------------|
+| Runtime | `pilcrow/crates/runtime/src/assets/assets.rs` | `silcrow_js_path()` → `/__pilcrow/runtime/silcrow.{hash}.js`; `INLINE_RUNTIME: AtomicBool`; `set_inline_runtime()`; `script_tag()` checks flag |
+| Runtime | `pilcrow/crates/runtime/src/start.rs` | Calls `set_inline_runtime(config.client.inline_runtime)` at startup |
+| Runtime | `pilcrow/crates/runtime/src/sw.rs` | Removed dead `"/_silcrow/"` from SW exclude list |
+| Config | `pilcrow/crates/core/src/config/config.rs` | Added `inline_runtime: bool` to `ClientRuntimeConfig`; fixed `/_silcrow/` doc comment |
+| Demo | `demo/pages/_layout.html` | Switched to `{{ pilcrow_web::assets::assets::script_tag()|safe }}` |
+| Registry | `pilcrow/registry.toml` | `runtime-url-unification` + `inline-runtime-config` entries |
+
+**DX surface:**
+
+```toml
+# Pilcrow.toml
+[client]
+inline_runtime = true  # embed Silcrow JS inline; omit for external <script src>
+```
+
+```html
+<!-- In _layout.html — respects inline_runtime automatically -->
+{{ pilcrow_web::assets::assets::script_tag()|safe }}
+```
+
+---
+
 ### Slice F — `#[pilcrow(key)]` / `#[pilcrow(live)]` attributes + ListBroadcast  ✅ DONE
 
 **TODOs #13–#14**: `#[derive(PilcrowListRow)]` macro; `ListBroadcast` runtime type.
@@ -308,8 +336,8 @@ Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/
 | 12 | Keyed list patch wire format — `{ list, key, ...changed_fields }` SSE message; client targets `data-pilcrow-key` rows | ✅ Done (Slice E) |
 | 13 | `#[pilcrow::key]` and `#[pilcrow::live]` field attributes — bare fields bake static HTML | ✅ Done (Slice F) |
 | 14 | List broadcast producer — one server-side producer per live list | ✅ Done (Slice F) |
-| 15 | Silcrow splits into cacheable same-origin modules at `/__pilcrow/runtime/` | ⬜ Pending |
-| 16 | `inline_runtime = true` config option in `Pilcrow.toml` | ⬜ Pending |
+| 15 | Silcrow splits into cacheable same-origin modules at `/__pilcrow/runtime/` | ✅ Done (Slice G) |
+| 16 | `inline_runtime = true` config option in `Pilcrow.toml` | ✅ Done (Slice G) |
 | 17 | Scroll-aware windowed record baking — cursor requests trigger background Redis pre-bake of next window | ⬜ Pending |
 | 18 | HTML chunk baking for lists — pre-baked HTML chunks in Redis including live field markers | ⬜ Pending |
 | 19 | `Vec<T>` with `#[pilcrow::key]` + `#[pilcrow::live]` drives all list behaviour (no `LiveList` / `AppendList`) | ⬜ Pending |

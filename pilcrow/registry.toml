@@ -2472,3 +2472,74 @@ test_refs = [
   "crates/runtime/src/live_props/list_broadcast.rs — send_row_broadcasts_key_and_live_fields, send_patch_broadcasts_raw_fields, multiple_subscribers_all_receive, clone_shares_same_channel",
 ]
 scaffold_templates = []
+
+[[features]]
+id = "runtime-url-unification"
+name = "Silcrow Runtime URL — /__pilcrow/runtime/"
+domain = "pilcrow"
+status = "stable"
+summary = "silcrow.js is now served at /__pilcrow/runtime/silcrow.{hash}.js (previously /_silcrow/). All Pilcrow runtime assets now share the /__pilcrow/ URL namespace. The /_silcrow/ SW exclude is removed (covered by /__pilcrow/)."
+spec = """
+silcrow_js_path() returns /__pilcrow/runtime/silcrow.{hash:08x}.js.
+The content-hash URL scheme (CRC32, 8 hex digits) is unchanged.
+Cache headers remain public, max-age=31536000, immutable.
+
+The service worker exclude list previously contained both /_silcrow/ and /__pilcrow/.
+/_silcrow/ is removed; /__pilcrow/ already covers the new path.
+
+Developer templates using pilcrow_web::assets::assets::script_tag()|safe automatically
+use the new URL without any template changes.
+"""
+constraints = [
+  "The /_silcrow/ URL prefix no longer serves any content — update bookmarks or hardcoded references.",
+  "silcrow_js_path() is the canonical source for the URL; do not hardcode the path.",
+]
+source_refs = [
+  "crates/runtime/src/assets/assets.rs — silcrow_js_path()",
+  "crates/runtime/src/sw.rs — SW exclude list",
+]
+test_refs = [
+  "crates/runtime/src/assets/assets.rs — silcrow_js_path_under_pilcrow_runtime",
+  "crates/runtime/src/sw.rs — sw_excludes_pilcrow_prefix_not_silcrow, sw_precaches_silcrow_at_new_path",
+]
+scaffold_templates = []
+
+[[features]]
+id = "inline-runtime-config"
+name = "inline_runtime Config Option"
+domain = "pilcrow"
+status = "stable"
+summary = "When [client] inline_runtime = true in Pilcrow.toml, assets::script_tag() returns an inline <script> block with the full Silcrow JS content instead of a <script src> tag. Set once at startup; read on every template render."
+spec = """
+[client]
+inline_runtime = true   # default: false
+
+Startup: start_with_adapter calls set_inline_runtime(config.client.inline_runtime),
+storing the value in a process-wide AtomicBool.
+
+Template: {{ pilcrow_web::assets::assets::script_tag()|safe }}
+  → false: <script src="/__pilcrow/runtime/silcrow.{hash}.js" defer></script>
+  → true:  <script>...35KB of Silcrow JS...</script>
+
+Use inline_runtime for:
+- Offline-capable apps that need the runtime available without any extra requests
+- Environments where the extra HTTP request is costly
+- E2E tests that need to avoid dynamic URLs
+"""
+constraints = [
+  "inline_runtime is read from a process-wide AtomicBool — not per-request. It cannot change after startup.",
+  "The developer must use script_tag()|safe in their _layout.html, not a manual <script src> tag, for inline_runtime to take effect.",
+  "Inline mode embeds the full (~35KB minified) Silcrow source in every HTML response.",
+]
+invalid_examples = [
+  "Manually writing <script src=\"/__pilcrow/runtime/silcrow.{hash}.js\"> — use script_tag()|safe instead",
+]
+source_refs = [
+  "crates/runtime/src/assets/assets.rs — INLINE_RUNTIME, set_inline_runtime, script_tag",
+  "crates/runtime/src/start.rs — set_inline_runtime call",
+  "crates/core/src/config/config.rs — ClientRuntimeConfig.inline_runtime",
+]
+test_refs = [
+  "crates/runtime/src/assets/assets.rs — script_tag_external_by_default, script_tag_inline_when_flag_set",
+]
+scaffold_templates = []

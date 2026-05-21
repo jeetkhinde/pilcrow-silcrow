@@ -34,7 +34,7 @@ pub fn generate_sw_source(config: &ServiceWorkerConfig) -> String {
     precache_urls.extend(config.precache.clone());
     let precache_json = serde_json::to_string(&precache_urls).unwrap_or_else(|_| "[]".into());
 
-    let mut excludes: Vec<String> = vec!["/_silcrow/".into(), "/__pilcrow/".into()];
+    let mut excludes: Vec<String> = vec!["/__pilcrow/".into()];
     excludes.extend(config.exclude.clone());
     let excludes_json = serde_json::to_string(&excludes).unwrap_or_else(|_| "[]".into());
 
@@ -169,4 +169,34 @@ pub async fn sw_inject_layer(
 
     parts.headers.remove(header::CONTENT_LENGTH);
     axum::response::Response::from_parts(parts, axum::body::Body::from(html))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pilcrow_core::config::config::ServiceWorkerConfig;
+
+    #[test]
+    fn sw_excludes_pilcrow_prefix_not_silcrow() {
+        let config = ServiceWorkerConfig::default();
+        let source = generate_sw_source(&config);
+        assert!(
+            source.contains("/__pilcrow/"),
+            "should exclude /__pilcrow/ prefix: {source}"
+        );
+        assert!(
+            !source.contains("/_silcrow/"),
+            "/_silcrow/ exclude should be removed (now under /__pilcrow/): {source}"
+        );
+    }
+
+    #[test]
+    fn sw_precaches_silcrow_at_new_path() {
+        let config = ServiceWorkerConfig::default();
+        let source = generate_sw_source(&config);
+        assert!(
+            source.contains("/__pilcrow/runtime/silcrow."),
+            "silcrow.js should be precached at /__pilcrow/runtime/: {source}"
+        );
+    }
 }
