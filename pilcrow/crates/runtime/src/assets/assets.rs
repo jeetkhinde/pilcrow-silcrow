@@ -101,6 +101,10 @@ pub async fn serve_solid_islands_js() -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Serialize tests that mutate the INLINE_RUNTIME global to prevent races.
+    static INLINE_RUNTIME_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn silcrow_js_path_under_pilcrow_runtime() {
@@ -121,6 +125,7 @@ mod tests {
 
     #[test]
     fn script_tag_external_by_default() {
+        let _guard = INLINE_RUNTIME_LOCK.lock().unwrap();
         set_inline_runtime(false);
         let tag = script_tag();
         assert!(
@@ -139,6 +144,7 @@ mod tests {
 
     #[test]
     fn script_tag_inline_when_flag_set() {
+        let _guard = INLINE_RUNTIME_LOCK.lock().unwrap();
         set_inline_runtime(true);
         let tag = script_tag();
         assert!(
