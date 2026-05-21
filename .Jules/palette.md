@@ -8,3 +8,6 @@
 ## 2026-05-20 - Global Layout Accessibility (Skip Links & Landmarks)
 **Learning:** Found that the global application layout lacked a proper `<main>` landmark and a "Skip to content" link. In applications using client-side routing (like Silcrow), this is crucial because screen reader focus isn't naturally reset to the top of the new document on navigation.
 **Action:** Always include a visually hidden "Skip to main content" link at the very top of `<body>` that becomes visible on focus, and ensure the primary content area is wrapped in a `<main>` tag with an `id` that the skip link targets. Also ensure main navigation elements have clear `:focus-visible` indicators.
+## 2026-05-21 - Accessibility Improvements in Ticket Editor
+**Learning:** The ticket editor lacked keyboard navigation focus rings for the `select` dropdowns and the `Save` button, and the "Saved!" dynamic message lacked an ARIA live region, which left screen reader users unaware of successful form submissions.
+**Action:** Add `:focus-visible` states matching the primary brand color to interactive elements and `role="status" aria-live="polite"` to dynamically appearing notification text.

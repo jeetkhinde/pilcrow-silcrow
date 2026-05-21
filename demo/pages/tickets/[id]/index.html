@@ -65,6 +65,11 @@
       background: #fff;
     }
 
+    select:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+
     .btn-save {
       padding: 0.5rem 1.25rem;
       background: #2563eb;
@@ -74,6 +79,11 @@
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
+    }
+
+    .btn-save:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
     }
 
     .btn-save:hover:not(:disabled) {
@@ -219,7 +229,7 @@
         </select>
       </div>
       <button class="btn-save" id="btn-save">Save</button>
-      <span id="save-msg">Saved!</span>
+      <span id="save-msg" role="status" aria-live="polite">Saved!</span>
     </div>
   </div>
 </div>
