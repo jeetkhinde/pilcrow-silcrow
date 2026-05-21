@@ -89,8 +89,10 @@ pub use response::response::html;
 
 pub use deferred::{__live_props_response, LiveProp, LiveTarget};
 pub use nav::extract_ps_fragment;
+pub mod prebake;
+pub use prebake::trigger as prebake_next;
 #[cfg(feature = "live-props")]
-pub use live_props::{ListBroadcast, ListPatchEvent, ListRow};
+pub use live_props::{InMemoryListChunkCache, ListBroadcast, ListChunkCache, ListPatchEvent, ListRow, list_chunk_key};
 // ── ISR / SSG cache ──────────────────────────────────────────
 pub use isr::{IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────

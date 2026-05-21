@@ -244,6 +244,51 @@ match rx.recv().await {
 
 ---
 
+### Slice H — Windowed baking, HTML chunk cache, Vec<T> canonical list DX  ✅ DONE
+
+**TODOs #17–#19**: `prebake_next(path)`, `ListChunkCache`, canonical list DX locked.
+
+| Layer | File | What changed |
+|-------|------|--------------|
+| Runtime | `pilcrow/crates/runtime/src/prebake.rs` | NEW — `set_local_base`, `trigger` (fire-and-forget `reqwest::get`) |
+| Runtime | `pilcrow/crates/runtime/src/fsr/handle.rs` | Added `prebake_next(path)` forwarding to `prebake::trigger` |
+| Runtime | `pilcrow/crates/runtime/src/start.rs` | Calls `prebake::set_local_base("http://127.0.0.1:{port}")` at startup |
+| Runtime | `pilcrow/crates/runtime/src/live_props/list_chunk.rs` | NEW — `ListChunkCache` trait + `InMemoryListChunkCache` |
+| Runtime | `pilcrow/crates/runtime/src/live_props/mod.rs` | Export `ListChunkCache`, `InMemoryListChunkCache`, `list_chunk_key` |
+| Runtime | `pilcrow/crates/runtime/src/lib.rs` | Re-export `prebake_next`; `ListChunkCache`, `InMemoryListChunkCache`, `list_chunk_key` under `live-props` gate |
+| Registry | `pilcrow/registry.toml` | `windowed-prebake`, `list-chunk-cache`, `canonical-list-dx` entries |
+
+**DX surface:**
+
+```rust
+// In a paginated page handler:
+pub async fn load(req: Req) -> AppResult<Props> {
+    let tickets = db::tickets_page(&cursor).await?;
+    if let Some(next) = tickets.next_cursor {
+        req.fsr.prebake_next(&format!("/tickets?cursor={next}"));
+    }
+    Ok(Props { tickets })
+}
+
+// Chunk cache (register at startup):
+let cache = Arc::new(InMemoryListChunkCache::new());
+app.layer(Extension(cache as Arc<dyn ListChunkCache>));
+
+// In a handler or SSE handler:
+if let Some(html) = cache.get("tickets", &id) {
+    // serve pre-baked row
+} else {
+    let rendered = render_ticket_row(&ticket);
+    cache.set("tickets", &id, rendered.clone());
+}
+
+// After mutation:
+lb.send_row("tickets", &updated);
+cache.invalidate("tickets", &updated.id.to_string());
+```
+
+---
+
 ## Design Decisions (locked)
 
 ### TODO #6 — Layout-aware navigation: route-segment diffing
@@ -338,9 +383,9 @@ Slot IDs are route **patterns** (`/tickets/:id`), not resolved paths (`/tickets/
 | 14 | List broadcast producer — one server-side producer per live list | ✅ Done (Slice F) |
 | 15 | Silcrow splits into cacheable same-origin modules at `/__pilcrow/runtime/` | ✅ Done (Slice G) |
 | 16 | `inline_runtime = true` config option in `Pilcrow.toml` | ✅ Done (Slice G) |
-| 17 | Scroll-aware windowed record baking — cursor requests trigger background Redis pre-bake of next window | ⬜ Pending |
-| 18 | HTML chunk baking for lists — pre-baked HTML chunks in Redis including live field markers | ⬜ Pending |
-| 19 | `Vec<T>` with `#[pilcrow::key]` + `#[pilcrow::live]` drives all list behaviour (no `LiveList` / `AppendList`) | ⬜ Pending |
+| 17 | Scroll-aware windowed record baking — cursor requests trigger background Redis pre-bake of next window | ✅ Done (Slice H) |
+| 18 | HTML chunk baking for lists — pre-baked HTML chunks in Redis including live field markers | ✅ Done (Slice H) |
+| 19 | `Vec<T>` with `#[pilcrow::key]` + `#[pilcrow::live]` drives all list behaviour (no `LiveList` / `AppendList`) | ✅ Done (Slice H) |
 | 20 | Create and maintain this progress tracking record | ✅ Done |
 
 ---

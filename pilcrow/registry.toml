@@ -2543,3 +2543,120 @@ test_refs = [
   "crates/runtime/src/assets/assets.rs — script_tag_external_by_default, script_tag_inline_when_flag_set",
 ]
 scaffold_templates = []
+
+[[features]]
+id = "windowed-prebake"
+name = "Windowed Pre-bake (prebake_next)"
+domain = "pilcrow"
+status = "stable"
+summary = "req.fsr.prebake_next(path) triggers a fire-and-forget background GET to the local server, warming the FSR/HTTP cache for the next cursor window before the user scrolls there."
+spec = """
+After serving cursor window N, call prebake_next with the URL for window N+1.
+A Tokio task spawns a GET to http://127.0.0.1:{port}{path}; the response is
+silently discarded. No-op if set_local_base has not been called.
+
+The local base URL is set once at startup by start_with_adapter:
+  prebake::set_local_base(format!("http://127.0.0.1:{}", config.web.port))
+
+pub async fn load(req: Req) -> AppResult<Props> {
+    let tickets = db::tickets_page(&cursor).await?;
+    if let Some(next) = tickets.next_cursor {
+        req.fsr.prebake_next(&format!("/tickets?cursor={next}"));
+    }
+    Ok(Props { tickets })
+}
+"""
+constraints = [
+  "prebake_next is synchronous and non-blocking — it spawns a task and returns immediately.",
+  "The background GET uses the process-local address (127.0.0.1) — do not use in tests that have no running server.",
+  "The base URL is set once via prebake::set_local_base; calling it more than once is a no-op.",
+]
+source_refs = [
+  "crates/runtime/src/prebake.rs — set_local_base, trigger",
+  "crates/runtime/src/fsr/handle.rs — FsrHandle::prebake_next",
+  "crates/runtime/src/start.rs — set_local_base call",
+]
+test_refs = [
+  "crates/runtime/src/prebake.rs — trigger_is_noop_without_base, set_local_base_accepts_valid_url",
+]
+scaffold_templates = []
+
+[[features]]
+id = "list-chunk-cache"
+name = "ListChunkCache — Per-row Pre-baked HTML"
+domain = "pilcrow"
+status = "stable"
+summary = "ListChunkCache trait + InMemoryListChunkCache impl store pre-baked HTML for individual list rows keyed by (list_name, row_key). Rows are invalidated after a ListBroadcast::send_row call."
+spec = """
+Key scheme: pilcrow:chunk:{list_name}:{row_key}
+(Matches the intended Redis key for a future live-props-redis impl.)
+
+pub trait ListChunkCache: Send + Sync + 'static {
+    fn get(&self, list_name: &str, key: &str) -> Option<String>;
+    fn set(&self, list_name: &str, key: &str, html: String);
+    fn invalidate(&self, list_name: &str, key: &str);
+    fn invalidate_list(&self, list_name: &str);
+}
+
+Register at startup:
+  let cache = Arc::new(InMemoryListChunkCache::new());
+  app.layer(Extension(cache as Arc<dyn ListChunkCache>));
+
+In a handler:
+  if let Some(html) = cache.get("tickets", &id) { /* serve */ }
+  else {
+      let html = render_ticket_row(&ticket);
+      cache.set("tickets", &id, html.clone());
+  }
+
+After a mutation:
+  lb.send_row("tickets", &updated);
+  cache.invalidate("tickets", &updated.id.to_string());
+"""
+constraints = [
+  "InMemoryListChunkCache is process-local — lost on restart. Use live-props-redis for persistence.",
+  "Invalidate the chunk after every ListBroadcast::send_row to prevent stale HTML.",
+  "list_chunk_key() is a formatting helper only; it does not interact with the cache.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_chunk.rs — ListChunkCache, InMemoryListChunkCache, list_chunk_key",
+  "crates/runtime/src/live_props/mod.rs",
+  "crates/runtime/src/lib.rs",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_chunk.rs — set_and_get_round_trips, get_missing_returns_none, invalidate_removes_single_row, invalidate_list_clears_all_rows_for_that_list, set_overwrites_existing_entry, list_chunk_key_format",
+]
+scaffold_templates = []
+
+[[features]]
+id = "canonical-list-dx"
+name = "Vec<T: ListRow> — Canonical List DX"
+domain = "pilcrow"
+status = "stable"
+summary = "Vec<T> where T: ListRow is the canonical list type. No LiveList<T> or AppendList<T> types exist or will be added. The full list surface is: #[derive(PilcrowListRow)], ListBroadcast, and data-pilcrow-list / data-pilcrow-key DOM attributes."
+spec = """
+Design lock — no new list container types.
+
+The list DX surface is exactly:
+  1. #[derive(PilcrowListRow)] on the row struct — generates ListRow impl.
+  2. Props { items: Vec<TicketRow> } — plain Vec in page props.
+  3. ListBroadcast — server-side push of individual row patches.
+  4. data-pilcrow-list="<name>" + data-pilcrow-key="{{ item.id }}" in HTML templates.
+
+Why no LiveList<T>:
+  - A Vec<T> + derive is already zero-boilerplate.
+  - Specialised container types create a parallel type hierarchy with no benefit.
+  - SSE patch delivery (list-patch wire format) does not require a container type.
+"""
+constraints = [
+  "Do not introduce LiveList<T>, AppendList<T>, or any other list container type.",
+  "List rows must derive PilcrowListRow (or implement ListRow manually).",
+  "Each list must have exactly one ListBroadcast instance per process.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+  "crates/runtime/src/live_props/list_broadcast.rs — ListBroadcast",
+  "crates/macros/src/list_row_derive.rs — PilcrowListRow derive",
+]
+test_refs = []
+scaffold_templates = []
