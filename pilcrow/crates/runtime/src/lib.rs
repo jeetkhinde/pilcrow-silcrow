@@ -89,6 +89,8 @@ pub use response::response::html;
 
 pub use deferred::{__live_props_response, LiveProp, LiveTarget};
 pub use nav::extract_ps_fragment;
+#[cfg(feature = "live-props")]
+pub use live_props::{ListBroadcast, ListPatchEvent, ListRow};
 // ── ISR / SSG cache ──────────────────────────────────────────
 pub use isr::{IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────

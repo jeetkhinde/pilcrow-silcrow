@@ -8,6 +8,7 @@ use syn::{
 mod fsr_invalidate;
 mod handler;
 mod invalidate_macro;
+mod list_row_derive;
 mod live_props_derive;
 
 #[proc_macro_attribute]
@@ -18,6 +19,28 @@ pub fn handler(attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_derive(PilcrowProps, attributes(promote_after, patch_debounce, column))]
 pub fn derive_pilcrow_props(input: TokenStream) -> TokenStream {
     live_props_derive::expand(input)
+}
+
+/// Derive `ListRow` for a struct whose fields are annotated with `#[pilcrow(key)]`
+/// (unique row ID) and `#[pilcrow(live)]` (fields included in `list-patch` SSE events).
+///
+/// Exactly one field must be annotated `#[pilcrow(key)]`. Its `to_string()` value
+/// is used as the row key. Any number of fields may be annotated `#[pilcrow(live)]`;
+/// their current values are serialised to JSON in `pilcrow_live_fields()`.
+///
+/// ```rust,ignore
+/// #[derive(PilcrowListRow)]
+/// pub struct TicketRow {
+///     #[pilcrow(key)]
+///     pub id: i64,
+///     #[pilcrow(live)]
+///     pub status: String,
+///     pub title: String,  // static — not included in live updates
+/// }
+/// ```
+#[proc_macro_derive(PilcrowListRow, attributes(pilcrow))]
+pub fn derive_pilcrow_list_row(input: TokenStream) -> TokenStream {
+    list_row_derive::expand(input)
 }
 
 #[proc_macro]
