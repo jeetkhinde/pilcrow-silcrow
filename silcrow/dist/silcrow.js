@@ -562,15 +562,12 @@ const URL_BINDING_PROPS = new Set([
   "poster", "cite", "background"
 ]);
 
-const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
 // ── Internal Utilities ──────────────────────────────────────
 
+// Caches path string → split segments so repeated lookups skip regex + split.
+// Stores null for paths that fail validation so they short-circuit on reuse.
 const pathCache = new Map();
 
-// ⚡ Bolt: Memoize path splitting and validation to avoid expensive regex and split ops
-// 📊 Impact: ~2.5x faster path resolution (200ms -> 77ms for 1M operations in tests)
-// 🔬 Measurement: Benchmarked 1M lookups of resolvePath against standard cache implementation
 function resolvePath(obj, path) {
   if (typeof obj !== "object" || obj === null) return undefined;
 
@@ -589,7 +586,6 @@ function resolvePath(obj, path) {
   let cur = obj;
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
-    // Inline check for blocked keys is faster than Set.has for 3 items
     if (part === "__proto__" || part === "constructor" || part === "prototype") return undefined;
     if (!Object.prototype.hasOwnProperty.call(cur, part)) return undefined;
     cur = cur[part];
