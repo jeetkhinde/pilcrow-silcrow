@@ -245,15 +245,18 @@ function mergePath(prev, next) {
   if (!isPlainMergeable(prev) || !isPlainMergeable(next)) return next;
   if (Array.isArray(prev) !== Array.isArray(next)) return next;
 
-  const out = Array.isArray(prev) ? prev.slice() : Object.assign({}, prev);
+  let out = prev;
   let changed = false;
   for (const k in next) {
     if (!Object.prototype.hasOwnProperty.call(next, k)) continue;
     if (BLOCKED_ATOM_KEYS.has(k)) continue;
     const merged = mergePath(prev[k], next[k]);
     if (!Object.is(merged, prev[k])) {
+      if (!changed) {
+        out = Array.isArray(prev) ? prev.slice() : Object.assign({}, prev);
+        changed = true;
+      }
       out[k] = merged;
-      changed = true;
     }
   }
   return changed ? out : prev;
