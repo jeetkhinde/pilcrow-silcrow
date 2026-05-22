@@ -17,7 +17,7 @@ use axum::Router;
 /// struct LambdaAdapter;
 ///
 /// impl PilcrowAdapter for LambdaAdapter {
-///     fn serve(self, _bind_addr: &str, app: Router) -> AdapterFuture {
+///     fn serve(self, _bind_addr: &str, app: Router, _on_bind: Box<dyn FnOnce(&str) + Send + 'static>) -> AdapterFuture {
 ///         Box::pin(async move {
 ///             lambda_http::run(app).await.expect("lambda serve");
 ///         })
@@ -28,7 +28,12 @@ use axum::Router;
 /// pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, LambdaAdapter).await;
 /// ```
 pub trait PilcrowAdapter: Send + 'static {
-    fn serve(self, bind_addr: &str, app: Router) -> AdapterFuture;
+    fn serve(
+        self,
+        bind_addr: &str,
+        app: Router,
+        on_bind: Box<dyn FnOnce(&str) + Send + 'static>,
+    ) -> AdapterFuture;
 }
 
 /// Boxed pinned future returned by [`PilcrowAdapter::serve`].
@@ -41,7 +46,12 @@ pub type AdapterFuture = Pin<Box<dyn Future<Output = ()>>>;
 pub struct TokioAdapter;
 
 impl PilcrowAdapter for TokioAdapter {
-    fn serve(self, bind_addr: &str, app: Router) -> AdapterFuture {
+    fn serve(
+        self,
+        bind_addr: &str,
+        app: Router,
+        on_bind: Box<dyn FnOnce(&str) + Send + 'static>,
+    ) -> AdapterFuture {
         let bind_addr = bind_addr.to_string();
         Box::pin(async move {
             let listener = 'bind: {
@@ -74,6 +84,7 @@ impl PilcrowAdapter for TokioAdapter {
             let bound = listener.local_addr().unwrap();
             tracing::info!("listening on http://{bound}");
             eprintln!("pilcrow: listening on http://{bound}");
+            on_bind(&bound.to_string());
             if let Err(err) = axum::serve(listener, app)
                 .with_graceful_shutdown(shutdown_signal())
                 .await
@@ -116,4 +127,41 @@ pub(super) async fn shutdown_signal() {
     }
 
     tracing::info!("shutdown signal received — draining in-flight requests");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    struct CallbackAdapter;
+
+    impl PilcrowAdapter for CallbackAdapter {
+        fn serve(
+            self,
+            _bind_addr: &str,
+            _app: Router,
+            on_bind: Box<dyn FnOnce(&str) + Send + 'static>,
+        ) -> AdapterFuture {
+            on_bind("127.0.0.1:5050");
+            Box::pin(async {})
+        }
+    }
+
+    #[tokio::test]
+    async fn on_bind_callback_receives_resolved_addr() {
+        let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let cap = captured.clone();
+        let cb: Box<dyn FnOnce(&str) + Send + 'static> =
+            Box::new(move |addr| *cap.lock().unwrap() = Some(addr.to_string()));
+
+        CallbackAdapter
+            .serve("127.0.0.1:3000", Router::new(), cb)
+            .await;
+
+        assert_eq!(
+            *captured.lock().unwrap(),
+            Some("127.0.0.1:5050".to_string())
+        );
+    }
 }

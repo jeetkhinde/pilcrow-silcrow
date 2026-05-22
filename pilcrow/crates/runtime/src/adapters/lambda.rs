@@ -47,7 +47,12 @@ use crate::adapter::{AdapterFuture, PilcrowAdapter};
 pub struct LambdaAdapter;
 
 impl PilcrowAdapter for LambdaAdapter {
-    fn serve(self, _bind_addr: &str, app: Router) -> AdapterFuture {
+    fn serve(
+        self,
+        _bind_addr: &str,
+        app: Router,
+        _on_bind: Box<dyn FnOnce(&str) + Send + 'static>,
+    ) -> AdapterFuture {
         Box::pin(async move {
             if let Err(err) =
                 lambda_http::run(lambda_http::service_fn(move |req: lambda_http::Request| {

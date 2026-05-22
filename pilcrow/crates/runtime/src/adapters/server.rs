@@ -27,11 +27,12 @@ pub type RenderAdapter = PortEnvAdapter;
 pub type VercelAdapter = PortEnvAdapter;
 
 impl PilcrowAdapter for PortEnvAdapter {
-    fn serve(self, bind_addr: &str, app: Router) -> AdapterFuture {
-        // let addr = match std::env::var("PORT") {
-        //     Ok(port) => format!("0.0.0.0:{port}"),
-        //     Err(_) => bind_addr.to_string(),
-        // };
+    fn serve(
+        self,
+        bind_addr: &str,
+        app: Router,
+        on_bind: Box<dyn FnOnce(&str) + Send + 'static>,
+    ) -> AdapterFuture {
         let addr = resolve_addr(bind_addr);
         Box::pin(async move {
             let listener = match tokio::net::TcpListener::bind(&addr).await {
@@ -42,7 +43,9 @@ impl PilcrowAdapter for PortEnvAdapter {
                     std::process::exit(1);
                 }
             };
-            tracing::info!("listening on http://{addr}");
+            let bound = listener.local_addr().unwrap();
+            tracing::info!("listening on http://{bound}");
+            on_bind(&bound.to_string());
             if let Err(err) = axum::serve(listener, app)
                 .with_graceful_shutdown(shutdown_signal())
                 .await
