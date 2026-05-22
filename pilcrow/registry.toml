@@ -1073,6 +1073,8 @@ constraints = [
   "React route-data examples assume React 19 use() and Suspense.",
   "Silcrow.submit from React should target the same Pilcrow named action URLs used by enhanced HTML forms.",
   "<react> tags inside HTML comments are ignored and preserved as comments.",
+  "SSR placeholder replacement (strategy=\"ssr\") buffers the entire HTML response in memory. Responses larger than 10 MiB skip SSR processing — the placeholders are left unreplaced and a tracing::warn is emitted.",
+  "The Node.js SSR worker communicates over stdin/stdout on the blocking thread pool (spawn_blocking), so SSR renders do not block Tokio workers.",
 ]
 invalid_examples = [
   "<react src=\"./react/Counter.tsx\" /> — missing strategy",
@@ -1236,16 +1238,18 @@ id = "request-timeout"
 name = "Request Timeout"
 domain = "pilcrow"
 status = "stable"
-summary = "Requests that exceed 30 seconds receive a 408 Request Timeout response automatically."
+summary = "Requests that exceed 30 seconds receive a 408 Request Timeout response automatically, with the timed-out path logged."
 spec = """
-tower::timeout::TimeoutLayer is applied to every route via ServiceBuilder in start().
-If a handler takes longer than REQUEST_TIMEOUT_SECS (30s), the layer cancels it and
-HandleErrorLayer converts the BoxError into StatusCode::REQUEST_TIMEOUT (408).
+An axum::middleware::from_fn middleware (request_timeout_middleware) wraps every route in
+tokio::time::timeout(REQUEST_TIMEOUT_SECS). On expiry it emits tracing::warn!(path, timeout_secs)
+and returns StatusCode::REQUEST_TIMEOUT (408). The path of the timed-out request is captured
+before dispatch, making production timeouts debuggable without grepping access logs.
 No application-level configuration is needed.
 """
 canonical_usage = """
 // This is automatic — no code needed in your app.
 // If a load() or action runs > 30s it returns HTTP 408.
+// The tracing::warn! on timeout includes fields: path=<route> timeout_secs=30
 """
 constraints = [
   "Timeout is fixed at 30 seconds — not configurable per-route in v0.1.",
@@ -1253,7 +1257,7 @@ constraints = [
 ]
 invalid_examples = []
 source_refs = [
-  "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, TimeoutLayer, HandleErrorLayer",
+  "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, request_timeout_middleware",
 ]
 test_refs = []
 validation_rules = []
@@ -1289,6 +1293,38 @@ constraints = [
 ]
 invalid_examples = []
 source_refs = ["crates/runtime/src/start.rs — TraceLayer::new_for_http()"]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "response-compression"
+name = "Response Compression"
+domain = "pilcrow"
+status = "stable"
+summary = "HTML, JS, and CSS responses are automatically compressed with brotli, gzip, deflate, or zstd based on the client's Accept-Encoding header."
+spec = """
+tower_http::compression::CompressionLayer::new() is installed by start() as the outermost
+router layer. It negotiates the best available encoding from the client's Accept-Encoding
+header (brotli > zstd > gzip > deflate) and compresses the response body transparently.
+No application-level configuration is needed — all content types that the client can accept
+compressed are handled. The Content-Encoding response header is set automatically.
+"""
+canonical_usage = """
+// This is automatic — no code needed in your app.
+// Clients that send Accept-Encoding: br, gzip receive compressed responses.
+// Verify in browser devtools: Response Headers > Content-Encoding: br
+"""
+constraints = [
+  "Compression is always on — there is no opt-out constant.",
+  "The encoding is negotiated per-request from Accept-Encoding; uncompressed clients receive plain responses.",
+  "SSE and WebSocket responses are not compressed (streaming bodies are excluded by tower-http).",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/start.rs — CompressionLayer::new()",
+  "crates/runtime/Cargo.toml — tower-http compression-full feature",
+]
 test_refs = []
 validation_rules = []
 scaffold_templates = []
