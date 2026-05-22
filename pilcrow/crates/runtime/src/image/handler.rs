@@ -123,17 +123,25 @@ fn serve_bytes(bytes: Vec<u8>, mime: &'static str) -> Response {
 async fn load_source(src: &str, static_dir: &str) -> anyhow::Result<Vec<u8>> {
     let rel = src.trim_start_matches('/');
 
-    // Reject traversal components before touching the filesystem.
-    if rel.split('/').any(|c| c == "..") {
+    // Strip a leading `static_dir/` prefix so callers can pass either
+    // "hero.jpg" or "public/hero.jpg" when static_dir is "public".
+    let static_prefix = format!("{}/", static_dir.trim_matches('/'));
+    let rel = rel.strip_prefix(static_prefix.as_str()).unwrap_or(rel);
+
+    // Reject parent-directory components using platform-agnostic path parsing.
+    if std::path::Path::new(rel)
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
         anyhow::bail!("path traversal not allowed");
     }
 
-    let root = std::path::Path::new(static_dir)
-        .canonicalize()
+    let root = tokio::fs::canonicalize(static_dir)
+        .await
         .map_err(|e| anyhow::anyhow!("static_dir unavailable: {e}"))?;
     let candidate = root.join(rel);
-    let canonical = candidate
-        .canonicalize()
+    let canonical = tokio::fs::canonicalize(&candidate)
+        .await
         .map_err(|e| anyhow::anyhow!("image not found: {e}"))?;
 
     if !canonical.starts_with(&root) {
