@@ -2,14 +2,12 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::BoxError;
 use axum::Router;
-use axum::error_handling::HandleErrorLayer;
 use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use pilcrow_core::PilcrowConfig;
 
-use tower::ServiceBuilder;
-use tower::timeout::TimeoutLayer;
+use tower_http::compression::CompressionLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::adapter::{PilcrowAdapter, TokioAdapter};
@@ -313,18 +311,9 @@ where
     }
 
     let mut app = app
-        .layer(
-            ServiceBuilder::new()
-                .layer(HandleErrorLayer::new(|err: BoxError| async move {
-                    if err.is::<tower::timeout::error::Elapsed>() {
-                        StatusCode::REQUEST_TIMEOUT
-                    } else {
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    }
-                }))
-                .layer(TimeoutLayer::new(Duration::from_secs(REQUEST_TIMEOUT_SECS))),
-        )
-        .layer(TraceLayer::new_for_http());
+        .layer(axum::middleware::from_fn(request_timeout_middleware))
+        .layer(TraceLayer::new_for_http())
+        .layer(CompressionLayer::new());
 
     // i18n: inject bundles as extension (for handler access via Req.i18n) and add the
     // locale-prefix rewrite middleware (outermost, so it runs before routing).
@@ -366,6 +355,26 @@ where
         };
         crate::prebake::set_local_base(base);
     })).await;
+}
+
+/// Enforce a per-request timeout and log the path when it fires.
+async fn request_timeout_middleware(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let path = req.uri().path().to_owned();
+    match tokio::time::timeout(
+        Duration::from_secs(REQUEST_TIMEOUT_SECS),
+        next.run(req),
+    )
+    .await
+    {
+        Ok(response) => response,
+        Err(_) => {
+            tracing::warn!(path = %path, timeout_secs = REQUEST_TIMEOUT_SECS, "request timed out");
+            StatusCode::REQUEST_TIMEOUT.into_response()
+        }
+    }
 }
 
 /// Replace `__PILCROW_REACT_SSR_{id}__` placeholders in HTML responses.
