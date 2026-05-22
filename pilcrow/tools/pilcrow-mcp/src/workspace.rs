@@ -827,12 +827,12 @@ mod tests {
             .parent()
             .unwrap()
             .to_path_buf();
-        let integration_root = pilcrow_root
+        let workspace_root = pilcrow_root
             .parent()
-            .unwrap_or_else(|| Path::new("."))
-            .join("workspaces/pilcrow-silcrow");
-        if integration_root.join("demo/Cargo.toml").exists() {
-            integration_root.join("demo")
+            .unwrap_or_else(|| Path::new("."));
+        let demo = workspace_root.join("demo");
+        if demo.join("Cargo.toml").exists() {
+            demo
         } else {
             pilcrow_root
         }
