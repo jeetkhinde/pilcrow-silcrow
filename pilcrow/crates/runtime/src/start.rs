@@ -25,6 +25,9 @@ use crate::isr::{IsrCache, IsrHandle};
 use crate::sw::{sw_handler, sw_inject_layer};
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
+/// Maximum HTML body size buffered for SSR placeholder replacement (10 MiB).
+/// Responses larger than this skip SSR processing rather than risking OOM.
+const SSR_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
 // local utility
 fn web_bind_addr(config: &PilcrowConfig) -> String {
     format!("{}:{}", config.web.host, config.web.port)
@@ -395,9 +398,12 @@ async fn island_ssr_middleware(
     }
 
     let (parts, body) = response.into_parts();
-    let bytes = match axum::body::to_bytes(body, usize::MAX).await {
+    let bytes = match axum::body::to_bytes(body, SSR_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
-        Err(_) => return axum::response::Response::from_parts(parts, axum::body::Body::empty()),
+        Err(_) => {
+            tracing::warn!("island_ssr_middleware: response body exceeded SSR_BODY_LIMIT_BYTES or read failed; SSR skipped");
+            return axum::response::Response::from_parts(parts, axum::body::Body::empty());
+        }
     };
 
     let html = match std::str::from_utf8(&bytes) {
@@ -411,7 +417,15 @@ async fn island_ssr_middleware(
         return axum::response::Response::from_parts(parts, axum::body::Body::from(bytes));
     }
 
-    let replaced = replace_ssr_placeholders(html, &worker);
+    // `replace_ssr_placeholders` communicates with a Node.js process over
+    // stdin/stdout (blocking I/O). Run it on the blocking thread pool to
+    // avoid stalling Tokio workers and serialising all SSR requests.
+    let html_owned = html.to_owned();
+    let replaced = tokio::task::spawn_blocking(move || {
+        replace_ssr_placeholders(&html_owned, &worker)
+    })
+    .await
+    .unwrap_or_default();
     axum::response::Response::from_parts(parts, axum::body::Body::from(replaced))
 }
 
