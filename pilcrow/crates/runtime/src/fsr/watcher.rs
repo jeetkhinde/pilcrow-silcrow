@@ -99,11 +99,15 @@ pub async fn watcher_tick(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    // Phase 1: run all DB queries in parallel (read-only, safe to fan out).
-    let results = futures_util::future::join_all(
-        stale.iter().map(|slot_row| re_execute_query(store, slot_row)),
-    )
-    .await;
+    // Phase 1: run DB queries with bounded concurrency (8 at a time) to avoid pool exhaustion.
+    let mut results = Vec::with_capacity(stale.len());
+    for chunk in stale.chunks(8) {
+        let chunk_results = futures_util::future::join_all(
+            chunk.iter().map(|slot_row| re_execute_query(store, slot_row)),
+        )
+        .await;
+        results.extend(chunk_results);
+    }
 
     // Phase 2: patch files and broadcast sequentially to avoid same-route write races.
     for (slot_row, result) in stale.iter().zip(results) {
@@ -163,11 +167,15 @@ pub async fn watcher_tick_redis(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    // Phase 1: run all DB queries in parallel (read-only, safe to fan out).
-    let results = futures_util::future::join_all(
-        stale.iter().map(|slot_row| re_execute_query(store, slot_row)),
-    )
-    .await;
+    // Phase 1: run DB queries with bounded concurrency (8 at a time) to avoid pool exhaustion.
+    let mut results = Vec::with_capacity(stale.len());
+    for chunk in stale.chunks(8) {
+        let chunk_results = futures_util::future::join_all(
+            chunk.iter().map(|slot_row| re_execute_query(store, slot_row)),
+        )
+        .await;
+        results.extend(chunk_results);
+    }
 
     // Phase 2: patch files, Redis, and SSE sequentially to avoid same-route write races.
     for (slot_row, result) in stale.iter().zip(results) {
@@ -513,7 +521,7 @@ pub fn spawn_embedded_watcher_redis(
     }
 
     tokio::spawn(async move {
-        let fallback_interval = Duration::from_millis(config.poll_interval_ms);
+        let fallback_interval = Duration::from_millis(config.poll_interval_ms).max(Duration::from_millis(100));
 
         loop {
             match redis.client().get_async_pubsub().await {

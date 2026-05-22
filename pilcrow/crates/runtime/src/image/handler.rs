@@ -36,12 +36,9 @@ pub async fn image_handler(
 ) -> Response {
     let cfg = &state.config;
 
-    // Validate src — block absolute URLs to non-allowlisted domains.
-    if let Ok(url) = q.src.parse::<url::Url>() {
-        let host = url.host_str().unwrap_or("");
-        if !cfg.domains.iter().any(|d| d == host) {
-            return (StatusCode::FORBIDDEN, "Remote domain not allowed").into_response();
-        }
+    // Validate src — remote URLs are blocked entirely (fetch not yet implemented).
+    if q.src.parse::<url::Url>().is_ok() {
+        return (StatusCode::NOT_IMPLEMENTED, "Remote image fetch is not supported").into_response();
     }
 
     let quality = q.quality.unwrap_or(cfg.quality).clamp(1, 100);
@@ -69,8 +66,8 @@ pub async fn image_handler(
         Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
     };
 
-    // Load source image (local file path for now).
-    let src_bytes = match load_source(&q.src).await {
+    // Load source image from the configured static root.
+    let src_bytes = match load_source(&q.src, &cfg.static_dir).await {
         Ok(b) => b,
         Err(e) => {
             tracing::warn!("image load failed for {}: {e}", q.src);
@@ -123,7 +120,25 @@ fn serve_bytes(bytes: Vec<u8>, mime: &'static str) -> Response {
     res
 }
 
-async fn load_source(src: &str) -> anyhow::Result<Vec<u8>> {
-    // Absolute URLs are blocked upstream; here src is always a local path.
-    Ok(tokio::fs::read(src.trim_start_matches('/')).await?)
+async fn load_source(src: &str, static_dir: &str) -> anyhow::Result<Vec<u8>> {
+    let rel = src.trim_start_matches('/');
+
+    // Reject traversal components before touching the filesystem.
+    if rel.split('/').any(|c| c == "..") {
+        anyhow::bail!("path traversal not allowed");
+    }
+
+    let root = std::path::Path::new(static_dir)
+        .canonicalize()
+        .map_err(|e| anyhow::anyhow!("static_dir unavailable: {e}"))?;
+    let candidate = root.join(rel);
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|e| anyhow::anyhow!("image not found: {e}"))?;
+
+    if !canonical.starts_with(&root) {
+        anyhow::bail!("path escapes static root");
+    }
+
+    Ok(tokio::fs::read(&canonical).await?)
 }
