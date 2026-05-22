@@ -181,6 +181,10 @@ pub struct ImageConfig {
     /// Maximum concurrent image transforms (CPU-bound). Default: 4.
     #[serde(default = "default_image_concurrency")]
     pub concurrency: usize,
+    /// Root directory that local `src` paths are resolved against.
+    /// Paths that escape this directory are rejected. Default: `"public"`.
+    #[serde(default = "default_image_static_dir")]
+    pub static_dir: String,
 }
 
 impl Default for ImageConfig {
@@ -194,6 +198,7 @@ impl Default for ImageConfig {
             quality: default_image_quality(),
             formats: default_image_formats(),
             concurrency: default_image_concurrency(),
+            static_dir: default_image_static_dir(),
         }
     }
 }
@@ -482,6 +487,10 @@ fn default_image_formats() -> Vec<String> {
 
 fn default_image_concurrency() -> usize {
     4
+}
+
+fn default_image_static_dir() -> String {
+    "public".to_string()
 }
 
 #[cfg(test)]
