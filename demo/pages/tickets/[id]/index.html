@@ -118,7 +118,13 @@
       margin-left: 1rem;
       font-size: 0.85rem;
       color: #16a34a;
-      display: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    #save-msg.show {
+      opacity: 1;
     }
 
     .badge {
@@ -169,7 +175,7 @@
   </style>
 </pilcrow:head>
 
-<a class="back" href="/tickets">← All Tickets</a>
+<a class="back" href="/tickets" aria-label="Back to all tickets"><span aria-hidden="true">←</span> All Tickets</a>
 
 <div class="card">
   <div class="field">
@@ -219,7 +225,7 @@
         </select>
       </div>
       <button class="btn-save" id="btn-save">Save</button>
-      <span id="save-msg">Saved!</span>
+      <span id="save-msg" role="status" aria-live="polite"></span>
     </div>
   </div>
 </div>
@@ -251,8 +257,12 @@
         body: JSON.stringify({status: status, priority: priority})
       });
       if (res.ok) {
-        msg.style.display = 'inline';
-        setTimeout(function () {msg.style.display = 'none';}, 2000);
+        msg.textContent = 'Saved!';
+        msg.classList.add('show');
+        setTimeout(function () {
+          msg.classList.remove('show');
+          setTimeout(function() { msg.textContent = ''; }, 200);
+        }, 2000);
       }
     } catch (e) {
       console.error('save failed', e);
