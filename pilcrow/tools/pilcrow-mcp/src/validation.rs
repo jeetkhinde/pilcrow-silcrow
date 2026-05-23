@@ -130,20 +130,32 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
             }
         }
 
-        // Detect truly unimplemented static-output constants.
-        // PRERENDER is now a stable SSG feature. GENERATE_STATIC_PARAMS remains unimplemented.
+        // Detect removed/unsupported static-output constants.
         for unsupported_const in ["GENERATE_STATIC_PARAMS"] {
             if line.contains(unsupported_const) && line.contains("const") {
                 findings.push(finding_with_line(
                     Severity::Error,
                     "pilcrow-planned-static-output",
-                    format!("`{unsupported_const}` is not supported in Pilcrow. Use PRERENDER = true for SSG."),
+                    format!("`{unsupported_const}` is not supported in Pilcrow. Use `pub const PROMOTE_AFTER: u32 = 0;` for bake-on-first-hit."),
                     path,
                     Some(lnum),
                     Some("registry.toml: feature ssg"),
-                    Some("Use pub const PRERENDER: bool = true; in your code-behind for SSG prerendering."),
+                    Some("Use `pub const PROMOTE_AFTER: u32 = 0;` in your code-behind to bake on first hit."),
                 ));
             }
+        }
+
+        // PRERENDER is removed — build error. Use PROMOTE_AFTER = 0 instead.
+        if line.contains("PRERENDER") && line.contains("const") {
+            findings.push(finding_with_line(
+                Severity::Error,
+                "pilcrow-prerender-removed",
+                "`PRERENDER: bool` is removed. Use `pub const PROMOTE_AFTER: u32 = 0;` instead.".to_string(),
+                path,
+                Some(lnum),
+                Some("registry.toml: feature ssg"),
+                Some("Replace `pub const PRERENDER: bool = true;` with `pub const PROMOTE_AFTER: u32 = 0;`."),
+            ));
         }
 
         // STREAMING conflicts: detect incompatible const combinations at build time.
@@ -157,17 +169,6 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
                     Some(lnum),
                     Some("registry.toml: feature SSR Streaming"),
                     Some("Use AsyncValue<T> for streaming individual fields on an ISR page."),
-                ));
-            }
-            if code.contains("PRERENDER") {
-                findings.push(finding_with_line(
-                    Severity::Error,
-                    "pilcrow-streaming-ssg-conflict",
-                    "STREAMING = true is incompatible with PRERENDER = true — routekit reports this as a structured build error.".to_string(),
-                    path,
-                    Some(lnum),
-                    Some("registry.toml: feature SSR Streaming"),
-                    Some("Pre-rendered pages are fully static and cannot use streaming."),
                 ));
             }
             if code.contains("LiveProp<") {
@@ -369,20 +370,6 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
                             ));
                         }
                     }
-                } else if name == "PRERENDER" {
-                    // Must be a bool literal, not a string like "true"
-                    if let syn::Expr::Lit(expr_lit) = c.expr.as_ref() {
-                        if matches!(&expr_lit.lit, syn::Lit::Str(_)) {
-                            findings.push(finding(
-                                Severity::Error,
-                                "pilcrow-prerender-wrong-type",
-                                "PRERENDER must be a bool literal: `pub const PRERENDER: bool = true;` — not a string.".to_string(),
-                                path,
-                                Some("crates/routekit/src/templating/page_options.rs"),
-                                Some("Use `pub const PRERENDER: bool = true;` in your .rs code-behind."),
-                            ));
-                        }
-                    }
                 } else if name == "REVALIDATE" || name == "MAX_STALE" {
                     // Must be an integer literal (u64), not a string like "60"
                     if let syn::Expr::Lit(expr_lit) = c.expr.as_ref() {
@@ -499,28 +486,26 @@ fn validate_html(code: &str, path: Option<&str>, findings: &mut Vec<Finding>) {
             }
         }
 
-        // generateStaticParams is unimplemented. `prerender` in HTML is wrong syntax —
-        // PRERENDER belongs in the .rs code-behind, not the HTML template.
         if line.contains("generateStaticParams") {
             findings.push(finding_with_line(
                 Severity::Error,
                 "pilcrow-planned-static-output",
-                "`generateStaticParams` is not supported in Pilcrow. Use PRERENDER = true in the .rs code-behind.".to_string(),
+                "`generateStaticParams` is not supported in Pilcrow. Use `pub const PROMOTE_AFTER: u32 = 0;` in the .rs code-behind.".to_string(),
                 path,
                 Some(lnum),
                 Some("registry.toml: feature ssg"),
-                Some("Add pub const PRERENDER: bool = true; in your .rs code-behind file to enable SSG."),
+                Some("Add `pub const PROMOTE_AFTER: u32 = 0;` in your .rs code-behind file to bake on first hit."),
             ));
         }
-        if line.contains("prerender") && !line.contains("PRERENDER") {
+        if line.contains("prerender") {
             findings.push(finding_with_line(
                 Severity::Warning,
                 "pilcrow-prerender-in-html",
-                "`prerender` is not a valid HTML attribute. SSG is configured in the .rs code-behind.".to_string(),
+                "`prerender` is not a valid HTML attribute. Use `pub const PROMOTE_AFTER: u32 = 0;` in the .rs code-behind instead.".to_string(),
                 path,
                 Some(lnum),
                 Some("registry.toml: feature ssg"),
-                Some("Add pub const PRERENDER: bool = true; in your paired .rs file instead."),
+                Some("Add `pub const PROMOTE_AFTER: u32 = 0;` in your paired .rs file instead."),
             ));
         }
         if line.contains("REVALIDATE") || line.contains("CACHE_TAGS") || line.contains("CACHE_VARY")
@@ -856,37 +841,22 @@ mod tests {
     }
 
     #[test]
-    fn rejects_prerender_as_string_literal() {
-        let report = validate_implementation(
-            "pub const PRERENDER: &str = \"true\";",
-            Some("pages/about.rs"),
-            None,
-        );
-        assert!(
-            report
-                .findings
-                .iter()
-                .any(|f| f.rule_id == "pilcrow-prerender-wrong-type"),
-            "expected pilcrow-prerender-wrong-type, got: {:?}",
-            report.findings
-        );
-    }
-
-    #[test]
-    fn accepts_prerender_as_bool_literal() {
-        let report = validate_implementation(
+    fn rejects_prerender_const_as_removed() {
+        for code in [
             "pub const PRERENDER: bool = true;",
-            Some("pages/about.rs"),
-            None,
-        );
-        assert!(
-            !report
-                .findings
-                .iter()
-                .any(|f| f.rule_id == "pilcrow-prerender-wrong-type"),
-            "unexpected finding: {:?}",
-            report.findings
-        );
+            "pub const PRERENDER: &str = \"true\";",
+        ] {
+            let report = validate_implementation(code, Some("pages/about.rs"), None);
+            assert!(
+                report
+                    .findings
+                    .iter()
+                    .any(|f| f.rule_id == "pilcrow-prerender-removed"
+                        && f.severity == Severity::Error),
+                "expected pilcrow-prerender-removed for `{code}`, got: {:?}",
+                report.findings
+            );
+        }
     }
 
     #[test]

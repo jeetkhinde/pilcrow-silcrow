@@ -39,7 +39,7 @@ bundles silcrow.js at Cargo build time via `build.rs`.
 | `pilcrow-core` | Domain primitives, config, envelope, error types | `src/config/config.rs`, `src/envelope/envelope.rs` |
 | `pilcrow-macros` | Proc-macros: `#[handler]`, SSE helpers | `src/lib.rs`, `src/handler.rs` |
 | `pilcrow-routekit` | File-based routing, codegen, templating (React/Solid/i18n) | `src/routing/`, `src/templating/`, `src/codegen/` |
-| `pilcrow-runtime` | Axum integration, middleware, SSE/WS, assets embed, ISR, CSRF | `src/context.rs`, `src/middleware.rs`, `src/sse/`, `src/assets/` |
+| `pilcrow-runtime` | Axum integration, middleware, SSE/WS, assets embed, FSR, CSRF | `src/context.rs`, `src/middleware.rs`, `src/sse/`, `src/assets/`, `src/fsr/` |
 | `pilcrow-web` | Web/SSR integration layer (thin adapter) | `src/lib.rs` |
 | `pilcrow-client` | Client-facing extractors and error types | `src/client.rs`, `src/extractor.rs` |
 
@@ -97,12 +97,13 @@ for `[data-pilcrow-react]` elements to mount React islands. Silcrow has no React
 
 ## Rendering mode questions — read docs, do not scan
 
-For ANY question about rendering modes (SSR, ISR, SSG, streaming, deferred fields, island strategies):
+For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 
 1. Read `.claude/rendering-models.md` — all modes, configuration constants, constraints, and combination rules
 
-Do NOT open `pilcrow/crates/runtime/src/isr.rs`, `codegen/app_module.rs`, or `deferred.rs` unless
-you are actively debugging a mismatch between the docs and real behavior.
+**Removed modes:** ISR (`REVALIDATE`), SSR Streaming (`STREAMING`), `Deferred<T>` / `DeferredHtml`, Static Export, `PRERENDER: bool` — all produce build errors now.
+
+Do NOT open `pilcrow/crates/runtime/src/isr.rs` (stripped to in-memory SSG cache only), `codegen/app_module.rs`, or `deferred.rs` unless actively debugging a mismatch between the docs and real behavior.
 
 ## React island questions — read docs, do not scan
 
@@ -176,6 +177,13 @@ None.
 ## Known issues — do not work around without fixing root cause
 
 None.
+
+## Runtime middleware (always-on)
+
+Applied to every request in `start.rs` — no config needed:
+
+- **Request timeout** — 30 s hard cap; returns `408` and logs `warn!(path, "request timed out")`
+- **Response compression** — `CompressionLayer` (tower-http); compresses all responses automatically
 
 ## Hard rules — never violate
 
