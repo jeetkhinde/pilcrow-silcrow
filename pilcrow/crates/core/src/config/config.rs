@@ -281,8 +281,8 @@ pub struct CacheConfig {
     /// Defaults to `.pilcrow-cache` in the current directory.
     pub dir: Option<String>,
     /// Maximum duration (seconds) a background revalidation task may run before abort.
-    #[serde(default = "default_revalidate_timeout_secs")]
-    pub revalidate_timeout_secs: u64,
+    #[serde(default = "default_revalidate_secs")]
+    pub revalidate_secs: u64,
 }
 
 impl Default for CacheConfig {
@@ -292,7 +292,7 @@ impl Default for CacheConfig {
             url: None,
             path: None,
             dir: None,
-            revalidate_timeout_secs: default_revalidate_timeout_secs(),
+            revalidate_secs: default_revalidate_secs(),
         }
     }
 }
@@ -445,7 +445,7 @@ fn default_locales_dir() -> String {
     "locales".to_string()
 }
 
-fn default_revalidate_timeout_secs() -> u64 {
+fn default_revalidate_secs() -> u64 {
     30
 }
 
