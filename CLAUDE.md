@@ -103,6 +103,8 @@ For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 
 **Removed modes:** ISR (`REVALIDATE`), SSR Streaming (`STREAMING`), `Deferred<T>` / `DeferredHtml`, Static Export, `PRERENDER: bool` — all produce build errors now.
 
+**FSR scheduled revalidation:** `#[pilcrow::live(revalidate = N)]` on a Props `LiveProp<T>` field auto-wires a timer that calls `invalidate_dep_key` every N seconds. Auto-derives dep key `"{module_name}::{field_name}"` and injects it as `depends_on` in the field's `from_row()` impl when no explicit `depends_on` is set in `live.rs`. No manual `WatcherConfig` or `hooks.rs` needed. `revalidate` is the only accepted key in `#[pilcrow::live(...)]` on Props fields — `promote_after` belongs in `live.rs` or as `pub const PROMOTE_AFTER`.
+
 Do NOT open `pilcrow/crates/runtime/src/isr.rs` (stripped to in-memory SSG cache only), `codegen/app_module.rs`, or `deferred.rs` unless actively debugging a mismatch between the docs and real behavior.
 
 ## React island questions — read docs, do not scan
