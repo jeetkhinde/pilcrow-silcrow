@@ -24,6 +24,9 @@ const REQUEST_TIMEOUT_SECS: u64 = 30;
 /// Maximum HTML body size buffered for SSR placeholder replacement (10 MiB).
 /// Responses larger than this skip SSR processing rather than risking OOM.
 const SSR_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
+/// Hard cap on Node SSR worker round-trip time. Prevents a hung Node process
+/// from occupying a spawn_blocking thread slot indefinitely.
+const SSR_WORKER_TIMEOUT: Duration = Duration::from_secs(10);
 // local utility
 fn web_bind_addr(config: &PilcrowConfig) -> String {
     format!("{}:{}", config.web.host, config.web.port)
@@ -408,11 +411,20 @@ async fn island_ssr_middleware(
     // stdin/stdout (blocking I/O). Run it on the blocking thread pool to
     // avoid stalling Tokio workers and serialising all SSR requests.
     let html_owned = html.to_owned();
-    let replaced = tokio::task::spawn_blocking(move || {
+    let task = tokio::task::spawn_blocking(move || {
         replace_ssr_placeholders(&html_owned, &worker)
-    })
-    .await
-    .unwrap_or_default();
+    });
+    let replaced = match tokio::time::timeout(SSR_WORKER_TIMEOUT, task).await {
+        Ok(Ok(html)) => html,
+        Ok(Err(panic)) => {
+            tracing::error!("island SSR worker panicked: {:?}", panic);
+            return axum::response::Response::from_parts(parts, axum::body::Body::empty());
+        }
+        Err(_elapsed) => {
+            tracing::error!("island SSR worker timed out after {}s", SSR_WORKER_TIMEOUT.as_secs());
+            return axum::response::Response::from_parts(parts, axum::body::Body::empty());
+        }
+    };
     axum::response::Response::from_parts(parts, axum::body::Body::from(replaced))
 }
 
