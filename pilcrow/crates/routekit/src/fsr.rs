@@ -948,4 +948,58 @@ mod tests {
         assert_eq!(fields[1].column_name, None);
         assert!(source.contains("row.get(\"priority\")"));
     }
+
+    #[test]
+    fn auto_dep_key_injected_when_revalidate_secs_is_set() {
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub status: LiveProp<String>,
+                pub priority: LiveProp<String>,
+            }
+            ",
+        );
+
+        let mut auto_attrs = HashMap::new();
+        // Only status gets revalidate; priority does not.
+        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60) });
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        // status → auto dep key injected in both from_row and live_fields (2 locations).
+        assert_eq!(source.matches("\"page_tickets::status\"").count(), 2,
+            "expected dep key for status in both from_row and live_fields");
+        // priority → no auto_attr, so no dep key.
+        assert!(!source.contains("\"page_tickets::priority\""),
+            "priority has no revalidate so no dep key should be injected");
+    }
+
+    #[test]
+    fn explicit_depends_on_beats_auto_dep_key() {
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                #[pilcrow::depends_on(dep!(tickets, id, params.id))]
+                pub status: LiveProp<String>,
+            }
+            ",
+        );
+
+        let route_params = vec!["id".to_string()];
+        let mut auto_attrs = HashMap::new();
+        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(30) });
+
+        let (source, _) = process_live_rs(&path, &route_params, None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        // Explicit dep key wins — tickets:id=, NOT page_tickets::status.
+        assert!(source.contains("\"tickets:id={}\""), "explicit dep should appear");
+        assert!(!source.contains("\"page_tickets::status\""),
+            "auto dep key must not override explicit depends_on");
+    }
 }

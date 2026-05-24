@@ -277,12 +277,9 @@ pub struct CacheConfig {
     pub url: Option<String>,
     /// SQLite database path. Used when `provider = "sqlite"`.
     pub path: Option<String>,
-    /// Directory for filesystem-backed ISR cache. Used when `provider = "filesystem"`.
+    /// Cache storage directory. Used when `provider = "filesystem"`.
     /// Defaults to `.pilcrow-cache` in the current directory.
     pub dir: Option<String>,
-    /// Maximum duration (seconds) a background revalidation task may run before abort.
-    #[serde(default = "default_revalidate_secs")]
-    pub revalidate_secs: u64,
 }
 
 impl Default for CacheConfig {
@@ -292,12 +289,10 @@ impl Default for CacheConfig {
             url: None,
             path: None,
             dir: None,
-            revalidate_secs: default_revalidate_secs(),
         }
     }
 }
 
-/// Which backing store to use for the ISR cache.
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum CacheProvider {
@@ -443,10 +438,6 @@ fn default_locale_str() -> String {
 
 fn default_locales_dir() -> String {
     "locales".to_string()
-}
-
-fn default_revalidate_secs() -> u64 {
-    30
 }
 
 fn default_web_host() -> String {

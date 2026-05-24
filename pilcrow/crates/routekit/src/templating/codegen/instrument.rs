@@ -279,7 +279,8 @@ pub fn instrument_frontmatter(
     let own_syn_fields = extract_named_fields(props_struct);
 
     // Parse and strip `#[pilcrow::live(...)]` from LiveProp<T> Props fields.
-    // Collects per-field revalidate_secs / promote_after for FSR codegen.
+    // Collects per-field revalidate_secs for FSR codegen. Errors on unknown keys.
+    let mut live_field_err: Option<io::Error> = None;
     if let syn::Fields::Named(ref mut named) = props_struct.fields {
         for field in &mut named.named {
             let Some(ident) = &field.ident else { continue };
@@ -303,6 +304,18 @@ pub fn instrument_frontmatter(
                             if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
                                 live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
                             }
+                        } else {
+                            let key = nv.path.segments.last()
+                                .map(|s| s.ident.to_string())
+                                .unwrap_or_default();
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: unknown key `{key}` in \
+                                     `#[pilcrow::live(...)]` on field `{field_name}`. \
+                                     Only `revalidate` is accepted on Props fields."
+                                ),
+                            ));
                         }
                     }
                 }
@@ -312,6 +325,9 @@ pub fn instrument_frontmatter(
                 page_options.fsr.live_field_attrs.insert(field_name, live_attr);
             }
         }
+    }
+    if let Some(err) = live_field_err {
+        return Err(err);
     }
 
     // Detect `LiveProp<T>` fields.
