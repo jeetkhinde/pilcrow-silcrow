@@ -919,6 +919,32 @@ pub fn render_generated_app_module(
     if hooks.has_init {
         out.push_str("    crate::hooks::init().await;\n");
     }
+    // Collect scheduled invalidations from per-field #[pilcrow::live(revalidate = N)] attrs.
+    let mut scheduled: Vec<(String, u64)> = Vec::new();
+    for entry in page_entries {
+        if let Some(opts) = page_options_map.get(&entry.symbol) {
+            let mut pairs: Vec<_> = opts.fsr.live_field_attrs.iter()
+                .filter_map(|(field_name, attr)| {
+                    attr.revalidate_secs.map(|secs| {
+                        (format!("{}::{}", entry.symbol, field_name), secs)
+                    })
+                })
+                .collect();
+            pairs.sort_by_key(|(k, _)| k.clone());
+            scheduled.extend(pairs);
+        }
+    }
+    if !scheduled.is_empty() {
+        out.push_str("    ::pilcrow_web::__register_codegen_scheduled_invalidations(::std::vec![\n");
+        for (dep_key, secs) in &scheduled {
+            let key_lit = rust_string(dep_key);
+            let _ = writeln!(
+                out,
+                "        ::pilcrow_web::ScheduledInvalidation::new({key_lit}, ::std::time::Duration::from_secs({secs}u64)),"
+            );
+        }
+        out.push_str("    ]);\n");
+    }
     out.push_str("}\n");
 
     // ── Live props SSE handlers ───────────────────────────────────────────────

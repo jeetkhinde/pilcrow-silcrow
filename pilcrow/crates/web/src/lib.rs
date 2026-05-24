@@ -57,6 +57,13 @@ pub mod live;
 #[cfg(feature = "live-props")]
 pub use pilcrow_macros::PilcrowListRow;
 
+// ── FSR codegen internals (used by generated app module) ─────
+#[doc(hidden)]
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::__register_codegen_scheduled_invalidations;
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::ScheduledInvalidation;
+
 /// Experimental APIs that may change before stabilization.
 #[cfg(feature = "experimental-baked-pages")]
 pub mod experimental {

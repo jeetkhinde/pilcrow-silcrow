@@ -141,7 +141,8 @@ pub fn render_generated_templates_module(
             let route_params: Vec<String> =
                 entry.route_params.iter().map(|p| p.name.clone()).collect();
             let page_route_promote_after = instrumented.page_options.fsr.promote_after;
-            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after) {
+            let auto_attrs = &instrumented.page_options.fsr.live_field_attrs;
+            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after, auto_attrs, &entry.module_name) {
                 Ok((src, fields)) => {
                     crate::fsr::validate_live_template_slots(
                         &entry.template_source,

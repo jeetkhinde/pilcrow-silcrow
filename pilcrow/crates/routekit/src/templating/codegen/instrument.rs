@@ -1,4 +1,5 @@
 use super::*;
+use crate::templating::page_options::LiveFieldAttr;
 
 /// `extra_fields` contains the named fields from a layout's Props struct when the layout
 /// declares `load()`. When non-empty, a `__MergedProps` struct is synthesized in the
@@ -277,6 +278,46 @@ pub fn instrument_frontmatter(
     // Extract the page's own named fields before any modification.
     let own_syn_fields = extract_named_fields(props_struct);
 
+    // Parse and strip `#[pilcrow::live(...)]` from LiveProp<T> Props fields.
+    // Collects per-field revalidate_secs / promote_after for FSR codegen.
+    if let syn::Fields::Named(ref mut named) = props_struct.fields {
+        for field in &mut named.named {
+            let Some(ident) = &field.ident else { continue };
+            if !type_last_ident(&field.ty).is_some_and(|id| id == "LiveProp") {
+                continue;
+            }
+            let field_name = ident.to_string();
+            let mut live_attr = LiveFieldAttr::default();
+            let mut found = false;
+            field.attrs.retain(|a| {
+                if !is_pilcrow_live_field_attr(a) {
+                    return true;
+                }
+                found = true;
+                if let Ok(items) = a.parse_args_with(
+                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+                ) {
+                    for item in items {
+                        let syn::Meta::NameValue(nv) = item else { continue };
+                        if nv.path.is_ident("promote_after") {
+                            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
+                                live_attr.promote_after = n.base10_parse::<u32>().ok();
+                            }
+                        } else if nv.path.is_ident("revalidate") {
+                            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
+                                live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
+                            }
+                        }
+                    }
+                }
+                false // strip the attribute
+            });
+            if found {
+                page_options.fsr.live_field_attrs.insert(field_name, live_attr);
+            }
+        }
+    }
+
     // Detect `LiveProp<T>` fields.
     let live_fields: Vec<String> = own_syn_fields.iter()
         .filter_map(|f| {
@@ -480,6 +521,12 @@ pub fn normalize_derive_path(input: &str) -> String {
         .chars()
         .filter(|c| !c.is_whitespace())
         .collect::<String>()
+}
+
+/// Returns true if the attribute is `#[pilcrow::live(...)]` (field-level, not struct-level).
+fn is_pilcrow_live_field_attr(attr: &syn::Attribute) -> bool {
+    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
+    segs == ["pilcrow", "live"]
 }
 
 /// Parse a `u64` literal from a `pub const X: u64 = N;` expression.

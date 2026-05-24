@@ -1,10 +1,12 @@
 use quote::ToTokens;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io;
 use std::path::Path;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{Expr, Ident, LitInt, Meta, Token};
+
+use crate::templating::page_options::LiveFieldAttr;
 
 /// Field extracted from the `Live` struct in `live.rs`.
 pub struct LiveField {
@@ -86,16 +88,23 @@ impl Parse for DependsOnRouteInput {
 /// Process a `live.rs` file: strip `#[pilcrow::*]` attrs, extract LiveProp fields,
 /// and generate a `from_row()` impl.
 ///
-/// `route_promote_after` comes from the page-level `PROMOTE_AFTER` constant (or
-/// `PRERENDER = true` which maps to `Some(0)`). When `Some`, the generated
-/// `PilcrowLive` impl emits `route_promote_after()` so the runtime prefers the
-/// route-level threshold over any per-field `#[pilcrow::promote_after]` values.
+/// `route_promote_after` — from the page-level `PROMOTE_AFTER` constant. When `Some`,
+/// emits `route_promote_after()` so the runtime prefers the route threshold over per-field values.
+///
+/// `auto_attrs` — per-field options from `#[pilcrow::live(...)]` on Props `LiveProp<T>` fields.
+/// For each field: if no explicit `depends_on` is set in `live.rs` and `revalidate_secs` is set,
+/// auto-injects dep key `"{module_name}::{field_name}"` as `depends_on`. If no explicit
+/// `promote_after` is set in `live.rs`, uses the value from the Props attr.
+///
+/// `module_name` — the page module symbol (e.g. `"page_tickets"`), used to derive dep keys.
 ///
 /// Returns (processed_source, live_fields).
 pub fn process_live_rs(
     path: &Path,
     route_params: &[String],
     route_promote_after: Option<u32>,
+    auto_attrs: &HashMap<String, LiveFieldAttr>,
+    module_name: &str,
 ) -> io::Result<(String, Vec<LiveField>)> {
     let source = std::fs::read_to_string(path)?;
     let mut file: syn::File = syn::parse_str(&source).map_err(|e| {
@@ -176,7 +185,7 @@ pub fn process_live_rs(
 
     // Generate from_row() impl and append to file.
     if !live_fields.is_empty() {
-        let from_row_impl = generate_from_row_impl(&live_fields, route_promote_after);
+        let from_row_impl = generate_from_row_impl(&live_fields, route_promote_after, auto_attrs, module_name);
         let mut out = file.into_token_stream().to_string();
         out.push('\n');
         out.push_str(&from_row_impl);
@@ -475,7 +484,12 @@ fn parse_runtime_value_expr(expr: &Expr) -> RuntimeValueExpr {
     RuntimeValueExpr::Expr(expr.to_token_stream().to_string())
 }
 
-fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>) -> String {
+fn generate_from_row_impl(
+    fields: &[LiveField],
+    route_promote_after: Option<u32>,
+    auto_attrs: &HashMap<String, LiveFieldAttr>,
+    module_name: &str,
+) -> String {
     let mut out = String::from("impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
 ");
     out.push_str("    fn query(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::pilcrow_runtime::fsr::LiveQuery {
@@ -490,6 +504,21 @@ fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
+        // Resolve depends_on: explicit live.rs > auto dep key from Props attr
+        let auto_dep_key = auto_attrs.get(name)
+            .filter(|a| a.revalidate_secs.is_some())
+            .map(|_| format!("{module_name}::{name}"));
+        let effective_depends_on = if field.depends_on.is_some() {
+            generate_depends_on(&field.depends_on)
+        } else if let Some(ref key) = auto_dep_key {
+            format!("::std::vec![\"{key}\".to_string()]")
+        } else {
+            generate_depends_on(&None)
+        };
+        // Resolve promote_after: explicit live.rs field > Props attr > None
+        let effective_promote_after = field.promote_after
+            .or_else(|| auto_attrs.get(name).and_then(|a| a.promote_after));
+
         out.push_str(&format!(
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
 "
@@ -502,11 +531,11 @@ fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>
         out.push_str("                    .unwrap_or_default(),
 ");
         out.push_str("                depends_on: ");
-        out.push_str(&generate_depends_on(&field.depends_on));
+        out.push_str(&effective_depends_on);
         out.push_str(",
 ");
         out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(field.promote_after));
+        out.push_str(&generate_option_u32(effective_promote_after));
         out.push_str(",
 ");
         out.push_str("                patch_debounce: ");
@@ -523,6 +552,20 @@ fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>
     out.push_str("    fn live_fields(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::std::vec::Vec<::pilcrow_runtime::fsr::LiveFieldRegistration> {\n");
     out.push_str("        ::std::vec![\n");
     for field in fields {
+        let name = &field.name;
+        let auto_dep_key = auto_attrs.get(name)
+            .filter(|a| a.revalidate_secs.is_some())
+            .map(|_| format!("{module_name}::{name}"));
+        let effective_depends_on_vec = if field.depends_on.is_some() {
+            generate_depends_on_vec(&field.depends_on)
+        } else if let Some(ref key) = auto_dep_key {
+            format!("::std::vec![\"{key}\".to_string()]")
+        } else {
+            generate_depends_on_vec(&None)
+        };
+        let effective_promote_after = field.promote_after
+            .or_else(|| auto_attrs.get(name).and_then(|a| a.promote_after));
+
         out.push_str("            ::pilcrow_runtime::fsr::LiveFieldRegistration {\n");
         out.push_str(&format!("                slot: \"{}\",\n", field.name));
         match &field.column_name {
@@ -532,10 +575,10 @@ fn generate_from_row_impl(fields: &[LiveField], route_promote_after: Option<u32>
             None => out.push_str("                column_name: ::std::option::Option::None,\n"),
         }
         out.push_str("                depends_on: ");
-        out.push_str(&generate_depends_on_vec(&field.depends_on));
+        out.push_str(&effective_depends_on_vec);
         out.push_str(",\n");
         out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(field.promote_after));
+        out.push_str(&generate_option_u32(effective_promote_after));
         out.push_str(",\n");
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));
@@ -712,7 +755,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("promote_after: ::std::option::Option::Some(50)"));
@@ -745,7 +788,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("ticket_priority: ::pilcrow_runtime::fsr::LiveProp"));
@@ -775,7 +818,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // 2 fields × 2 locations (from_row + live_fields) = 4 occurrences.
@@ -800,7 +843,7 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None).expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("\"ticket_priorities:id={}\""));
@@ -820,7 +863,7 @@ mod tests {
             ",
         );
 
-        let err = match process_live_rs(&path, &[], None) {
+        let err = match process_live_rs(&path, &[], None, &Default::default(), "page_test") {
             Ok(_) => panic!("missing id param should fail"),
             Err(err) => err,
         };
@@ -847,7 +890,7 @@ mod tests {
             ",
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         let audit_note = fields
@@ -871,7 +914,7 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 1);
@@ -895,7 +938,7 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None).expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 2);
