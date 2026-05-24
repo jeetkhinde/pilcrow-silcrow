@@ -72,7 +72,25 @@ pub async fn load(req: Req) -> AppResult<Props> {
 
 ### Scheduled invalidation (replaces REVALIDATE TTL)
 
-Register timer-based dep-key invalidation at startup instead of per-route TTLs:
+**Preferred — field-level `revalidate = N` on Props (zero manual wiring):**
+
+```rust
+// page.rs
+pub struct Props {
+    #[pilcrow::live(revalidate = 60)]   // re-bake every 60 s automatically
+    pub status: LiveProp<String>,
+
+    #[pilcrow::live(revalidate = 300)]
+    pub price: LiveProp<f64>,
+}
+```
+
+Codegen auto-derives dep key `"{module_name}::{field_name}"` (e.g. `"page_tickets::status"`),
+injects it as `depends_on` in `live.rs`'s `from_row()` when no explicit `depends_on` is set,
+and registers a `ScheduledInvalidation` in `__pilcrow_init()`. No `WatcherConfig`, no
+`hooks.rs`, no manual dep keys needed.
+
+**Manual — explicit `WatcherConfig` in `hooks.rs` (shared dep keys across routes):**
 
 ```rust
 spawn_embedded_watcher(store, WatcherConfig {
@@ -83,6 +101,9 @@ spawn_embedded_watcher(store, WatcherConfig {
     ..WatcherConfig::new()
 }, event_tx);
 ```
+
+Use the manual approach when multiple routes share one dep key, or when invalidation is
+triggered by an external event (e.g. `req.fsr.invalidate_dep_key("products").await`).
 
 ### Redis key structure
 
@@ -96,12 +117,16 @@ pilcrow:json:<route>     → baked JSON data
 
 - `PROMOTE_AFTER = 0` means bake on first hit; all subsequent requests skip `load()`
 - Dynamic routes with `PROMOTE_AFTER = 0` must provide `entries()` for startup prebaking
+- `#[pilcrow::live(revalidate = N)]` on a Props `LiveProp<T>` field auto-wires a timer and dep key — no manual `depends_on` in `live.rs` needed unless you want to share the dep key
+- `revalidate = N` and an explicit `depends_on` in `live.rs` coexist: explicit wins for `depends_on`; the timer fires regardless
 - `REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`, `STREAMING`, `PRERENDER` are **build errors**
 
 **Key files**
 - `pilcrow/crates/runtime/src/fsr/` — `store.rs`, `handle.rs`, `extractor.rs`, `watcher.rs`, `cache.rs`
-- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER`
-- `pilcrow/crates/routekit/src/templating/page_options.rs` — `FsrOpts`
+- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER` and `#[pilcrow::live(...)]` Props field attrs
+- `pilcrow/crates/routekit/src/templating/page_options.rs` — `FsrOpts`, `LiveFieldAttr`
+- `pilcrow/crates/routekit/src/fsr.rs` — `process_live_rs`, auto dep key injection
+- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — emits `__register_codegen_scheduled_invalidations` in `__pilcrow_init()`
 
 ---
 
