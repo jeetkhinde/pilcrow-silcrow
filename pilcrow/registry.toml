@@ -1248,6 +1248,42 @@ validation_rules = []
 scaffold_templates = []
 
 [[features]]
+id = "request-body-limit"
+name = "Request Body Limit"
+domain = "pilcrow"
+status = "stable"
+summary = "All requests are capped at a configurable body size (default 2 MiB). Requests exceeding the limit are rejected with 413 before reaching any handler."
+spec = """
+axum::extract::DefaultBodyLimit::max(n) is applied at router construction in start().
+The limit is read from config.web.request_body_limit_bytes, which defaults to 2 MiB
+(2 * 1024 * 1024 bytes). Override it in Pilcrow.toml under [web]:
+
+  [web]
+  request_body_limit_bytes = 10485760  # 10 MiB
+
+The limit applies to all request bodies including form posts, JSON APIs, and file uploads.
+Individual extractors (Form, Json, Bytes) may enforce their own tighter limits — the
+framework limit is the outer ceiling.
+"""
+canonical_usage = """
+# Pilcrow.toml — increase body limit for upload-heavy routes
+[web]
+request_body_limit_bytes = 10485760  # 10 MiB (default is 2 MiB)
+"""
+constraints = [
+  "The limit applies globally — there is no per-route override in v0.1.",
+  "SSR placeholder injection (island_ssr_middleware) uses a separate SSR_BODY_LIMIT_BYTES constant (10 MiB) for the response body buffer — this is unrelated to the request body limit.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/core/src/config/config.rs — WebConfig.request_body_limit_bytes, default_request_body_limit()",
+  "crates/runtime/src/start.rs — DefaultBodyLimit::max(request_body_limit_bytes)",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
 id = "request-tracing"
 name = "Request Tracing"
 domain = "pilcrow"

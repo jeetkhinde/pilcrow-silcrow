@@ -50,6 +50,7 @@ where
 {
     let config = Arc::new(load_config_or_exit());
     let bind_addr = web_bind_addr(&config);
+    let request_body_limit_bytes = config.web.request_body_limit_bytes;
     let http = reqwest::Client::new();
 
     // Apply [client] settings before any template render can call script_tag().
@@ -292,6 +293,7 @@ where
     }
 
     let mut app = app
+        .layer(axum::extract::DefaultBodyLimit::max(request_body_limit_bytes))
         .layer(axum::middleware::from_fn(request_timeout_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CompressionLayer::new());

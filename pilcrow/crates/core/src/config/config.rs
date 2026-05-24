@@ -316,6 +316,10 @@ pub struct WebConfig {
     pub port: u16,
     #[serde(default = "default_backend_url")]
     pub backend_url: String,
+    /// Maximum request body size in bytes. Requests exceeding this are rejected
+    /// with 413 before reaching any handler. Defaults to 2 MiB.
+    #[serde(default = "default_request_body_limit")]
+    pub request_body_limit_bytes: usize,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -332,6 +336,7 @@ impl Default for WebConfig {
             host: default_web_host(),
             port: default_web_port(),
             backend_url: default_backend_url(),
+            request_body_limit_bytes: default_request_body_limit(),
         }
     }
 }
@@ -450,6 +455,10 @@ fn default_web_port() -> u16 {
 
 fn default_backend_url() -> String {
     "http://127.0.0.1:4000".to_string()
+}
+
+fn default_request_body_limit() -> usize {
+    2 * 1024 * 1024 // 2 MiB
 }
 
 fn default_backend_host() -> String {
