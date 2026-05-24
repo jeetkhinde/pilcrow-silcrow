@@ -457,10 +457,7 @@ canonical_usage = """
 # live.rs
 use pilcrow::live::*;
 
-#[pilcrow::live(
-    promote_after = 50,
-    patch_debounce = 30
-)]
+#[pilcrow::live(patch_debounce = 30)]
 #[pilcrow::depends_on_route(tickets, id)]
 pub struct Live {
     pub ticket_status: LiveProp<String>,
@@ -491,7 +488,7 @@ pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live, status: Liv
 constraints = [
   "Incompatible with STREAMING = true",
   "FSR_JSON = true incompatible with STREAMING = true",
-  "promote_after = 0 means bake on first hit — all subsequent requests skip load()",
+  "Route bake threshold is set via pub const PROMOTE_AFTER: u32 = N in page.rs; 0 means bake on first hit.",
   "Struct-level #[pilcrow::live(...)] defaults apply to all LiveProp<T> fields.",
   "Struct-level #[pilcrow::depends_on_route(table, param)] defaults apply to all LiveProp<T> fields.",
   "Field-level #[pilcrow::*] attributes override struct-level live defaults for that field.",
@@ -502,7 +499,7 @@ constraints = [
   "dep! macro args mean table, column, runtime value.",
   "Requires the `live-props` Cargo feature on pilcrow-web",
   "#[pilcrow::live(revalidate = N)] is only valid on LiveProp<T> fields in Props — not in live.rs.",
-  "revalidate = N only accepted key in #[pilcrow::live(...)] on Props fields; promote_after belongs in live.rs or as pub const PROMOTE_AFTER.",
+  "revalidate = N is the only accepted key in #[pilcrow::live(...)] on Props fields; unknown keys are build errors.",
 ]
 invalid_examples = [
   "Using LiveProp<T> outside of a struct that implements PilcrowLive",
@@ -542,7 +539,7 @@ validation_rules = [
   "req.fsr.tombstone(path).await marks a promoted route as deleted; next request returns 404.",
   "tombstone() clears Redis keys (pilcrow:html, pilcrow:slot, pilcrow:json) and removes baked files from disk.",
   "tombstone() is a no-op when FSR is not configured or the route has no route-level row.",
-  "pub const PROMOTE_AFTER: u32 = N in page.rs sets a route-level promotion threshold that overrides per-field #[pilcrow::promote_after] for ensure_route_row.",
+  "pub const PROMOTE_AFTER: u32 = N in page.rs is the sole surface for setting a route's promotion threshold.",
   "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER is set.",
   "ScheduledInvalidation::new(dep_key, interval) in WatcherConfig::scheduled_invalidations replaces REVALIDATE TTL for FSR routes — calls invalidate_dep_key on a timer.",
   "Each ScheduledInvalidation spawns a dedicated background task inside spawn_embedded_watcher / spawn_embedded_watcher_redis.",
