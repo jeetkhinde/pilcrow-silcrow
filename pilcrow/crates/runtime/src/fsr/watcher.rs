@@ -43,7 +43,7 @@ impl ScheduledInvalidation {
 pub struct WatcherConfig {
     /// How often to poll for stale rows (polling mode or pub/sub fallback).
     pub poll_interval_ms: u64,
-    /// Framework default promote_after_hits (per-field can override via pilcrow_fsr).
+    /// Framework default promote_after_hits. Override route-level via `PROMOTE_AFTER: u32 = N` in `page.rs`.
     pub promote_after_hits: u32,
     /// Framework default patch_debounce_secs.
     pub patch_debounce_secs: u32,

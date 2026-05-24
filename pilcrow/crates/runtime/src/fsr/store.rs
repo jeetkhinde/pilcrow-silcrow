@@ -85,20 +85,18 @@ impl FsrStore {
         query_sql: &str,
         query_params: &serde_json::Value,
         depends_on: &[String],
-        promote_after: Option<u32>,
         debounce_secs: Option<u32>,
         column_name: Option<&str>,
     ) -> sqlx::Result<()> {
         sqlx::query(
             r#"
             INSERT INTO pilcrow_fsr
-                (route, slot, query, query_params, depends_on, promote_after, debounce_secs, column_name)
-            VALUES ($1, $2, $3, $4, $5::text[], $6, $7, $8)
+                (route, slot, query, query_params, depends_on, debounce_secs, column_name)
+            VALUES ($1, $2, $3, $4, $5::text[], $6, $7)
             ON CONFLICT (route, slot) DO UPDATE SET
                 query         = EXCLUDED.query,
                 query_params  = EXCLUDED.query_params,
                 depends_on    = EXCLUDED.depends_on,
-                promote_after = EXCLUDED.promote_after,
                 debounce_secs = EXCLUDED.debounce_secs,
                 column_name   = EXCLUDED.column_name
             "#,
@@ -108,7 +106,6 @@ impl FsrStore {
         .bind(query_sql)
         .bind(query_params)
         .bind(depends_on)
-        .bind(promote_after.map(|n| n as i32))
         .bind(debounce_secs.map(|n| n as i32))
         .bind(column_name)
         .execute(&*self.pool)

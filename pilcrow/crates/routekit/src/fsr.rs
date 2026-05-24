@@ -15,7 +15,6 @@ pub struct LiveField {
     /// The inner type T in LiveProp<T>.
     pub inner_type: String,
     pub depends_on: Option<DependencyExpr>,
-    pub promote_after: Option<u32>,
     pub patch_debounce: Option<u32>,
     pub allow_unused: bool,
 }
@@ -40,7 +39,6 @@ pub enum RuntimeValueExpr {
 struct LiveDefaults {
     column_name: Option<String>,
     depends_on: Option<DependencyExpr>,
-    promote_after: Option<u32>,
     patch_debounce: Option<u32>,
     allow_unused: bool,
 }
@@ -89,12 +87,11 @@ impl Parse for DependsOnRouteInput {
 /// and generate a `from_row()` impl.
 ///
 /// `route_promote_after` — from the page-level `PROMOTE_AFTER` constant. When `Some`,
-/// emits `route_promote_after()` so the runtime prefers the route threshold over per-field values.
+/// emits `route_promote_after()` so the runtime uses this threshold to promote the route.
 ///
 /// `auto_attrs` — per-field options from `#[pilcrow::live(...)]` on Props `LiveProp<T>` fields.
 /// For each field: if no explicit `depends_on` is set in `live.rs` and `revalidate_secs` is set,
-/// auto-injects dep key `"{module_name}::{field_name}"` as `depends_on`. If no explicit
-/// `promote_after` is set in `live.rs`, uses the value from the Props attr.
+/// auto-injects dep key `"{module_name}::{field_name}"` as `depends_on`.
 ///
 /// `module_name` — the page module symbol (e.g. `"page_tickets"`), used to derive dep keys.
 ///
@@ -170,9 +167,6 @@ pub fn process_live_rs(
                     depends_on: field_defaults
                         .depends_on
                         .or_else(|| struct_defaults.depends_on.clone()),
-                    promote_after: field_defaults
-                        .promote_after
-                        .or(struct_defaults.promote_after),
                     patch_debounce: field_defaults
                         .patch_debounce
                         .or(struct_defaults.patch_debounce),
@@ -355,9 +349,7 @@ fn parse_live_defaults(
                     let Meta::NameValue(name_value) = item else {
                         continue;
                     };
-                    if name_value.path.is_ident("promote_after") {
-                        defaults.promote_after = expr_to_u32(&name_value.value);
-                    } else if name_value.path.is_ident("patch_debounce") {
+                    if name_value.path.is_ident("patch_debounce") {
                         defaults.patch_debounce = expr_to_u32(&name_value.value);
                     } else if name_value.path.is_ident("depends_on") {
                         defaults.depends_on = Some(parse_dependency_expr(&name_value.value));
@@ -385,12 +377,7 @@ fn parse_field_defaults(
         let Some(last) = attr.path().segments.last() else {
             continue;
         };
-        if last.ident == "promote_after" {
-            defaults.promote_after = attr
-                .parse_args::<LitInt>()
-                .ok()
-                .and_then(|lit| lit.base10_parse::<u32>().ok());
-        } else if last.ident == "patch_debounce" {
+        if last.ident == "patch_debounce" {
             defaults.patch_debounce = attr
                 .parse_args::<LitInt>()
                 .ok()
@@ -530,10 +517,6 @@ fn generate_from_row_impl(
         out.push_str(&effective_depends_on);
         out.push_str(",
 ");
-        out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(field.promote_after));
-        out.push_str(",
-");
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));
         out.push_str(",
@@ -570,9 +553,6 @@ fn generate_from_row_impl(
         }
         out.push_str("                depends_on: ");
         out.push_str(&effective_depends_on_vec);
-        out.push_str(",\n");
-        out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(field.promote_after));
         out.push_str(",\n");
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));
@@ -665,7 +645,6 @@ mod tests {
             column_name: None,
             inner_type: "String".to_string(),
             depends_on: None,
-            promote_after: None,
             patch_debounce: None,
             allow_unused: false,
         }
@@ -737,7 +716,6 @@ mod tests {
             use pilcrow_web::live::*;
 
             #[pilcrow::live(
-                promote_after = 50,
                 patch_debounce = 30,
                 depends_on = dep!(tickets, id, params.id)
             )]
@@ -752,7 +730,6 @@ mod tests {
         let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
         let _ = fs::remove_file(path);
 
-        assert!(source.contains("promote_after: ::std::option::Option::Some(50)"));
         assert!(source.contains("patch_debounce: ::std::option::Option::Some(30)"));
         // 2 fields × 2 locations (from_row + live_fields) = 4 occurrences.
         assert_eq!(source.matches("\"tickets:id={}\"").count(), 4);
@@ -767,12 +744,10 @@ mod tests {
             use pilcrow_web::live::*;
 
             #[pilcrow::live(
-                promote_after = 50,
                 patch_debounce = 30,
                 depends_on = dep!(tickets, id, params.id)
             )]
             pub struct Live {
-                #[pilcrow::promote_after(5)]
                 #[pilcrow::patch_debounce(3)]
                 #[pilcrow::depends_on(dep!(ticket_priorities, ticket_id, params.id))]
                 pub ticket_priority: LiveProp<String>,
@@ -786,14 +761,11 @@ mod tests {
         let _ = fs::remove_file(path);
 
         assert!(source.contains("ticket_priority: ::pilcrow_runtime::fsr::LiveProp"));
-        assert!(source.contains("promote_after: ::std::option::Option::Some(5)"));
         assert!(source.contains("patch_debounce: ::std::option::Option::Some(3)"));
         assert!(source.contains("\"ticket_priorities:ticket_id={}\""));
         assert!(source.contains("ticket_status: ::pilcrow_runtime::fsr::LiveProp"));
-        assert!(source.contains("promote_after: ::std::option::Option::Some(50)"));
         assert!(source.contains("patch_debounce: ::std::option::Option::Some(30)"));
         assert!(source.contains("\"tickets:id={}\""));
-        assert!(!source.contains("# [pilcrow :: promote_after"));
         assert!(!source.contains("# [pilcrow :: depends_on"));
     }
 
