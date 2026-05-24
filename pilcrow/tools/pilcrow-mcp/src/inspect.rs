@@ -136,6 +136,11 @@ pub fn inspect_template(
     if !abs_path.exists() {
         bail!("template not found: {}", abs_path.display());
     }
+    let canonical = abs_path.canonicalize()?;
+    let root_canonical = resolved.project_root.canonicalize()?;
+    if !canonical.starts_with(&root_canonical) {
+        bail!("path is outside the project root: {}", path);
+    }
     Ok(
         inspect_template_file(&abs_path, path).unwrap_or_else(|| TemplateInspection {
             path: path.to_string(),
@@ -162,6 +167,11 @@ pub fn inspect_code_behind(
     };
     if !abs_path.exists() {
         bail!("code-behind file not found: {}", abs_path.display());
+    }
+    let canonical = abs_path.canonicalize()?;
+    let root_canonical = resolved.project_root.canonicalize()?;
+    if !canonical.starts_with(&root_canonical) {
+        bail!("path is outside the project root: {}", path);
     }
     let info = parse_code_behind(&abs_path);
     Ok(InspectCodeBehindResult {

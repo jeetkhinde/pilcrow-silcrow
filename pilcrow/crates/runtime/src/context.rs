@@ -4,7 +4,10 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use axum::{
     async_trait,
-    extract::{Form, FromRequest, FromRequestParts, Path, Request},
+    extract::{
+        Form, FromRequest, FromRequestParts, Path, Request,
+        rejection::{BytesRejection, FailedToBufferBody, FormRejection},
+    },
     http::request::Parts,
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Redirect, Response},
@@ -919,10 +922,18 @@ impl<S: Send + Sync> FromRequest<S> for Req {
 
         // Reconstruct the request so Form can consume the body.
         let req = Request::from_parts(parts, body);
-        let pairs: Vec<(String, String)> = Form::<Vec<(String, String)>>::from_request(req, state)
-            .await
-            .map(|f| f.0)
-            .unwrap_or_default();
+        let pairs: Vec<(String, String)> =
+            match Form::<Vec<(String, String)>>::from_request(req, state).await {
+                Ok(f) => f.0,
+                // Non-form requests (GET, JSON POST, etc.) — treat as no form data.
+                Err(FormRejection::InvalidFormContentType(_)) => vec![],
+                // Body exceeded the body limit — reject with 413.
+                Err(FormRejection::BytesRejection(BytesRejection::FailedToBufferBody(
+                    FailedToBufferBody::LengthLimitError(_),
+                ))) => return Err((StatusCode::PAYLOAD_TOO_LARGE, "form body too large")),
+                // Malformed urlencoded data — reject with 400.
+                Err(_) => return Err((StatusCode::BAD_REQUEST, "invalid form data")),
+            };
 
         let mut raw_map: HashMap<String, Vec<String>> = HashMap::new();
         for (k, v) in pairs {
