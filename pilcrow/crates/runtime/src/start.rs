@@ -1,4 +1,3 @@
-use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -19,7 +18,6 @@ use crate::dev::{DevState, dev_inject_layer, dev_reload_handler, spawn_css_watch
 use crate::i18n::{I18nBundles, locale_middleware_impl};
 use crate::image::handler::{ImageState, image_handler};
 use crate::island_ssr::{IslandSsrWorker, replace_ssr_placeholders};
-use crate::isr::{IsrCache, IsrHandle};
 use crate::sw::{sw_handler, sw_inject_layer};
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
@@ -32,17 +30,7 @@ fn web_bind_addr(config: &PilcrowConfig) -> String {
 }
 
 pub async fn start(app: Router) {
-    start_with_prerender(app, |_cache| async {}).await;
-}
-
-/// Start the Pilcrow web server, calling `prerender_fn` with the shared `IsrCache`
-/// before accepting connections. Used by SSG apps to pre-warm the cache at startup.
-pub async fn start_with_prerender<F, Fut>(app: Router, prerender_fn: F)
-where
-    F: FnOnce(Arc<IsrCache>) -> Fut,
-    Fut: Future<Output = ()>,
-{
-    start_with_adapter(app, prerender_fn, TokioAdapter).await;
+    start_with_adapter(app, TokioAdapter).await;
 }
 
 /// Start the Pilcrow web server with a custom deployment [`PilcrowAdapter`].
@@ -53,10 +41,8 @@ where
 /// ```rust,ignore
 /// pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, MyAdapter).await;
 /// ```
-pub async fn start_with_adapter<F, Fut, A>(app: Router, prerender_fn: F, adapter: A)
+pub async fn start_with_adapter<A>(app: Router, adapter: A)
 where
-    F: FnOnce(Arc<IsrCache>) -> Fut,
-    Fut: Future<Output = ()>,
     A: PilcrowAdapter,
 {
     let config = Arc::new(load_config_or_exit());
@@ -86,16 +72,9 @@ where
         None
     };
 
-    // ISR cache is in-memory only; filesystem persistence removed in Slice C.
-    let _ = &config.cache; // suppress unused warning while config still exists
-    let isr_cache = Arc::new(IsrCache::new());
-
     let dev_mode = std::env::var("PILCROW_DEV").is_ok();
     let sw_enabled = config.service_worker.enabled && !dev_mode;
     let sw_strategy_dbg = format!("{:?}", config.service_worker.strategy);
-
-    prerender_fn(Arc::clone(&isr_cache)).await;
-    let isr_handle = IsrHandle::new(Arc::clone(&isr_cache));
 
     let silcrow_path = silcrow_js_path();
     let react_islands_path = react_islands_js_path();
@@ -150,8 +129,7 @@ where
     #[allow(unused_mut)]
     let mut app = app
         .layer(axum::Extension(config))
-        .layer(axum::Extension(http))
-        .layer(axum::Extension(isr_handle));
+        .layer(axum::Extension(http));
 
     // live-props: register broadcast channel + optional DB store.
     #[cfg(feature = "live-props")]

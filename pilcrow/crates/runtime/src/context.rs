@@ -18,7 +18,6 @@ use serde::Serialize;
 
 use crate::fsr::{FsrHandle, fsr_store_for_handle};
 use crate::i18n::{CurrentLocale, FmtHelper, I18nBundles};
-use crate::isr::IsrHandle;
 use crate::response::headers::*;
 use crate::response::response::{ActionResult, BaseResponse, FormErrors, ToastLevel};
 
@@ -422,9 +421,6 @@ pub struct Req {
     pub locals: Locals,
     /// Response modifier: set headers, cookies, toasts from inside any handler.
     pub res: Res,
-    /// ISR cache handle. Use `req.cache.revalidate(path)` or
-    /// `req.cache.revalidate_tag(tag)` to bust the cache from within an action.
-    pub cache: IsrHandle,
     /// FSR handle. Use `req.fsr.tombstone(path).await` to mark a promoted route
     /// as deleted — the next request to that path returns 404.
     pub fsr: FsrHandle,
@@ -593,7 +589,6 @@ impl Req {
             is_enhanced: common.is_enhanced,
             locals: common.locals,
             res: common.res,
-            cache: common.cache,
             fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,
@@ -642,7 +637,6 @@ impl Req {
             is_enhanced,
             locals,
             res,
-            cache: IsrHandle::default(),
             fsr: fsr_store_for_handle()
                 .map(FsrHandle::new)
                 .unwrap_or_default(),
@@ -697,10 +691,7 @@ impl Req {
         ReqBuilder::new()
     }
 
-    /// Construct a synthetic `Req` from captured parts for ISR background revalidation tasks.
-    ///
-    /// The synthetic request has an empty form body, `is_enhanced = false`, a fresh `Res`,
-    /// and a no-op `IsrHandle` (to prevent recursive cache writes inside the spawned task).
+    /// Construct a synthetic `Req` for startup prebake tasks.
     #[doc(hidden)]
     pub fn __synthetic(
         path: String,
@@ -720,7 +711,6 @@ impl Req {
             is_enhanced: false,
             locals,
             res: Res::default(),
-            cache: IsrHandle::default(),
             fsr: FsrHandle::default(),
             locale: String::new(),
             i18n: None,
@@ -822,7 +812,6 @@ impl ReqBuilder {
             is_enhanced: self.is_enhanced,
             locals: Locals::default(),
             res: Res::default(),
-            cache: IsrHandle::default(),
             fsr: FsrHandle::default(),
             locale: self.locale,
             i18n: None,
@@ -843,7 +832,6 @@ struct CommonParts {
     is_enhanced: bool,
     locals: Locals,
     res: Res,
-    cache: IsrHandle,
     fsr: FsrHandle,
     locale: String,
     i18n: Option<I18nBundles>,
@@ -888,14 +876,6 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         r
     });
 
-    // ISR cache handle — injected by start() when the cache is initialised.
-    // Pages without PRERENDER will have a no-op IsrHandle (inner = None).
-    let cache = parts
-        .extensions
-        .get::<IsrHandle>()
-        .cloned()
-        .unwrap_or_default();
-
     // FSR handle — populated from the global store when FSR is configured.
     let fsr = fsr_store_for_handle()
         .map(FsrHandle::new)
@@ -920,7 +900,6 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         is_enhanced,
         locals,
         res,
-        cache,
         fsr,
         locale,
         i18n,
@@ -961,7 +940,6 @@ impl<S: Send + Sync> FromRequest<S> for Req {
             is_enhanced: common.is_enhanced,
             locals: common.locals,
             res: common.res,
-            cache: common.cache,
             fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,

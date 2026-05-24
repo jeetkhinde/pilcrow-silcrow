@@ -461,7 +461,6 @@ pub fn compile_to_out_dir_with_config(
             loading_module_for_page: &loading_module_for_page,
             action_map: &templates_output.action_map,
             page_options_map: &templates_output.page_options,
-            ssg_config_map: &templates_output.ssg_config_map,
             live_fields_map: &templates_output.live_fields_map,
             has_live_fn_map: &templates_output.has_live_fn_map,
             fsr_live_source_map: &templates_output.fsr_live_source_map,

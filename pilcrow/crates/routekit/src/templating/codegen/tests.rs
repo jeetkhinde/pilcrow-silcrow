@@ -286,7 +286,6 @@ pub struct Live {
             loading_module_for_page: &HashMap::new(),
             action_map: &HashMap::new(),
             page_options_map: &HashMap::new(),
-            ssg_config_map: &HashMap::new(),
             live_fields_map: &live_fields_map,
             has_live_fn_map: &HashMap::new(),
             fsr_live_source_map: &HashMap::new(),
@@ -459,9 +458,9 @@ pub struct Live {
     }
 
     #[test]
-    fn ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map() {
+    fn promote_after_constant_is_stripped_and_recorded_in_page_options() {
         let frontmatter = r#"
-pub const PRERENDER: bool = true;
+pub const PROMOTE_AFTER: u32 = 0;
 
 pub struct Props {
     pub title: String,
@@ -483,29 +482,26 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain_ids: vec![],
             page_slot: None,
         }])
-        .expect("should generate with PRERENDER constant");
+        .expect("should generate with PROMOTE_AFTER constant");
 
-        // PRERENDER must not appear in the emitted source.
+        // PROMOTE_AFTER must not appear in the emitted source.
         assert!(
-            !generated.source.contains("PRERENDER"),
-            "PRERENDER leaked into emitted source"
+            !generated.source.contains("PROMOTE_AFTER"),
+            "PROMOTE_AFTER leaked into emitted source"
         );
 
-        // SSG config must be recorded.
-        let ssg = generated
-            .ssg_config_map
+        // promote_after must be recorded in page_options.
+        let opts = generated
+            .page_options
             .get("page_about")
-            .expect("page_about should have SSG config");
-        assert!(ssg.prerender);
-        assert!(!ssg.has_entries_fn);
-
-        // ISR is removed; no isr_config_map to check.
+            .expect("page_about should have page options");
+        assert_eq!(opts.fsr.promote_after, Some(0));
     }
 
     #[test]
     fn entries_fn_is_detected_in_ssg_opts() {
         let frontmatter = r#"
-pub const PRERENDER: bool = true;
+pub const PROMOTE_AFTER: u32 = 0;
 
 pub struct Props {
     pub name: String,
@@ -533,16 +529,16 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         }])
         .expect("should generate with entries fn");
 
-        let ssg = generated
-            .ssg_config_map
+        let opts = generated
+            .page_options
             .get("page_products_id")
-            .expect("page_products_id should have SSG config");
-        assert!(ssg.prerender);
-        assert!(ssg.has_entries_fn);
+            .expect("page_products_id should have page options");
+        assert_eq!(opts.fsr.promote_after, Some(0));
+        assert!(opts.ssg.has_entries_fn);
     }
 
     #[test]
-    fn non_ssg_page_has_no_ssg_config() {
+    fn page_without_promote_after_has_no_fsr_promote_threshold() {
         let generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_index".to_string(),
             render_symbol: "render_page_index".to_string(),
@@ -556,7 +552,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             page_slot: None,
         }])
         .expect("should generate");
-        assert!(generated.ssg_config_map.get("page_index").is_none());
+
+        let opts = generated.page_options.get("page_index");
+        let promote_after = opts.map(|o| o.fsr.promote_after).unwrap_or(None);
+        assert!(promote_after.is_none(), "expected no promote_after threshold for a plain page");
     }
 
     #[test]

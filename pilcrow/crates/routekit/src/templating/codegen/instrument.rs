@@ -34,7 +34,6 @@ pub fn instrument_frontmatter(
                 page_options.layout = if value == "none" { LayoutOpt::None } else { LayoutOpt::Inherit };
                 false
             }
-            "PRERENDER" => { page_options.ssg.prerender = value_str.trim() == "true"; false }
             "PROMOTE_AFTER" => {
                 if let Ok(v) = parse_u64_const(&c.expr) {
                     if v > u32::MAX as u64 {
@@ -99,12 +98,6 @@ pub fn instrument_frontmatter(
             && f.sig.inputs.is_empty()
             && matches!(f.vis, syn::Visibility::Public(_))
     });
-
-    // PRERENDER = true on a FSR route is equivalent to promote_after = 0, but only
-    // when PROMOTE_AFTER was not declared explicitly (explicit value always wins).
-    if page_options.ssg.prerender && page_options.fsr.promote_after.is_none() {
-        page_options.fsr.promote_after = Some(0);
-    }
 
     // Discover named action handlers. An action is any `pub` fn in a page's
     // code-behind with an `ActionResult`-shaped return. The fn name is the URL

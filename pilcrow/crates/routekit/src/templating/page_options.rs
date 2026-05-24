@@ -3,10 +3,8 @@
 /// All constants are stripped from the emitted module — they never reach runtime code.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SsgOpts {
-    /// Whether to pre-render this route at server startup (`PRERENDER`).
-    pub prerender: bool,
     /// Whether the code-behind declares `pub async fn entries()`.
-    /// Required for dynamic routes (patterns with `:param` segments).
+    /// Required for dynamic routes (patterns with `:param` segments) when `PROMOTE_AFTER = 0`.
     pub has_entries_fn: bool,
 }
 
@@ -39,9 +37,8 @@ impl FsrOpts {
 /// ```rust,ignore
 /// pub const TRAILING_SLASH: &str = "always"; // "always" | "never" | "ignore"
 /// pub const LAYOUT: &str = "none";           // opt out of all layout wrapping
-/// pub const PRERENDER: bool = true;          // SSG: pre-render at server startup (FSR: sets promote_after = 0)
 /// pub const FSR_JSON: bool = true;           // FSR: opt in to baked JSON alongside baked HTML
-/// pub const PROMOTE_AFTER: u32 = 100;        // FSR: override per-field promote_after for the whole route
+/// pub const PROMOTE_AFTER: u32 = 100;        // FSR: threshold; 0 = bake on first hit
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PageOptions {
