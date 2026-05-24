@@ -515,10 +515,6 @@ fn generate_from_row_impl(
         } else {
             generate_depends_on(&None)
         };
-        // Resolve promote_after: explicit live.rs field > Props attr > None
-        let effective_promote_after = field.promote_after
-            .or_else(|| auto_attrs.get(name).and_then(|a| a.promote_after));
-
         out.push_str(&format!(
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
 "
@@ -535,7 +531,7 @@ fn generate_from_row_impl(
         out.push_str(",
 ");
         out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(effective_promote_after));
+        out.push_str(&generate_option_u32(field.promote_after));
         out.push_str(",
 ");
         out.push_str("                patch_debounce: ");
@@ -563,8 +559,6 @@ fn generate_from_row_impl(
         } else {
             generate_depends_on_vec(&None)
         };
-        let effective_promote_after = field.promote_after
-            .or_else(|| auto_attrs.get(name).and_then(|a| a.promote_after));
 
         out.push_str("            ::pilcrow_runtime::fsr::LiveFieldRegistration {\n");
         out.push_str(&format!("                slot: \"{}\",\n", field.name));
@@ -578,7 +572,7 @@ fn generate_from_row_impl(
         out.push_str(&effective_depends_on_vec);
         out.push_str(",\n");
         out.push_str("                promote_after: ");
-        out.push_str(&generate_option_u32(effective_promote_after));
+        out.push_str(&generate_option_u32(field.promote_after));
         out.push_str(",\n");
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));

@@ -299,11 +299,7 @@ pub fn instrument_frontmatter(
                 ) {
                     for item in items {
                         let syn::Meta::NameValue(nv) = item else { continue };
-                        if nv.path.is_ident("promote_after") {
-                            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
-                                live_attr.promote_after = n.base10_parse::<u32>().ok();
-                            }
-                        } else if nv.path.is_ident("revalidate") {
+                        if nv.path.is_ident("revalidate") {
                             if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
                                 live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
                             }

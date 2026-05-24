@@ -5,9 +5,6 @@ use std::collections::HashMap;
 /// Stripped from emitted source — never reaches runtime code directly.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LiveFieldAttr {
-    /// Per-field promotion threshold override — equivalent to `#[pilcrow::promote_after(N)]`
-    /// on the matching field in `live.rs`.
-    pub promote_after: Option<u32>,
     /// Auto-wires a `ScheduledInvalidation` for this field: every `revalidate_secs` seconds the
     /// dep key `"{module_name}::{field_name}"` is invalidated, triggering a re-bake.
     /// Also auto-injects that dep key into the field's `depends_on` in the generated
