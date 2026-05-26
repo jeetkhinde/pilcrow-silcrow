@@ -72,16 +72,20 @@ pub async fn load(req: Req) -> AppResult<Props> {
 
 ### Scheduled invalidation (replaces REVALIDATE TTL)
 
-**Preferred — field-level `revalidate = N` on Props (zero manual wiring):**
+**Preferred — field-level `#[revalidate(N)]` on Props (zero manual wiring):**
 
 ```rust
 // page.rs
 pub struct Props {
-    #[pilcrow::live(revalidate = 60)]   // re-bake every 60 s automatically
+    #[revalidate(60)]   // re-bake every 60 s automatically
     pub status: LiveProp<String>,
 
-    #[pilcrow::live(revalidate = 300)]
+    #[revalidate(300)]
     pub price: LiveProp<f64>,
+
+    // Alternative: wire to an existing shared dep key instead of scheduling a new timer
+    #[depends_on("exchange_rates")]
+    pub rate: LiveProp<f64>,
 }
 ```
 
@@ -117,13 +121,14 @@ pilcrow:json:<route>     → baked JSON data
 
 - `PROMOTE_AFTER = 0` means bake on first hit; all subsequent requests skip `load()`
 - Dynamic routes with `PROMOTE_AFTER = 0` must provide `entries()` for startup prebaking
-- `#[pilcrow::live(revalidate = N)]` on a Props `LiveProp<T>` field auto-wires a timer and dep key — no manual `depends_on` in `live.rs` needed unless you want to share the dep key
-- `revalidate = N` and an explicit `depends_on` in `live.rs` coexist: explicit wins for `depends_on`; the timer fires regardless
+- `#[revalidate(N)]` on a Props `LiveProp<T>` field auto-wires a timer and dep key — no manual `depends_on` in `live.rs` needed unless you want to share the dep key
+- `#[depends_on("key")]` wires a Props `LiveProp<T>` field to an existing static dep key; mutually exclusive with `#[revalidate(N)]`
+- `#[revalidate(N)]` and an explicit `depends_on` in `live.rs` coexist: explicit wins for `depends_on`; the timer fires regardless
 - `REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`, `STREAMING`, `PRERENDER` are **build errors**
 
 **Key files**
 - `pilcrow/crates/runtime/src/fsr/` — `store.rs`, `handle.rs`, `extractor.rs`, `watcher.rs`, `cache.rs`
-- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER` and `#[pilcrow::live(...)]` Props field attrs
+- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER`, `#[revalidate(N)]`, `#[depends_on("key")]` Props field attrs
 - `pilcrow/crates/routekit/src/templating/page_options.rs` — `FsrOpts`, `LiveFieldAttr`
 - `pilcrow/crates/routekit/src/fsr.rs` — `process_live_rs`, auto dep key injection
 - `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — emits `__register_codegen_scheduled_invalidations` in `__pilcrow_init()`
