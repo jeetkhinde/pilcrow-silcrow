@@ -458,49 +458,9 @@ pub struct Live {
     }
 
     #[test]
-<<<<<<< HEAD
-    fn removed_isr_constants_cause_build_errors() {
-        for (constant, snippet) in &[
-            ("REVALIDATE", "pub const REVALIDATE: u64 = 60;"),
-            ("MAX_STALE", "pub const MAX_STALE: u64 = 3600;"),
-            (
-                "CACHE_TAGS",
-                "pub const CACHE_TAGS: &[&str] = &[\"products\"];",
-            ),
-            (
-                "CACHE_VARY",
-                "pub const CACHE_VARY: &[&str] = &[\"x-tenant\"];",
-            ),
-        ] {
-            let frontmatter = format!("{snippet}\npub struct Props {{}}\n");
-            let err = render_generated_templates_module(&[TemplateCodegenInput {
-                module_name: "page_products".to_string(),
-                render_symbol: "render_page_products".to_string(),
-                source_path: "/tmp/src/pages/products.html".to_string(),
-                rust_frontmatter: frontmatter,
-                template_source: "<p>hi</p>".to_string(),
-                layout_chain: vec![],
-                fragment_url_prefix: None,
-                route_params: vec![],
-            }])
-            .expect_err(&format!("{constant} should cause a build error"));
-            assert!(
-                err.to_string().contains(constant),
-                "{constant} error message missing constant name; got: {}",
-                err
-            );
-        }
-    }
-
-    #[test]
-    fn ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map() {
-        let frontmatter = r#"
-pub const PRERENDER: bool = true;
-=======
     fn promote_after_constant_is_stripped_and_recorded_in_page_options() {
         let frontmatter = r#"
 pub const PROMOTE_AFTER: u32 = 0;
->>>>>>> origin/main
 
 pub struct Props {
     pub title: String,
@@ -534,16 +494,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         let opts = generated
             .page_options
             .get("page_about")
-<<<<<<< HEAD
-            .expect("page_about should have SSG config");
-        assert!(ssg.prerender);
-        assert!(!ssg.has_entries_fn);
-
-        // ISR is removed; no isr_config_map to check.
-=======
             .expect("page_about should have page options");
         assert_eq!(opts.fsr.promote_after, Some(0));
->>>>>>> origin/main
     }
 
     #[test]
@@ -586,11 +538,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
-<<<<<<< HEAD
-    fn non_ssg_page_has_no_ssg_config() {
-=======
     fn page_without_promote_after_has_no_fsr_promote_threshold() {
->>>>>>> origin/main
         let generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_index".to_string(),
             render_symbol: "render_page_index".to_string(),
@@ -604,15 +552,6 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             page_slot: None,
         }])
         .expect("should generate");
-<<<<<<< HEAD
-        assert!(generated.ssg_config_map.get("page_index").is_none());
-    }
-
-    #[test]
-    fn streaming_constant_causes_build_error() {
-        let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
-        let err = render_generated_templates_module(&[TemplateCodegenInput {
-=======
 
         let opts = generated.page_options.get("page_index");
         let promote_after = opts.map(|o| o.fsr.promote_after).unwrap_or(None);
@@ -621,19 +560,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
 
     #[test]
     fn revalidate_attr_stripped_from_props_and_recorded_in_live_field_attrs() {
+        // Build a frontmatter that puts #[revalidate(N)] on a Props LiveProp field.
         let frontmatter = r#"
 pub struct Props {
-    pub status: LiveProp<String>,
-    pub title: String,
-}
-
-#[pilcrow::live(revalidate = 60)]
-pub status: LiveProp<String>;
-"#;
-        // Build a frontmatter that puts #[pilcrow::live(revalidate = N)] on a Props field.
-        let frontmatter = r#"
-pub struct Props {
-    #[pilcrow::live(revalidate = 60)]
+    #[revalidate(60)]
     pub status: LiveProp<String>,
     pub title: String,
 }
@@ -692,7 +622,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         };
 
         let mut live_field_attrs = HashMap::new();
-        live_field_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60) });
+        live_field_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60), depends_on: None });
 
         let mut page_opts = PageOptions::default();
         page_opts.fsr.live_field_attrs = live_field_attrs;
@@ -752,11 +682,16 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
-    fn unknown_key_in_props_live_attr_is_a_build_error() {
+    fn revalidate_and_depends_on_together_is_a_build_error() {
         let frontmatter = r#"
 pub struct Props {
-    #[pilcrow::live(promote_after = 0)]
+    #[revalidate(60)]
+    #[depends_on("prices:updated")]
     pub status: LiveProp<String>,
+}
+
+pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
+    Ok(Props { status: Default::default() })
 }
 "#;
         let err = render_generated_templates_module(&[TemplateCodegenInput {
@@ -771,19 +706,18 @@ pub struct Props {
             layout_chain_ids: vec![],
             page_slot: None,
         }])
-        .expect_err("unknown key in #[pilcrow::live(...)] on Props field should fail");
+        .expect_err("#[revalidate] and #[depends_on] on the same field should fail");
 
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
         let msg = err.to_string();
-        assert!(msg.contains("unknown key `promote_after`"), "got: {msg}");
-        assert!(msg.contains("Only `revalidate` is accepted"), "got: {msg}");
+        assert!(msg.contains("mutually exclusive"), "got: {msg}");
+        assert!(msg.contains("status"), "got: {msg}");
     }
 
     #[test]
     fn streaming_constant_is_silently_stripped() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
         let generated = render_generated_templates_module(&[TemplateCodegenInput {
->>>>>>> origin/main
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),
@@ -795,19 +729,8 @@ pub struct Props {
             layout_chain_ids: vec![],
             page_slot: None,
         }])
-<<<<<<< HEAD
-        .expect_err("STREAMING should cause a build error");
-        assert!(
-            err.to_string().contains("STREAMING"),
-            "error message missing STREAMING; got: {}",
-            err
-        );
-    }
-
-=======
         .expect("STREAMING should be ignored, not a build error");
     }
->>>>>>> origin/main
 
     #[test]
     fn emit_action_route_uses_custom_error_module_when_provided() {

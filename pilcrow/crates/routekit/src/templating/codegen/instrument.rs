@@ -21,91 +21,6 @@ pub fn instrument_frontmatter(
 
     // Parse and strip framework-reserved `pub const` declarations before other processing.
     // Handled: TRAILING_SLASH, LAYOUT, PRERENDER, PROMOTE_AFTER, FSR_JSON.
-<<<<<<< HEAD
-    // Removed (emit build errors): REVALIDATE, MAX_STALE, CACHE_TAGS, CACHE_VARY, STREAMING.
-    let mut page_options = PageOptions::default();
-    let mut const_remove_indices: Vec<usize> = Vec::new();
-    for (index, item) in file.items.iter().enumerate() {
-        if let syn::Item::Const(c) = item
-            && matches!(c.vis, syn::Visibility::Public(_))
-        {
-            let value_str = c.expr.to_token_stream().to_string();
-            let value = value_str.trim_matches('"').trim_matches('\'');
-            if c.ident == "TRAILING_SLASH" {
-                page_options.trailing_slash = TrailingSlash::from_label(value);
-                const_remove_indices.push(index);
-            } else if c.ident == "LAYOUT" {
-                page_options.layout = if value.trim_matches('"').trim_matches('\'') == "none" {
-                    LayoutOpt::None
-                } else {
-                    LayoutOpt::Inherit
-                };
-                const_remove_indices.push(index);
-            } else if c.ident == "REVALIDATE" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: REVALIDATE is removed. \
-                         Use FSR with ScheduledInvalidation instead: register \
-                         ScheduledInvalidation::new(\"<dep_key>\", Duration::from_secs(N)) \
-                         in WatcherConfig::scheduled_invalidations."
-                    ),
-                ));
-            } else if c.ident == "MAX_STALE" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: MAX_STALE is removed along with the ISR cache. \
-                         Use FSR LiveProp<T> with promote_after for route-level baking."
-                    ),
-                ));
-            } else if c.ident == "CACHE_TAGS" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: CACHE_TAGS is removed. \
-                         Use FSR dep keys and FsrStore::invalidate_dep_key() for targeted invalidation."
-                    ),
-                ));
-            } else if c.ident == "CACHE_VARY" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: CACHE_VARY is removed along with the ISR cache."
-                    ),
-                ));
-            } else if c.ident == "PRERENDER" {
-                let is_prerender = value_str.trim() == "true";
-                page_options.ssg.prerender = is_prerender;
-                const_remove_indices.push(index);
-            } else if c.ident == "PROMOTE_AFTER" {
-                if let Ok(v) = parse_u64_const(&c.expr) {
-                    if v > u32::MAX as u64 {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            format!(
-                                "{source_path}: PROMOTE_AFTER value {v} overflows u32 (max {}). \
-                                 Use a value in 0..={}.",
-                                u32::MAX,
-                                u32::MAX,
-                            ),
-                        ));
-                    }
-                    page_options.fsr.promote_after = Some(v as u32);
-                }
-                const_remove_indices.push(index);
-            } else if c.ident == "STREAMING" {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "{source_path}: STREAMING is removed. \
-                         Use FSR LiveProp<T> for field-level live updates, or plain SSR."
-                    ),
-                ));
-            } else if c.ident == "FSR_JSON" {
-                page_options.fsr.json = value_str.trim() == "true";
-                const_remove_indices.push(index);
-=======
     let mut page_options = PageOptions::default();
     let mut promote_after_err: Option<io::Error> = None;
     file.items.retain(|item| {
@@ -119,7 +34,6 @@ pub fn instrument_frontmatter(
             "LAYOUT" => {
                 page_options.layout = if value == "none" { LayoutOpt::None } else { LayoutOpt::Inherit };
                 false
->>>>>>> origin/main
             }
             "PROMOTE_AFTER" => {
                 if let Ok(v) = parse_u64_const(&c.expr) {
@@ -185,12 +99,6 @@ pub fn instrument_frontmatter(
             && f.sig.inputs.is_empty()
             && matches!(f.vis, syn::Visibility::Public(_))
     });
-
-    // PRERENDER = true on a FSR route is equivalent to promote_after = 0, but only
-    // when PROMOTE_AFTER was not declared explicitly (explicit value always wins).
-    if page_options.ssg.prerender && page_options.fsr.promote_after.is_none() {
-        page_options.fsr.promote_after = Some(0);
-    }
 
     // Discover named action handlers. An action is any `pub` fn in a page's
     // code-behind with an `ActionResult`-shaped return. The fn name is the URL
@@ -370,10 +278,8 @@ pub fn instrument_frontmatter(
     // Extract the page's own named fields before any modification.
     let own_syn_fields = extract_named_fields(props_struct);
 
-<<<<<<< HEAD
-=======
-    // Parse and strip `#[pilcrow::live(...)]` from LiveProp<T> Props fields.
-    // Collects per-field revalidate_secs for FSR codegen. Errors on unknown keys.
+    // Parse and strip `#[revalidate(N)]` and `#[depends_on("key")]` from LiveProp<T> Props fields.
+    // Collects per-field FSR options for codegen. Mutually exclusive: error if both are set.
     let mut live_field_err: Option<io::Error> = None;
     if let syn::Fields::Named(ref mut named) = props_struct.fields {
         for field in &mut named.named {
@@ -383,39 +289,33 @@ pub fn instrument_frontmatter(
             }
             let field_name = ident.to_string();
             let mut live_attr = LiveFieldAttr::default();
-            let mut found = false;
             field.attrs.retain(|a| {
-                if !is_pilcrow_live_field_attr(a) {
-                    return true;
-                }
-                found = true;
-                if let Ok(items) = a.parse_args_with(
-                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
-                ) {
-                    for item in items {
-                        let syn::Meta::NameValue(nv) = item else { continue };
-                        if nv.path.is_ident("revalidate") {
-                            if let syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(n), .. }) = &nv.value {
-                                live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
-                            }
-                        } else {
-                            let key = nv.path.segments.last()
-                                .map(|s| s.ident.to_string())
-                                .unwrap_or_default();
-                            live_field_err = Some(io::Error::new(
-                                io::ErrorKind::InvalidData,
-                                format!(
-                                    "`{source_path}`: unknown key `{key}` in \
-                                     `#[pilcrow::live(...)]` on field `{field_name}`. \
-                                     Only `revalidate` is accepted on Props fields."
-                                ),
-                            ));
-                        }
+                if is_revalidate_field_attr(a) {
+                    if let Ok(n) = a.parse_args::<syn::LitInt>() {
+                        live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
                     }
+                    return false; // strip
                 }
-                false // strip the attribute
+                if is_depends_on_props_attr(a) {
+                    if let Ok(s) = a.parse_args::<syn::LitStr>() {
+                        live_attr.depends_on = Some(s.value());
+                    }
+                    return false; // strip
+                }
+                true
             });
-            if found {
+            if live_attr.revalidate_secs.is_some() && live_attr.depends_on.is_some() {
+                live_field_err = Some(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "`{source_path}`: field `{field_name}` has both `#[revalidate]` and \
+                         `#[depends_on]` — they are mutually exclusive. \
+                         Use `#[revalidate(N)]` to auto-schedule invalidation or \
+                         `#[depends_on(\"key\")]` to wire to an existing dep key."
+                    ),
+                ));
+            }
+            if live_attr.revalidate_secs.is_some() || live_attr.depends_on.is_some() {
                 page_options.fsr.live_field_attrs.insert(field_name, live_attr);
             }
         }
@@ -424,7 +324,6 @@ pub fn instrument_frontmatter(
         return Err(err);
     }
 
->>>>>>> origin/main
     // Detect `LiveProp<T>` fields.
     let live_fields: Vec<String> = own_syn_fields.iter()
         .filter_map(|f| {
@@ -630,10 +529,17 @@ pub fn normalize_derive_path(input: &str) -> String {
         .collect::<String>()
 }
 
-/// Returns true if the attribute is `#[pilcrow::live(...)]` (field-level, not struct-level).
-fn is_pilcrow_live_field_attr(attr: &syn::Attribute) -> bool {
+/// Returns true if the attribute is `#[revalidate(...)]` on a `LiveProp<T>` field.
+fn is_revalidate_field_attr(attr: &syn::Attribute) -> bool {
     let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
-    segs == ["pilcrow", "live"]
+    segs == ["revalidate"]
+}
+
+/// Returns true if the attribute is `#[depends_on(...)]` on a `LiveProp<T>` Props field.
+/// (Distinct from `#[pilcrow::depends_on]` used in `live.rs` for runtime dep expressions.)
+fn is_depends_on_props_attr(attr: &syn::Attribute) -> bool {
+    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
+    segs == ["depends_on"]
 }
 
 /// Parse a `u64` literal from a `pub const X: u64 = N;` expression.
@@ -645,7 +551,3 @@ fn parse_u64_const(expr: &syn::Expr) -> Result<u64, ()> {
     }
     Err(())
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main

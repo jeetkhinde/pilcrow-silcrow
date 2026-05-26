@@ -111,11 +111,6 @@ pub struct GeneratedTemplatesModule {
     pub action_map: HashMap<String, Vec<ActionFn>>,
     /// Map from page module_name to its per-page options (`TRAILING_SLASH`, etc.).
     pub page_options: HashMap<String, PageOptions>,
-<<<<<<< HEAD
-    /// Map from page module_name to its SSG configuration (only for pages with `PRERENDER = true`).
-    pub ssg_config_map: HashMap<String, SsgOpts>,
-=======
->>>>>>> origin/main
     /// Map from page module_name to its `LiveProp<T>` field names.
     pub live_fields_map: HashMap<String, Vec<String>>,
     /// Map from page module_name to whether a `live()` fn and/or `LiveProp` struct are present.

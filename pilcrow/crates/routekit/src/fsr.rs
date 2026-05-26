@@ -491,10 +491,16 @@ fn generate_from_row_impl(
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
-        // Resolve depends_on: explicit live.rs > auto dep key from Props attr
-        let auto_dep_key = auto_attrs.get(name)
-            .filter(|a| a.revalidate_secs.is_some())
-            .map(|_| format!("{module_name}::{name}"));
+        // Resolve depends_on priority: explicit live.rs > #[depends_on("key")] > #[revalidate(N)] auto key
+        let auto_dep_key = auto_attrs.get(name).and_then(|a| {
+            if let Some(ref key) = a.depends_on {
+                Some(key.clone())
+            } else if a.revalidate_secs.is_some() {
+                Some(format!("{module_name}::{name}"))
+            } else {
+                None
+            }
+        });
         let effective_depends_on = if field.depends_on.is_some() {
             generate_depends_on(&field.depends_on)
         } else if let Some(ref key) = auto_dep_key {
@@ -532,9 +538,15 @@ fn generate_from_row_impl(
     out.push_str("        ::std::vec![\n");
     for field in fields {
         let name = &field.name;
-        let auto_dep_key = auto_attrs.get(name)
-            .filter(|a| a.revalidate_secs.is_some())
-            .map(|_| format!("{module_name}::{name}"));
+        let auto_dep_key = auto_attrs.get(name).and_then(|a| {
+            if let Some(ref key) = a.depends_on {
+                Some(key.clone())
+            } else if a.revalidate_secs.is_some() {
+                Some(format!("{module_name}::{name}"))
+            } else {
+                None
+            }
+        });
         let effective_depends_on_vec = if field.depends_on.is_some() {
             generate_depends_on_vec(&field.depends_on)
         } else if let Some(ref key) = auto_dep_key {
@@ -936,7 +948,7 @@ mod tests {
 
         let mut auto_attrs = HashMap::new();
         // Only status gets revalidate; priority does not.
-        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60) });
+        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60), depends_on: None });
 
         let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
         let _ = fs::remove_file(path);
@@ -950,6 +962,34 @@ mod tests {
     }
 
     #[test]
+    fn static_depends_on_prop_attr_wires_dep_key() {
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub status: LiveProp<String>,
+            }
+            ",
+        );
+
+        let mut auto_attrs = HashMap::new();
+        // #[depends_on(\"prices:updated\")] on the Props field.
+        auto_attrs.insert("status".to_string(), LiveFieldAttr {
+            revalidate_secs: None,
+            depends_on: Some("prices:updated".to_string()),
+        });
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        // Both from_row and live_fields should use the static dep key.
+        assert_eq!(source.matches("\"prices:updated\"").count(), 2,
+            "expected static dep key in both from_row and live_fields");
+        assert!(!source.contains("\"page_tickets::status\""),
+            "auto dep key must not appear when static depends_on is set");
+    }
+
     fn explicit_depends_on_beats_auto_dep_key() {
         let path = write_live_rs(
             "
@@ -964,7 +1004,7 @@ mod tests {
 
         let route_params = vec!["id".to_string()];
         let mut auto_attrs = HashMap::new();
-        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(30) });
+        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(30), depends_on: None });
 
         let (source, _) = process_live_rs(&path, &route_params, None, &auto_attrs, "page_tickets").expect("process live.rs");
         let _ = fs::remove_file(path);
