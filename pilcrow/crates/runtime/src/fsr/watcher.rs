@@ -434,12 +434,19 @@ fn value_to_string(v: &serde_json::Value) -> String {
 /// invalidation cycle cannot silently kill the timer.
 fn spawn_supervised_invalidation(store: Arc<FsrStore>, scheduled: ScheduledInvalidation) {
     tokio::spawn(async move {
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
+
         loop {
             let store_inner = Arc::clone(&store);
             let dep_key = scheduled.dep_key.clone();
             let interval = scheduled.interval.max(Duration::from_millis(1));
 
-            let result = tokio::spawn(async move {
+            let child = tokio::spawn(async move {
                 let mut ticker = time::interval(interval);
                 ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
                 ticker.tick().await; // skip the immediate first tick at t=0
@@ -453,8 +460,9 @@ fn spawn_supervised_invalidation(store: Arc<FsrStore>, scheduled: ScheduledInval
                         );
                     }
                 }
-            })
-            .await;
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
 
             match result {
                 Ok(()) => break,
@@ -490,6 +498,13 @@ pub fn spawn_embedded_watcher(
     }
 
     tokio::spawn(async move {
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
+
         loop {
             let store_inner = Arc::clone(&store);
             let event_tx_inner = event_tx.clone();
@@ -499,7 +514,7 @@ pub fn spawn_embedded_watcher(
                 Duration::from_millis(500)
             };
 
-            let result = tokio::spawn(async move {
+            let child = tokio::spawn(async move {
                 let mut ticker = time::interval(poll_interval);
                 ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
 
@@ -509,8 +524,9 @@ pub fn spawn_embedded_watcher(
                         tracing::error!(error = %e, "FSR watcher tick failed");
                     }
                 }
-            })
-            .await;
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
 
             match result {
                 Ok(()) => break,
@@ -550,6 +566,13 @@ pub fn spawn_embedded_watcher_redis(
     }
 
     tokio::spawn(async move {
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
+
         loop {
             let store_inner = Arc::clone(&store);
             let event_tx_inner = event_tx.clone();
@@ -557,7 +580,7 @@ pub fn spawn_embedded_watcher_redis(
             let fallback_interval =
                 Duration::from_millis(config.poll_interval_ms).max(Duration::from_millis(100));
 
-            let result = tokio::spawn(async move {
+            let child = tokio::spawn(async move {
                 loop {
                     match redis_inner.client().get_async_pubsub().await {
                         Ok(mut pubsub) => {
@@ -635,8 +658,9 @@ pub fn spawn_embedded_watcher_redis(
                     }
                     tokio::time::sleep(fallback_interval).await;
                 }
-            })
-            .await;
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
 
             match result {
                 Ok(()) => break,
