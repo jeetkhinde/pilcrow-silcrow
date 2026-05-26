@@ -73,6 +73,17 @@ pub struct FsrConfig {
     /// Redis connection URL (`redis://...`). When set, the embedded watcher uses
     /// Redis pub/sub instead of polling and the FSR cache layer is activated.
     pub redis_url: Option<String>,
+    /// TTL for Redis artifact keys (`pilcrow:html:*`, `pilcrow:json:*`, `pilcrow:slot:*`)
+    /// in seconds. Keys expire automatically, so Redis memory is bounded even for
+    /// dynamic routes that generate many unique keys. Default: `86400` (24 h).
+    /// Set to `0` to disable TTLs (keys persist until tombstoned or idle-evicted).
+    pub artifact_ttl_secs: u64,
+    /// How often the idle-eviction background task runs, in seconds. Default: `1800` (30 min).
+    /// Set to `0` to disable idle eviction entirely.
+    pub idle_evict_secs: u64,
+    /// Routes with no traffic for longer than this (in seconds) are un-promoted and
+    /// their Redis keys evicted. Default: `86400` (24 h).
+    pub idle_threshold_secs: u64,
 }
 
 impl Default for FsrConfig {
@@ -87,6 +98,9 @@ impl Default for FsrConfig {
             connection_ttl_secs: 3600,
             keepalive_secs: 30,
             redis_url: None,
+            artifact_ttl_secs: 86_400,
+            idle_evict_secs: 1_800,
+            idle_threshold_secs: 86_400,
         }
     }
 }
@@ -503,6 +517,9 @@ mod tests {
         assert_eq!(cfg.max_sse_connections, 1000);
         assert_eq!(cfg.connection_ttl_secs, 3600);
         assert_eq!(cfg.keepalive_secs, 30);
+        assert_eq!(cfg.artifact_ttl_secs, 86_400);
+        assert_eq!(cfg.idle_evict_secs, 1_800);
+        assert_eq!(cfg.idle_threshold_secs, 86_400);
     }
 
     #[test]
@@ -516,5 +533,18 @@ mod tests {
         assert_eq!(cfg.max_sse_connections, 500);
         assert_eq!(cfg.connection_ttl_secs, 7200);
         assert_eq!(cfg.keepalive_secs, 45);
+    }
+
+    #[test]
+    fn fsr_config_idle_eviction_fields_deserialize_from_toml() {
+        let toml = r#"
+            artifact_ttl_secs   = 3600
+            idle_evict_secs     = 900
+            idle_threshold_secs = 7200
+        "#;
+        let cfg: FsrConfig = toml::from_str(toml).unwrap();
+        assert_eq!(cfg.artifact_ttl_secs, 3600);
+        assert_eq!(cfg.idle_evict_secs, 900);
+        assert_eq!(cfg.idle_threshold_secs, 7200);
     }
 }
