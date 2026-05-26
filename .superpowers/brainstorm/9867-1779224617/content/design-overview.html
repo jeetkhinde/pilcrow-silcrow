@@ -1,0 +1,100 @@
+<h2>Slice D — Full Design Overview</h2>
+<p class="subtitle">TODOs #5–#10: s-boost opt-out, three-mode navigation, scroll, head, history, view transitions</p>
+
+<div class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+    <!-- TODO #5 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:var(--accent)">TODO #5 — s-boost opt-out</div>
+      <p style="font-size:0.85rem;margin:0.5rem 0">External, <code>mailto:</code>, <code>download</code>, <code>#hash</code> already blocked. One missing piece:</p>
+      <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.8rem">
+        &lt;div s-boost&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/dashboard"&gt;Go&lt;/a&gt;      &lt;!-- boosted ✓ --&gt;<br>
+        &nbsp;&nbsp;&lt;a href="/pdf" <strong>s-boost="false"</strong>&gt;PDF&lt;/a&gt; &lt;!-- opt-out ✓ --&gt;<br>
+        &lt;/div&gt;
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">Single <code>isSafeBoostHref()</code> check: add <code>if (anchor.getAttribute("s-boost") === "false") return false</code></p>
+    </div>
+
+    <!-- TODO #6 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:#8b5cf6">TODO #6 — Three-mode navigation</div>
+      <p style="font-size:0.85rem;margin:0.5rem 0">Server decides. Signals via response header. Codegen emits slot markers.</p>
+      <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.8rem">
+        <span style="color:#6b7280"># Response headers (server → client)</span><br>
+        X-Pilcrow-Layout: full      <span style="color:#6b7280">(default)</span><br>
+        X-Pilcrow-Layout: fragment  <span style="color:#6b7280">(main slot only)</span><br>
+        X-Pilcrow-Layout: json      <span style="color:#6b7280">(props JSON)</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">Codegen wraps default-slot content: <code>&lt;div data-ps-slot="main"&gt;…&lt;/div&gt;</code></p>
+    </div>
+
+    <!-- TODO #7 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:#10b981">TODO #7 — Scroll per mode</div>
+      <table style="font-size:0.82rem;width:100%;border-collapse:collapse;margin-top:0.5rem">
+        <tr><td style="padding:0.25rem 0.5rem 0.25rem 0;color:var(--accent);font-weight:600">full</td><td>→ <code>window.scrollTo(0,0)</code></td></tr>
+        <tr><td style="padding:0.25rem 0.5rem 0.25rem 0;color:#8b5cf6;font-weight:600">fragment</td><td>→ <code>[data-ps-slot="main"].scrollIntoView()</code></td></tr>
+        <tr><td style="padding:0.25rem 0.5rem 0.25rem 0;color:#10b981;font-weight:600">json</td><td>→ preserve (no scroll)</td></tr>
+      </table>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">All three modes still save/restore scroll on popstate via <code>history.state.scrollY</code></p>
+    </div>
+
+    <!-- TODO #8 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:#f59e0b">TODO #8 — &lt;pilcrow:head&gt; on all nav modes</div>
+      <p style="font-size:0.85rem;margin:0.5rem 0">Codegen always prepends to body:</p>
+      <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.8rem">
+        &lt;<strong>template</strong> data-ps-head&gt;<br>
+        &nbsp;&nbsp;&lt;title&gt;{{ props.title }}&lt;/title&gt;<br>
+        &nbsp;&nbsp;&lt;meta name="description" …&gt;<br>
+        &lt;/template&gt;
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">Fragment: Silcrow extracts <code>template.content</code> and upserts nodes into <code>document.head</code>.<br>JSON: server includes <code>"__ps_head": "&lt;title&gt;…&lt;/title&gt;"</code> in props payload.</p>
+    </div>
+
+    <!-- TODO #9 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:#ef4444">TODO #9 — History stores layout hash</div>
+      <p style="font-size:0.85rem;margin:0.5rem 0">Codegen emits layout fingerprint on <code>&lt;body&gt;</code>:</p>
+      <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.8rem">
+        &lt;body data-ps-layout="a3f7c2"&gt;
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">On navigation: <code>history.pushState({ …, layoutHash: "a3f7c2" })</code>. On popstate: Silcrow knows which mode was active for that page. Hash is a short hash of the layout chain file paths.</p>
+    </div>
+
+    <!-- TODO #10 -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+      <div class="label" style="color:#06b6d4">TODO #10 — View Transitions</div>
+      <p style="font-size:0.85rem;margin:0.5rem 0">Wraps all three modes uniformly:</p>
+      <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.8rem">
+        <span style="color:#6b7280">// in navigate(), around the swap:</span><br>
+        if (document.startViewTransition) {<br>
+        &nbsp;&nbsp;document.startViewTransition(() =&gt; proceed());<br>
+        } else {<br>
+        &nbsp;&nbsp;proceed();<br>
+        }
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin:0.5rem 0 0">Graceful fallback: no transition if API unavailable. Works with CSS <code>@view-transition</code> rules the developer defines.</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">Full navigation flow (boosted GET)</div>
+  <div style="background:var(--code-bg);border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;font-family:monospace;line-height:1.8">
+    1. User clicks &lt;a&gt; inside [s-boost] container<br>
+    2. isSafeBoostHref() passes (not external / download / hash / s-boost="false")<br>
+    3. fetch(url, { headers: { "silcrow-target": "true" } })<br>
+    4. Server sees silcrow-target → consults route config → sets X-Pilcrow-Layout header<br>
+    5. Silcrow reads header → chooses swap strategy<br>
+    &nbsp;&nbsp;&nbsp;<span style="color:var(--accent)">full</span>: safeSetHTML(document.body, html)  → scrollTo(0,0)<br>
+    &nbsp;&nbsp;&nbsp;<span style="color:#8b5cf6">fragment</span>: safeSetHTML(slot, html) + applyHead(template) → slot.scrollIntoView()<br>
+    &nbsp;&nbsp;&nbsp;<span style="color:#10b981">json</span>: patch(data, slot) + applyHead(data.__ps_head) → preserve scroll<br>
+    6. document.startViewTransition() wraps step 5<br>
+    7. history.pushState({ layoutHash, scrollY, url })<br>
+    8. silcrow:load event dispatched
+  </div>
+</div>

@@ -30,7 +30,9 @@ pub(crate) mod fsr {
 
     impl FsrHandle {
         pub(crate) fn new(_store: Arc<FsrStore>) -> Self {
-            Self { _store: Some(_store) }
+            Self {
+                _store: Some(_store),
+            }
         }
     }
 
@@ -46,6 +48,7 @@ pub mod isr;
 #[cfg(feature = "live-props")]
 pub mod live_props;
 pub mod middleware;
+pub mod nav;
 pub mod response;
 pub mod sse;
 pub mod start;
@@ -53,7 +56,7 @@ pub(crate) mod sw;
 pub mod validator;
 pub mod ws;
 pub use adapter::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use start::{start, start_with_adapter, start_with_prerender};
+pub use start::{start, start_with_adapter};
 // ── Core API re-exports ──────────────────────────────────────
 pub use axum::http::StatusCode;
 pub use axum::response::Response;
@@ -85,8 +88,11 @@ pub use axum;
 pub use response::response::html;
 
 pub use deferred::{__live_props_response, LiveProp, LiveTarget};
-// ── ISR / SSG cache ──────────────────────────────────────────
-pub use isr::{__isr_cache_key, IsrCache, IsrCacheState, IsrHandle};
+pub use nav::extract_ps_fragment;
+pub mod prebake;
+pub use prebake::trigger as prebake_next;
+#[cfg(feature = "live-props")]
+pub use live_props::{InMemoryListChunkCache, ListBroadcast, ListChunkCache, ListPatchEvent, ListRow, list_chunk_key};
 // ── Validation ───────────────────────────────────────────────
 pub use context::ReqBuilder;
 pub use validator::Validator;

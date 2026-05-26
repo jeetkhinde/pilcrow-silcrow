@@ -23,6 +23,12 @@ pub struct TemplateCodegenInput {
     pub fragment_url_prefix: Option<String>,
     /// Route params generated from the file path for page modules.
     pub route_params: Vec<GeneratedRouteParam>,
+    /// Layout IDs in the chain (outermost first) for X-PS-Present comparison.
+    /// Empty for layout/ui modules and pages with no auto-layout.
+    pub layout_chain_ids: Vec<String>,
+    /// Route pattern for the data-ps-slot element, e.g. "/tickets/:id".
+    /// None for non-page modules.
+    pub page_slot: Option<String>,
 }
 
 /// Metadata for one generated template module.
@@ -105,8 +111,11 @@ pub struct GeneratedTemplatesModule {
     pub action_map: HashMap<String, Vec<ActionFn>>,
     /// Map from page module_name to its per-page options (`TRAILING_SLASH`, etc.).
     pub page_options: HashMap<String, PageOptions>,
+<<<<<<< HEAD
     /// Map from page module_name to its SSG configuration (only for pages with `PRERENDER = true`).
     pub ssg_config_map: HashMap<String, SsgOpts>,
+=======
+>>>>>>> origin/main
     /// Map from page module_name to its `LiveProp<T>` field names.
     pub live_fields_map: HashMap<String, Vec<String>>,
     /// Map from page module_name to whether a `live()` fn and/or `LiveProp` struct are present.

@@ -4,6 +4,8 @@
 
 #[cfg(feature = "live-props")]
 pub use runtime::fsr::{DependencyKey, LiveProp, LiveQuery, PilcrowLive};
+#[cfg(feature = "live-props")]
+pub use runtime::live_props::ListRow;
 
 // Re-export macros from their defining crates.
 // `fsr_dep!` and `live_query!` are `#[macro_export]` macros in pilcrow-runtime.

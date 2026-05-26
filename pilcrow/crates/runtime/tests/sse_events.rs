@@ -153,10 +153,7 @@ async fn sse_emitter_json_sends_patch_event() {
 async fn sse_patch_with_mutation_id_appears_in_body() {
     let body = collect_sse_body(sse_stream(|emitter| async move {
         emitter
-            .send(
-                SilcrowEvent::patch(serde_json::json!({"n": 1}), "#a")
-                    .with_mutation_id("mut-42"),
-            )
+            .send(SilcrowEvent::patch(serde_json::json!({"n": 1}), "#a").with_mutation_id("mut-42"))
             .await
     }))
     .await;

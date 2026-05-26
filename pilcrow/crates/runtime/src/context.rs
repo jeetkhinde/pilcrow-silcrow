@@ -4,7 +4,10 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use axum::{
     async_trait,
-    extract::{Form, FromRequest, FromRequestParts, Path, Request},
+    extract::{
+        Form, FromRequest, FromRequestParts, Path, Request,
+        rejection::{BytesRejection, FailedToBufferBody, FormRejection},
+    },
     http::request::Parts,
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Redirect, Response},
@@ -18,7 +21,6 @@ use serde::Serialize;
 
 use crate::fsr::{FsrHandle, fsr_store_for_handle};
 use crate::i18n::{CurrentLocale, FmtHelper, I18nBundles};
-use crate::isr::IsrHandle;
 use crate::response::headers::*;
 use crate::response::response::{ActionResult, BaseResponse, FormErrors, ToastLevel};
 
@@ -422,9 +424,6 @@ pub struct Req {
     pub locals: Locals,
     /// Response modifier: set headers, cookies, toasts from inside any handler.
     pub res: Res,
-    /// ISR cache handle. Use `req.cache.revalidate(path)` or
-    /// `req.cache.revalidate_tag(tag)` to bust the cache from within an action.
-    pub cache: IsrHandle,
     /// FSR handle. Use `req.fsr.tombstone(path).await` to mark a promoted route
     /// as deleted — the next request to that path returns 404.
     pub fsr: FsrHandle,
@@ -593,7 +592,6 @@ impl Req {
             is_enhanced: common.is_enhanced,
             locals: common.locals,
             res: common.res,
-            cache: common.cache,
             fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,
@@ -623,10 +621,7 @@ impl Req {
         let path = parts.uri.path().to_owned();
         let headers = parts.headers.clone();
         let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
-        let mutation_id = parts
-            .headers
-            .typed_get::<SilcrowMutationId>()
-            .map(|h| h.0);
+        let mutation_id = parts.headers.typed_get::<SilcrowMutationId>().map(|h| h.0);
         let action = extract_action_from_query(parts.uri.query());
         let query = parse_query_multi(parts.uri.query());
         let locale = parts
@@ -645,7 +640,6 @@ impl Req {
             is_enhanced,
             locals,
             res,
-            cache: IsrHandle::default(),
             fsr: fsr_store_for_handle()
                 .map(FsrHandle::new)
                 .unwrap_or_default(),
@@ -700,10 +694,7 @@ impl Req {
         ReqBuilder::new()
     }
 
-    /// Construct a synthetic `Req` from captured parts for ISR background revalidation tasks.
-    ///
-    /// The synthetic request has an empty form body, `is_enhanced = false`, a fresh `Res`,
-    /// and a no-op `IsrHandle` (to prevent recursive cache writes inside the spawned task).
+    /// Construct a synthetic `Req` for startup prebake tasks.
     #[doc(hidden)]
     pub fn __synthetic(
         path: String,
@@ -723,7 +714,6 @@ impl Req {
             is_enhanced: false,
             locals,
             res: Res::default(),
-            cache: IsrHandle::default(),
             fsr: FsrHandle::default(),
             locale: String::new(),
             i18n: None,
@@ -825,7 +815,6 @@ impl ReqBuilder {
             is_enhanced: self.is_enhanced,
             locals: Locals::default(),
             res: Res::default(),
-            cache: IsrHandle::default(),
             fsr: FsrHandle::default(),
             locale: self.locale,
             i18n: None,
@@ -846,7 +835,6 @@ struct CommonParts {
     is_enhanced: bool,
     locals: Locals,
     res: Res,
-    cache: IsrHandle,
     fsr: FsrHandle,
     locale: String,
     i18n: Option<I18nBundles>,
@@ -870,10 +858,7 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
     let headers = parts.headers.clone();
     let path = parts.uri.path().to_owned();
     let is_enhanced = parts.headers.typed_get::<SilcrowTarget>().is_some();
-    let mutation_id = parts
-        .headers
-        .typed_get::<SilcrowMutationId>()
-        .map(|h| h.0);
+    let mutation_id = parts.headers.typed_get::<SilcrowMutationId>().map(|h| h.0);
 
     // Shared per-request Locals: first extraction creates and inserts;
     // subsequent ones share the same Arc.
@@ -893,14 +878,6 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         parts.extensions.insert(r.clone());
         r
     });
-
-    // ISR cache handle — injected by start() when the cache is initialised.
-    // Pages without PRERENDER will have a no-op IsrHandle (inner = None).
-    let cache = parts
-        .extensions
-        .get::<IsrHandle>()
-        .cloned()
-        .unwrap_or_default();
 
     // FSR handle — populated from the global store when FSR is configured.
     let fsr = fsr_store_for_handle()
@@ -926,7 +903,6 @@ async fn extract_common_parts<S: Send + Sync>(parts: &mut Parts, state: &S) -> C
         is_enhanced,
         locals,
         res,
-        cache,
         fsr,
         locale,
         i18n,
@@ -946,10 +922,18 @@ impl<S: Send + Sync> FromRequest<S> for Req {
 
         // Reconstruct the request so Form can consume the body.
         let req = Request::from_parts(parts, body);
-        let pairs: Vec<(String, String)> = Form::<Vec<(String, String)>>::from_request(req, state)
-            .await
-            .map(|f| f.0)
-            .unwrap_or_default();
+        let pairs: Vec<(String, String)> =
+            match Form::<Vec<(String, String)>>::from_request(req, state).await {
+                Ok(f) => f.0,
+                // Non-form requests (GET, JSON POST, etc.) — treat as no form data.
+                Err(FormRejection::InvalidFormContentType(_)) => vec![],
+                // Body exceeded the body limit — reject with 413.
+                Err(FormRejection::BytesRejection(BytesRejection::FailedToBufferBody(
+                    FailedToBufferBody::LengthLimitError(_),
+                ))) => return Err((StatusCode::PAYLOAD_TOO_LARGE, "form body too large")),
+                // Malformed urlencoded data — reject with 400.
+                Err(_) => return Err((StatusCode::BAD_REQUEST, "invalid form data")),
+            };
 
         let mut raw_map: HashMap<String, Vec<String>> = HashMap::new();
         for (k, v) in pairs {
@@ -967,7 +951,6 @@ impl<S: Send + Sync> FromRequest<S> for Req {
             is_enhanced: common.is_enhanced,
             locals: common.locals,
             res: common.res,
-            cache: common.cache,
             fsr: common.fsr,
             locale: common.locale,
             i18n: common.i18n,

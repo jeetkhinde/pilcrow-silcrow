@@ -19,6 +19,7 @@ pub enum FeatureStatus {
     Experimental,
     Planned,
     Deprecated,
+    Removed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,9 @@
-use axum::{Extension, response::IntoResponse};
 use axum::http::{StatusCode, header};
+use axum::{Extension, response::IntoResponse};
 use std::sync::Arc;
 
-use super::store::{FsrStore, InspectRow};
 use super::hub::FsrConnectionCounter;
+use super::store::{FsrStore, InspectRow};
 
 /// Dev-only handler for `GET /__pilcrow/fsr/inspect`.
 ///
@@ -21,7 +21,12 @@ pub async fn fsr_inspect_handler(
         .unwrap_or(0);
 
     let Some(Extension(store)) = store else {
-        return (StatusCode::SERVICE_UNAVAILABLE, content_type, not_configured_html(conn_count)).into_response();
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            content_type,
+            not_configured_html(conn_count),
+        )
+            .into_response();
     };
 
     match store.fetch_all_for_inspect().await {
@@ -79,10 +84,7 @@ fn build_html(rows: &[InspectRow], conn_count: usize) -> String {
     if rows.is_empty() {
         out.push_str("<p>No rows in <code>pilcrow_fsr</code>.</p>\n");
     } else {
-        out.push_str(&format!(
-            "<p class=\"count\">{} row(s)</p>\n",
-            rows.len()
-        ));
+        out.push_str(&format!("<p class=\"count\">{} row(s)</p>\n", rows.len()));
         out.push_str(
             "<table>\n<thead>\n<tr>\
              <th>route</th><th>slot</th><th>depends_on</th>\
@@ -93,7 +95,11 @@ fn build_html(rows: &[InspectRow], conn_count: usize) -> String {
 
         for row in rows {
             let is_route_row = row.slot.is_empty();
-            let row_class = if is_route_row { " class=\"route-row\"" } else { "" };
+            let row_class = if is_route_row {
+                " class=\"route-row\""
+            } else {
+                ""
+            };
             let slot_cell = if is_route_row {
                 "(route)".to_string()
             } else {
@@ -149,8 +155,8 @@ fn build_html(rows: &[InspectRow], conn_count: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{Router, body::Body, routing::get};
     use axum::http::{Request, StatusCode};
+    use axum::{Router, body::Body, routing::get};
     use tower::ServiceExt as _;
 
     /// Handler returns 503 when no FsrStore extension is present.
@@ -176,8 +182,7 @@ mod tests {
     /// Without a DB extension the handler returns 503 — not 404.
     #[tokio::test]
     async fn route_present_returns_non_404_in_dev_mode() {
-        let app = Router::new()
-            .route("/__pilcrow/fsr/inspect", get(fsr_inspect_handler));
+        let app = Router::new().route("/__pilcrow/fsr/inspect", get(fsr_inspect_handler));
         let req = Request::builder()
             .uri("/__pilcrow/fsr/inspect")
             .body(Body::empty())
@@ -190,14 +195,17 @@ mod tests {
     #[tokio::test]
     async fn inspect_shows_connection_count() {
         use crate::fsr::hub::FsrConnectionCounter;
-        use std::sync::atomic::AtomicUsize;
         use axum::body::to_bytes;
+        use std::sync::atomic::AtomicUsize;
 
         let counter: FsrConnectionCounter = Arc::new(AtomicUsize::new(42));
         let resp = fsr_inspect_handler(None, Some(Extension(counter))).await;
         let body = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
         let html = String::from_utf8_lossy(&body);
-        assert!(html.contains("42"), "expected connection count 42 in HTML, got: {html}");
+        assert!(
+            html.contains("42"),
+            "expected connection count 42 in HTML, got: {html}"
+        );
     }
 
     #[tokio::test]

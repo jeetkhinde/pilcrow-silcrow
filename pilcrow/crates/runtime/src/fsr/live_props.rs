@@ -39,7 +39,6 @@ impl std::fmt::Display for DependencyKey {
 pub struct LiveProp<T> {
     pub value: T,
     pub depends_on: Vec<String>, // stored as "table:column=value" strings
-    pub promote_after: Option<u32>,
     pub patch_debounce: Option<u32>,
 }
 
@@ -48,14 +47,8 @@ impl<T: Serialize + Clone> LiveProp<T> {
         Self {
             value,
             depends_on: depends_on.iter().map(|d| d.as_dep_string()).collect(),
-            promote_after: None,
             patch_debounce: None,
         }
-    }
-
-    pub fn promote_after(mut self, hits: u32) -> Self {
-        self.promote_after = Some(hits);
-        self
     }
 
     pub fn patch_debounce(mut self, seconds: u32) -> Self {

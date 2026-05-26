@@ -1,19 +1,18 @@
 use axum::{
-    Extension,
-    Json,
+    Extension, Json,
     extract::Query,
     http::StatusCode,
-    response::{IntoResponse, Response},
     response::sse::{Event, KeepAlive, Sse},
+    response::{IntoResponse, Response},
 };
 use futures_core::Stream;
+use futures_util::StreamExt as FuturesStreamExt;
 use serde::Deserialize;
 use std::convert::Infallible;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::task::{Context, Poll};
-use futures_util::StreamExt as FuturesStreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 
 use super::store::FsrStore;
@@ -50,7 +49,10 @@ struct ConnectionGuard(Arc<AtomicUsize>);
 impl Drop for ConnectionGuard {
     fn drop(&mut self) {
         let prev = self.0.fetch_sub(1, Ordering::Relaxed);
-        debug_assert!(prev > 0, "ConnectionGuard dropped with counter already at zero");
+        debug_assert!(
+            prev > 0,
+            "ConnectionGuard dropped with counter already at zero"
+        );
     }
 }
 
@@ -99,7 +101,11 @@ pub async fn fsr_hub_handler(
     let current = counter.fetch_add(1, Ordering::Relaxed);
     if current >= hub_config.max_connections {
         counter.fetch_sub(1, Ordering::Relaxed);
-        return (StatusCode::SERVICE_UNAVAILABLE, "FSR connection limit reached").into_response();
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "FSR connection limit reached",
+        )
+            .into_response();
     }
 
     let subscribed_route = query.route.unwrap_or_default();
@@ -121,35 +127,35 @@ pub async fn fsr_hub_handler(
 
     // Box::pin is required: tokio::time::Sleep is !Unpin, and GuardedStream
     // requires its inner stream to be Unpin so we can poll it through Pin<&mut Self>.
-    let ttl_fut = Box::pin(tokio::time::sleep(std::time::Duration::from_secs(hub_config.connection_ttl_secs)));
+    let ttl_fut = Box::pin(tokio::time::sleep(std::time::Duration::from_secs(
+        hub_config.connection_ttl_secs,
+    )));
 
     let after_ttl = FuturesStreamExt::take_until(rx, ttl_fut);
     let stream = tokio_stream::StreamExt::filter_map(after_ttl, move |msg| {
-            let subscribed_route = subscribed_route.clone();
-            let subscribed_slots = subscribed_slots.clone();
-            match msg {
-                Ok(patch) => {
-                    if patch.route != subscribed_route {
-                        return None;
-                    }
-                    if !subscribed_slots.is_empty() && !subscribed_slots.contains(&patch.slot) {
-                        return None;
-                    }
-                    let payload = serde_json::json!({ &patch.slot: patch.value });
-                    Some(Ok::<Event, Infallible>(
-                        Event::default().event("fsr").data(payload.to_string()),
-                    ))
+        match msg {
+            Ok(patch) => {
+                if patch.route != subscribed_route {
+                    return None;
                 }
-                Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(n)) => {
-                    tracing::debug!(
-                        route = %subscribed_route,
-                        lagged_by = n,
-                        "FSR client lagged — sending resync"
-                    );
-                    Some(Ok(Event::default().event("fsr-resync").data("lagged")))
+                if !subscribed_slots.is_empty() && !subscribed_slots.contains(&patch.slot) {
+                    return None;
                 }
+                let payload = serde_json::json!({ &patch.slot: patch.value });
+                Some(Ok::<Event, Infallible>(
+                    Event::default().event("fsr").data(payload.to_string()),
+                ))
             }
-        });
+            Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(n)) => {
+                tracing::debug!(
+                    route = %subscribed_route,
+                    lagged_by = n,
+                    "FSR client lagged — sending resync"
+                );
+                Some(Ok(Event::default().event("fsr-resync").data("lagged")))
+            }
+        }
+    });
 
     let guarded = GuardedStream {
         inner: stream,
@@ -158,8 +164,7 @@ pub async fn fsr_hub_handler(
 
     Sse::new(guarded)
         .keep_alive(
-            KeepAlive::new()
-                .interval(std::time::Duration::from_secs(hub_config.keepalive_secs)),
+            KeepAlive::new().interval(std::time::Duration::from_secs(hub_config.keepalive_secs)),
         )
         .into_response()
 }
@@ -245,13 +250,13 @@ pub async fn fsr_snapshot_handler(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::Ordering;
+    use crate::fsr::watcher::SlotPatch;
     use axum::Router;
     use axum::body::Body;
     use axum::http::Request;
     use axum::routing::get;
+    use std::sync::atomic::Ordering;
     use tower::ServiceExt as _;
-    use crate::fsr::watcher::SlotPatch;
 
     fn make_app(counter: FsrConnectionCounter, max: usize) -> Router {
         let (tx, _) = tokio::sync::broadcast::channel::<SlotPatch>(1);
@@ -325,7 +330,10 @@ mod tests {
     #[tokio::test]
     async fn snapshot_returns_503_without_store() {
         let resp = fsr_snapshot_handler(
-            Query(FsrHubQuery { route: None, slots: None }),
+            Query(FsrHubQuery {
+                route: None,
+                slots: None,
+            }),
             None,
         )
         .await;

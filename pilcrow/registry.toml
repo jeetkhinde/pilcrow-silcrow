@@ -410,20 +410,6 @@ validation_rules = [
 ]
 scaffold_templates = ["silcrow-form"]
 
-[[features]]
-id = "deferred-streams"
-name = "Deferred Streams"
-domain = "pilcrow"
-status = "removed"
-summary = "REMOVED in Slice C. AsyncHtml, AsyncValue<T>, DeferredHtml, and Deferred<T> have been removed. Use FSR (live.rs + LiveProp<T>) for reactive data instead."
-spec = "Removed. AsyncHtml, AsyncValue<T>, async_response_combined, async_value_response, __streaming_props_response, and all deferred field infrastructure have been deleted. Using these types will fail to compile. Migrate to FSR: declare a Live struct in live.rs with LiveProp<T> fields."
-canonical_usage = ""
-constraints = []
-invalid_examples = []
-source_refs = []
-test_refs = []
-validation_rules = []
-scaffold_templates = []
 
 [[features]]
 id = "live-props"
@@ -465,15 +451,13 @@ name = "FSR (Field-Selective Rendering)"
 domain = "pilcrow"
 status = "stable"
 summary = "Field-Selective Rendering — live.rs convention, LiveProp<T>, watcher, s-live slots, SSE hub. Developer-facing surface via `use pilcrow::live::*;`."
-spec = "FSR enables per-field SSE-driven live updates. A route's live.rs exports a Live struct with LiveProp<T> fields. Routekit validates the sibling page.html template against live.rs at build time: every s-live=\"field\" slot must match a LiveProp field, every LiveProp field must have a matching s-live slot unless the field is marked #[pilcrow::allow_unused], and duplicate s-live slot names are rejected with a clear error. Struct-level #[pilcrow::live(...)] and #[pilcrow::depends_on_route(table, param)] defaults apply to every LiveProp field, and field-level attributes override those defaults. depends_on_route(tickets, id) expands conceptually to dep!(tickets, id, params.id) and is valid only when the route has an id param; explicit #[pilcrow::depends_on(dep!(...))] remains the escape hatch. LiveProp<T> fields are individually addressable over a shared SSE connection. The FSR watcher polls a LiveQuery and pushes SlotPatch events when values change. Routes opt in with `use pilcrow::live::*;` and the `live-props` Cargo feature. Redis (live-props-redis feature) adds a three-layer serve architecture: Redis is the hot path (pilcrow:html:<route>, pilcrow:slot:<route> HASH, pilcrow:json:<route>), Postgres is the truth layer (pilcrow_fsr table), and disk is async recovery. The watcher becomes pub/sub-driven: it subscribes to pilcrow:invalidate, re-executes stored queries, patches Redis, then publishes pilcrow:patch which is forwarded to connected SSE clients. Without Redis, the watcher falls back to 500ms polling. redis_url in [cache] of pilcrow.toml is required when using live-props-redis."
+spec = "FSR enables per-field SSE-driven live updates. A route's live.rs exports a Live struct with LiveProp<T> fields. Routekit validates the sibling page.html template against live.rs at build time: every s-live=\"field\" slot must match a LiveProp field, every LiveProp field must have a matching s-live slot unless the field is marked #[pilcrow::allow_unused], and duplicate s-live slot names are rejected with a clear error. Struct-level #[pilcrow::live(...)] and #[pilcrow::depends_on_route(table, param)] defaults apply to every LiveProp field, and field-level attributes override those defaults. depends_on_route(tickets, id) expands conceptually to dep!(tickets, id, params.id) and is valid only when the route has an id param; explicit #[pilcrow::depends_on(dep!(...))] remains the escape hatch. LiveProp<T> fields are individually addressable over a shared SSE connection. The FSR watcher polls a LiveQuery and pushes SlotPatch events when values change. Routes opt in with `use pilcrow::live::*;` and the `live-props` Cargo feature. Redis (live-props-redis feature) adds a three-layer serve architecture: Redis is the hot path (pilcrow:html:<route>, pilcrow:slot:<route> HASH, pilcrow:json:<route>), Postgres is the truth layer (pilcrow_fsr table), and disk is async recovery. The watcher becomes pub/sub-driven: it subscribes to pilcrow:invalidate, re-executes stored queries, patches Redis, then publishes pilcrow:patch which is forwarded to connected SSE clients. Without Redis, the watcher falls back to 500ms polling. redis_url in [fsr] of pilcrow.toml is required when using live-props-redis. Per-field scheduled revalidation: #[pilcrow::live(revalidate = N)] on a LiveProp<T> field in Props auto-derives dep key \"{module_name}::{field_name}\", injects it into the field's depends_on in the generated from_row() impl (when no explicit depends_on is set in live.rs), and registers a ScheduledInvalidation timer in __pilcrow_init() that fires invalidate_dep_key every N seconds. Codegen emits __register_codegen_scheduled_invalidations() which is consumed by start() when building WatcherConfig. Cache persistence and eviction: artifact_ttl_secs (default 86400) sets an EX TTL on pilcrow:html:*, pilcrow:json:*, and pilcrow:slot:* Redis keys so orphaned entries expire automatically. idle_evict_secs (default 1800) controls how often the idle-eviction background task runs; idle_threshold_secs (default 86400) is how long a route must be cold before it is un-promoted (promoted=FALSE, hit_count=0) and its Redis keys and baked disk artifacts are deleted. Un-promoted routes re-enter the normal promotion cycle on the next request. Set idle_evict_secs=0 to disable eviction. All three fields are configurable in the [fsr] section of Pilcrow.toml."
+
 canonical_usage = """
 # live.rs
 use pilcrow::live::*;
 
-#[pilcrow::live(
-    promote_after = 50,
-    patch_debounce = 30
-)]
+#[pilcrow::live(patch_debounce = 30)]
 #[pilcrow::depends_on_route(tickets, id)]
 pub struct Live {
     pub ticket_status: LiveProp<String>,
@@ -490,9 +474,13 @@ impl Live {
     }
 }
 
-# page.rs
-pub struct Props { pub live: Live }
-pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live }) }
+# page.rs — with per-field scheduled revalidation (no manual depends_on needed)
+pub struct Props {
+    pub live: Live,
+    #[pilcrow::live(revalidate = 60)]   // re-bake every 60 s; auto dep key = "page_tickets::status"
+    pub status: LiveProp<String>,
+}
+pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live, status: LiveProp::initial(String::new()) }) }
 
 # page.html
 <span s-live="ticket_status">{{ live.ticket_status.value }}</span>
@@ -500,8 +488,7 @@ pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live }) }
 constraints = [
   "Incompatible with STREAMING = true",
   "FSR_JSON = true incompatible with STREAMING = true",
-  "live.rs + PRERENDER treated as promote_after = 0",
-  "promote_after absent = SSG (bake at startup)",
+  "Route bake threshold is set via pub const PROMOTE_AFTER: u32 = N in page.rs; 0 means bake on first hit.",
   "Struct-level #[pilcrow::live(...)] defaults apply to all LiveProp<T> fields.",
   "Struct-level #[pilcrow::depends_on_route(table, param)] defaults apply to all LiveProp<T> fields.",
   "Field-level #[pilcrow::*] attributes override struct-level live defaults for that field.",
@@ -511,6 +498,8 @@ constraints = [
   "depends_on_route(table, param) requires `param` to exist in the route params.",
   "dep! macro args mean table, column, runtime value.",
   "Requires the `live-props` Cargo feature on pilcrow-web",
+  "#[pilcrow::live(revalidate = N)] is only valid on LiveProp<T> fields in Props — not in live.rs.",
+  "revalidate = N is the only accepted key in #[pilcrow::live(...)] on Props fields; unknown keys are build errors.",
 ]
 invalid_examples = [
   "Using LiveProp<T> outside of a struct that implements PilcrowLive",
@@ -545,16 +534,18 @@ validation_rules = [
   "Duplicate s-live slot names are rejected.",
   "depends_on_route(table, param) fails the build when `param` is missing from the route.",
   "live-props-redis Cargo feature enables Redis caching and pub/sub-driven invalidation.",
-  "redis_url in [cache] block of pilcrow.toml is required when live-props-redis feature is enabled.",
+  "redis_url in [fsr] block of pilcrow.toml is required when live-props-redis feature is enabled.",
   "Without live-props-redis, the watcher uses 500ms polling fallback.",
   "req.fsr.tombstone(path).await marks a promoted route as deleted; next request returns 404.",
   "tombstone() clears Redis keys (pilcrow:html, pilcrow:slot, pilcrow:json) and removes baked files from disk.",
   "tombstone() is a no-op when FSR is not configured or the route has no route-level row.",
-  "pub const PROMOTE_AFTER: u32 = N in page.rs sets a route-level promotion threshold that overrides per-field #[pilcrow::promote_after] for ensure_route_row.",
-  "pub const PRERENDER: bool = true in a FSR page (with live.rs) sets PROMOTE_AFTER = 0 automatically — route is promoted on its first hit.",
-  "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER or PRERENDER = true is set.",
+  "pub const PROMOTE_AFTER: u32 = N in page.rs is the sole surface for setting a route's promotion threshold.",
+  "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER is set.",
   "ScheduledInvalidation::new(dep_key, interval) in WatcherConfig::scheduled_invalidations replaces REVALIDATE TTL for FSR routes — calls invalidate_dep_key on a timer.",
   "Each ScheduledInvalidation spawns a dedicated background task inside spawn_embedded_watcher / spawn_embedded_watcher_redis.",
+  "#[pilcrow::live(revalidate = N)] on a Props LiveProp<T> field auto-derives dep key \"{module_name}::{field_name}\" and registers a ScheduledInvalidation — no WatcherConfig or hooks.rs wiring needed.",
+  "revalidate = N and an explicit depends_on in live.rs coexist: explicit depends_on wins; the timer fires regardless.",
+  "#[pilcrow::live(...)] on Props LiveProp<T> fields is stripped at codegen — never emitted into generated source.",
 ]
 scaffold_templates = []
 
@@ -669,7 +660,7 @@ summary = "Page code-behind constants configure route-specific generation behavi
 spec = "Routekit parses supported page option constants from code-behind and strips them from generated modules. Supported: TRAILING_SLASH (always|never|ignore) and LAYOUT (none)."
 canonical_usage = "pub const TRAILING_SLASH: &str = \"always\"; — adds a redirect from /path to /path/ for GET. pub const LAYOUT: &str = \"none\"; — opts out of all layout wrapping for this page."
 constraints = [
-  "TRAILING_SLASH and LAYOUT are configured here. ISR constants (REVALIDATE, etc.) and PRERENDER are separate features.",
+  "TRAILING_SLASH and LAYOUT are configured here. PROMOTE_AFTER is the FSR threshold constant.",
   "TRAILING_SLASH values: \"always\" (redirect to /path/), \"ignore\" (redirect to /path), \"never\" (default).",
   "LAYOUT values: only \"none\" is supported.",
   "Constants are stripped from the emitted module — they never reach the template.",
@@ -1086,6 +1077,8 @@ constraints = [
   "React route-data examples assume React 19 use() and Suspense.",
   "Silcrow.submit from React should target the same Pilcrow named action URLs used by enhanced HTML forms.",
   "<react> tags inside HTML comments are ignored and preserved as comments.",
+  "SSR placeholder replacement (strategy=\"ssr\") buffers the entire HTML response in memory. Responses larger than 10 MiB skip SSR processing — the placeholders are left unreplaced and a tracing::warn is emitted.",
+  "The Node.js SSR worker communicates over stdin/stdout on the blocking thread pool (spawn_blocking), so SSR renders do not block Tokio workers.",
 ]
 invalid_examples = [
   "<react src=\"./react/Counter.tsx\" /> — missing strategy",
@@ -1112,44 +1105,33 @@ scaffold_templates = ["react-island"]
 
 [[features]]
 id = "ssg"
-name = "Static Site Generation (SSG)"
+name = "Bake on first hit (PROMOTE_AFTER = 0)"
 domain = "pilcrow"
 status = "stable"
-summary = "Startup-prerender SSG: pages with pub const PRERENDER: bool = true are rendered once at server startup and served from cache on all subsequent requests."
+summary = "FSR with PROMOTE_AFTER = 0: route is baked on its very first request and served from Redis on all subsequent requests. There is no separate SSG code path — this is FSR with a threshold of zero."
 spec = """
-SSG is implemented as of 2026-04-24 (startup-prerender model).
-
-When PRERENDER = true is declared in a code-behind file that also has load(), routekit generates:
-1. A handler that checks the ISR cache first (keyed by req.path). Cache hit → return immediately.
-   Cache miss (startup race) → run load chain, render, store with u64::MAX TTL, return response.
-2. A __pilcrow_prerender_all(cache) function called at server startup (before accepting connections)
-   that pre-warms the cache for every PRERENDER page.
+Setting pub const PROMOTE_AFTER: u32 = 0 in page.rs is the canonical way to request
+bake-on-first-hit behaviour. The route goes through the standard FSR handler; on the first
+hit the HTML + JSON are written to Redis (pilcrow:html:<route>, pilcrow:json:<route>) and
+all subsequent requests skip load() entirely.
 
 For dynamic routes (patterns with :param segments), an entries() function is required:
   pub async fn entries() -> Vec<HashMap<String, String>>
   Returns the list of path-param combinations to pre-render at startup.
 
-User API:
-  pub const PRERENDER: bool = true;                           — opt in
-  pub async fn entries() -> Vec<HashMap<String, String>> { } — required for dynamic routes
-
-Use pilcrow_start(pilcrow_router()).await instead of pilcrow_web::start(pilcrow_router()).await
-to trigger the startup prerender. pilcrow_start is generated by pilcrow_app!().
-
-PRERENDER is a no-op for pages without load() (already static via Props::default()).
-
-All PRERENDER constants are stripped from the emitted module — never appear in generated Rust.
+PROMOTE_AFTER: u32 = 0 is stripped from the emitted module — never appears in generated Rust.
+PRERENDER: bool is removed — using it is a build error.
 """
 canonical_usage = """
-// Static route — pages/about.rs
-pub const PRERENDER: bool = true;
+// pages/about.rs — bake on first hit
+pub const PROMOTE_AFTER: u32 = 0;
 pub struct Props { pub title: String }
 pub async fn load(_req: Req) -> AppResult<Props> {
     Ok(Props { title: "About Us".to_string() })
 }
 
-// Dynamic route — pages/products/[id].rs
-pub const PRERENDER: bool = true;
+// pages/products/[id].rs — dynamic route, bake on first hit per param combo
+pub const PROMOTE_AFTER: u32 = 0;
 pub struct Props { pub product: Product }
 pub async fn entries() -> Vec<HashMap<String, String>> {
     db::all_product_ids().await.into_iter()
@@ -1160,36 +1142,27 @@ pub async fn load(req: Req) -> AppResult<Props> {
     let id = req.params.get("id").unwrap();
     Ok(Props { product: db::find(id).await? })
 }
-
-// main.rs — use pilcrow_start instead of start
-pilcrow_app!();
-#[tokio::main]
-async fn main() {
-    pilcrow_start(pilcrow_router()).await
-}
 """
 constraints = [
-  "PRERENDER requires a load() fn to do anything — pages without load() are already static.",
-  "Dynamic routes (pattern contains :param) with PRERENDER require an entries() function — invalid config is reported as a structured build error.",
-  "Use pilcrow_start(pilcrow_router()).await (not pilcrow_web::start) to trigger startup prerendering.",
+  "Dynamic routes with PROMOTE_AFTER = 0 require an entries() function — build error otherwise.",
+  "PRERENDER: bool is removed — using it is a build error.",
+  "This is FSR with threshold 0, not a separate code path.",
 ]
 invalid_examples = [
-  "PRERENDER on a dynamic route without entries() fn — build error",
+  "pub const PRERENDER: bool = true — build error, use PROMOTE_AFTER = 0 instead",
+  "PROMOTE_AFTER = 0 on a dynamic route without entries() fn — build error",
 ]
 source_refs = [
-  "crates/routekit/src/templating/page_options.rs — SsgOpts struct",
-  "crates/routekit/src/templating/codegen/instrument.rs — PRERENDER and entries() detection",
-  "crates/routekit/src/templating/codegen/app_module.rs — emit_ssg_handler / emit_prerender_all",
-  "crates/runtime/src/start.rs — start_with_prerender",
-  "crates/web/src/lib.rs — pilcrow_app! macro (pilcrow_start fn generation)",
+  "crates/routekit/src/templating/page_options.rs — FsrOpts.promote_after",
+  "crates/routekit/src/templating/codegen/instrument.rs — PROMOTE_AFTER parsing",
+  "crates/runtime/src/fsr/store.rs — ensure_route_row, promote check",
 ]
 test_refs = [
-  "crates/routekit/src/templating/codegen/tests.rs — ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map",
   "crates/routekit/src/templating/codegen/tests.rs — entries_fn_is_detected_in_ssg_opts",
 ]
 validation_rules = [
-  "PRERENDER on a dynamic route without entries() is a build error.",
-  "Layouts cannot use PRERENDER — it only applies to pages.",
+  "Dynamic routes with PROMOTE_AFTER = 0 require an entries() function.",
+  "PRERENDER: bool = true is a build error.",
 ]
 scaffold_templates = []
 
@@ -1249,16 +1222,18 @@ id = "request-timeout"
 name = "Request Timeout"
 domain = "pilcrow"
 status = "stable"
-summary = "Requests that exceed 30 seconds receive a 408 Request Timeout response automatically."
+summary = "Requests that exceed 30 seconds receive a 408 Request Timeout response automatically, with the timed-out path logged."
 spec = """
-tower::timeout::TimeoutLayer is applied to every route via ServiceBuilder in start().
-If a handler takes longer than REQUEST_TIMEOUT_SECS (30s), the layer cancels it and
-HandleErrorLayer converts the BoxError into StatusCode::REQUEST_TIMEOUT (408).
+An axum::middleware::from_fn middleware (request_timeout_middleware) wraps every route in
+tokio::time::timeout(REQUEST_TIMEOUT_SECS). On expiry it emits tracing::warn!(path, timeout_secs)
+and returns StatusCode::REQUEST_TIMEOUT (408). The path of the timed-out request is captured
+before dispatch, making production timeouts debuggable without grepping access logs.
 No application-level configuration is needed.
 """
 canonical_usage = """
 // This is automatic — no code needed in your app.
 // If a load() or action runs > 30s it returns HTTP 408.
+// The tracing::warn! on timeout includes fields: path=<route> timeout_secs=30
 """
 constraints = [
   "Timeout is fixed at 30 seconds — not configurable per-route in v0.1.",
@@ -1266,7 +1241,43 @@ constraints = [
 ]
 invalid_examples = []
 source_refs = [
-  "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, TimeoutLayer, HandleErrorLayer",
+  "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, request_timeout_middleware",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "request-body-limit"
+name = "Request Body Limit"
+domain = "pilcrow"
+status = "stable"
+summary = "All requests are capped at a configurable body size (default 2 MiB). Requests exceeding the limit are rejected with 413 before reaching any handler."
+spec = """
+axum::extract::DefaultBodyLimit::max(n) is applied at router construction in start().
+The limit is read from config.web.request_body_limit_bytes, which defaults to 2 MiB
+(2 * 1024 * 1024 bytes). Override it in Pilcrow.toml under [web]:
+
+  [web]
+  request_body_limit_bytes = 10485760  # 10 MiB
+
+The limit applies to all request bodies including form posts, JSON APIs, and file uploads.
+Individual extractors (Form, Json, Bytes) may enforce their own tighter limits — the
+framework limit is the outer ceiling.
+"""
+canonical_usage = """
+# Pilcrow.toml — increase body limit for upload-heavy routes
+[web]
+request_body_limit_bytes = 10485760  # 10 MiB (default is 2 MiB)
+"""
+constraints = [
+  "The limit applies globally — there is no per-route override in v0.1.",
+  "SSR placeholder injection (island_ssr_middleware) uses a separate SSR_BODY_LIMIT_BYTES constant (10 MiB) for the response body buffer — this is unrelated to the request body limit.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/core/src/config/config.rs — WebConfig.request_body_limit_bytes, default_request_body_limit()",
+  "crates/runtime/src/start.rs — DefaultBodyLimit::max(request_body_limit_bytes)",
 ]
 test_refs = []
 validation_rules = []
@@ -1302,6 +1313,38 @@ constraints = [
 ]
 invalid_examples = []
 source_refs = ["crates/runtime/src/start.rs — TraceLayer::new_for_http()"]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "response-compression"
+name = "Response Compression"
+domain = "pilcrow"
+status = "stable"
+summary = "HTML, JS, and CSS responses are automatically compressed with brotli, gzip, deflate, or zstd based on the client's Accept-Encoding header."
+spec = """
+tower_http::compression::CompressionLayer::new() is installed by start() as the outermost
+router layer. It negotiates the best available encoding from the client's Accept-Encoding
+header (brotli > zstd > gzip > deflate) and compresses the response body transparently.
+No application-level configuration is needed — all content types that the client can accept
+compressed are handled. The Content-Encoding response header is set automatically.
+"""
+canonical_usage = """
+// This is automatic — no code needed in your app.
+// Clients that send Accept-Encoding: br, gzip receive compressed responses.
+// Verify in browser devtools: Response Headers > Content-Encoding: br
+"""
+constraints = [
+  "Compression is always on — there is no opt-out constant.",
+  "The encoding is negotiated per-request from Accept-Encoding; uncompressed clients receive plain responses.",
+  "SSE and WebSocket responses are not compressed (streaming bodies are excluded by tower-http).",
+]
+invalid_examples = []
+source_refs = [
+  "crates/runtime/src/start.rs — CompressionLayer::new()",
+  "crates/runtime/Cargo.toml — tower-http compression-full feature",
+]
 test_refs = []
 validation_rules = []
 scaffold_templates = []
@@ -2277,4 +2320,402 @@ test_refs = [
   "crates/routekit/src/templating/pipeline.rs — compile_pipeline_markdown_with_codebehind",
 ]
 validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "layout-aware-navigation"
+name = "Layout-Aware Navigation (PS Fragment)"
+domain = "silcrow"
+status = "stable"
+summary = "Global boost interception, X-PS-Present header, fragment-only responses, head template hoisting, scroll management, history layout hash, and View Transitions API integration."
+spec = """
+Pilcrow codegen emits `data-ps-layout=\"<id>\"` wrapper divs for every layout level and a
+`data-ps-slot=\"<pattern>\"` wrapper on the page content. A `<template data-ps-head>` element
+holds head content that should be applied during fragment navigation.
+
+On every enhanced GET request, Silcrow collects all `[data-ps-layout]` values in the current
+DOM and sends them as `X-PS-Present: /,/tickets` (comma-separated). The generated Rust handler
+checks whether every layout-chain ID is present and, if so, calls `extract_ps_fragment(&html, slot)`
+which returns only the matching `[data-ps-slot]` div plus any `<template data-ps-head>`. The
+response carries `Content-Type: text/html; x-ps-fragment=1`.
+
+Silcrow's `navigate()` detects the `x-ps-fragment=1` content-type flag and calls `applyFragment()`
+which swaps only the `[data-ps-slot]` element in the live DOM and runs `applyHeadTemplate()` to
+merge `<template data-ps-head>` contents into `<head>`. Full-page navigations also apply head
+templates.
+
+Scroll behaviour: full-page to scroll to top; fragment targeting body to scroll to top; fragment
+targeting a specific element to preserve scroll. JSON responses always preserve scroll.
+
+`history.pushState` state includes `{ layoutHash: [...ids] }` for restoration on popstate.
+
+All DOM swaps are wrapped in `document.startViewTransition()` when the browser supports it,
+falling back to a direct swap otherwise.
+
+All same-origin `<a>` links are intercepted by default (global boost). Individual anchors opt out
+with the `no-boost` attribute. `mailto:` and `tel:` links are never intercepted.
+"""
+constraints = [
+  "data-ps-layout and data-ps-slot wrappers are auto-injected by codegen — do not write them manually.",
+  "X-PS-Present header is only sent on GET requests when layout wrappers are present in the DOM.",
+  "Fragment extraction requires every layout-chain ID to be present in X-PS-Present; partial matches serve the full page.",
+  "no-boost attribute opts a single anchor out of global boost interception.",
+  "pilcrow:head section must use <pilcrow:head> component tag in page templates (not raw <head>).",
+]
+invalid_examples = [
+  "Manually writing data-ps-layout or data-ps-slot attributes in page templates",
+  "Expecting fragment responses when only some (not all) layout IDs are in X-PS-Present",
+  "Using <head> tags inside page templates expecting them to be hoisted — use <pilcrow:head> instead",
+]
+source_refs = [
+  "crates/routekit/src/templating/pipeline.rs — inject_ps_nav_markers, layout_id_from_path, page_slot_pattern",
+  "crates/routekit/src/templating/codegen/app_module.rs — emit_ps_fragment_check",
+  "crates/routekit/src/templating/codegen/types.rs — TemplateCodegenInput layout_chain_ids/page_slot",
+  "crates/runtime/src/nav.rs — extract_ps_fragment, find_slot_div, find_head_template",
+  "crates/runtime/assets/silcrow.js — collectLayoutPatterns, extractHeadTemplate, applyHeadTemplate, parseFragmentSlot, applyFragment",
+]
+test_refs = [
+  "crates/runtime/src/nav.rs — extract_ps_fragment_returns_slot_and_head, extract_ps_fragment_fallback_full_html, extract_ps_fragment_nested_divs",
+  "crates/routekit/src/templating/codegen/tests.rs",
+]
+validation_rules = [
+  "Fragment navigation requires both data-ps-layout wrappers and a data-ps-slot element in the rendered HTML.",
+  "The no-boost attribute on an anchor prevents Silcrow from intercepting that link.",
+]
+scaffold_templates = []
+
+[[features]]
+id = "sse-anchor"
+name = "data-pilcrow-live SSE Anchor"
+domain = "silcrow"
+status = "stable"
+summary = "Codegen injects a <div data-pilcrow-live> element for pages with LiveProp fields. Silcrow discovers it via initLiveElements(), manages the SSE connection through the existing hub infrastructure, and patches [data-pilcrow-live-field] text nodes on 'live' events."
+spec = """
+Pages with LiveProp<T> fields get a <div data-pilcrow-live=\"/__pilcrow/live{path}\" style=\"display:none\">
+injected before </body> at render time. This replaces the former inline EventSource <script> + __LIVE_SHIM.
+
+Silcrow's initLiveElements() scans for [data-pilcrow-live] on page load and after every fragment swap,
+calling openLive(el, url) which reuses the SSE hub pool (one connection per URL, shared across
+subscribers). The 'live' event listener in connectSseHub() patches [data-pilcrow-live-field=\"name\"]
+text nodes whenever the server sends a live event.
+
+The MutationObserver cleanup is extended to include [data-pilcrow-live] in its child-selector sweep,
+so the SSE hub is released when the element is removed from the DOM.
+"""
+constraints = [
+  "data-pilcrow-live is auto-injected by codegen; do not write it manually in templates.",
+  "The element is always display:none — it is a connection anchor, not a visible UI element.",
+  "Fragment navigation re-scans the swapped subtree for [data-pilcrow-live] after each swap.",
+]
+source_refs = [
+  "crates/routekit/src/templating/codegen/app_module.rs — live props anchor injection block",
+  "crates/runtime/assets/silcrow.js — initLiveElements, connectSseHub live listener",
+]
+test_refs = [
+  "crates/routekit/src/templating/codegen/tests.rs — live_anchor_emits_data_pilcrow_live_element",
+]
+scaffold_templates = []
+
+[[features]]
+id = "list-patch-wire-format"
+name = "Keyed List Patch Wire Format"
+domain = "pilcrow"
+status = "stable"
+summary = "SilcrowEvent::list_patch(list, key, data) emits event: list-patch with {list, key, ...changed_fields}. Client targets [data-pilcrow-list] then [data-pilcrow-key] within it and calls patch(changes, row)."
+spec = """
+Wire format:
+  event: list-patch
+  data: { \"list\": \"<field_name>\", \"key\": \"<row_key>\", \"<changed>\": <value>, ... }
+
+Server: SilcrowEvent::list_patch(\"tickets\", \"ticket:42\", serde_json::json!({\"status\": \"open\"}))
+
+Client (connectSseHub list-patch listener):
+  1. Find container: document.querySelector('[data-pilcrow-list=\"tickets\"]')
+  2. Find row: container.querySelector('[data-pilcrow-key=\"ticket:42\"]')
+  3. Apply: patch({status: \"open\"}, row)
+
+The data-pilcrow-list and data-pilcrow-key attributes are auto-injected by codegen (Slice F).
+Until Slice F ships, developers can manually add these attributes for server-pushed list updates.
+"""
+constraints = [
+  "list and key fields are stripped from the payload before passing to patch(); only changed_fields remain.",
+  "If the container or row is not found in the DOM the event is silently dropped.",
+  "key is always coerced to String before CSS.escape().",
+]
+source_refs = [
+  "crates/runtime/src/sse/server_sent_events.rs — EventKind::ListPatch, SilcrowEvent::list_patch",
+  "crates/runtime/assets/silcrow.js — connectSseHub list-patch listener",
+]
+test_refs = [
+  "crates/runtime/src/sse/server_sent_events.rs — list_patch_serialises_with_all_fields, list_patch_numeric_key_serialises",
+]
+scaffold_templates = []
+
+[[features]]
+id = "key-live-field-attrs"
+name = "PilcrowListRow Derive — #[pilcrow(key)] and #[pilcrow(live)]"
+domain = "pilcrow"
+status = "stable"
+summary = "#[derive(PilcrowListRow)] implements the ListRow trait on item structs. #[pilcrow(key)] marks the unique row key field; #[pilcrow(live)] marks live-updatable fields whose current values are included in list-patch SSE events."
+spec = """
+Annotate an item struct with #[derive(PilcrowListRow)] and mark fields:
+- #[pilcrow(key)]  — exactly one field; its to_string() value becomes the row key.
+- #[pilcrow(live)] — zero or more fields; their serde_json values are included
+  in ListBroadcast::send_row's list-patch payload.
+
+The derive generates:
+  impl ListRow for MyStruct {
+      fn pilcrow_key(&self) -> String { self.id.to_string() }
+      fn pilcrow_live_fields(&self) -> Vec<(&'static str, Value)> { ... }
+  }
+
+Fields without either annotation are rendered as static HTML only — they are not
+included in live updates.
+"""
+constraints = [
+  "Exactly one field may be annotated #[pilcrow(key)]; a struct with zero key fields emits an empty string key.",
+  "All #[pilcrow(live)] field types must implement serde::Serialize.",
+  "The derive attribute helper is registered as 'pilcrow' — not as separate 'key'/'live' idents.",
+]
+invalid_examples = [
+  "#[pilcrow::key] — not valid; use #[pilcrow(key)] (the helper attr is 'pilcrow', not a module path)",
+  "Multiple #[pilcrow(key)] fields on the same struct",
+]
+source_refs = [
+  "crates/macros/src/list_row_derive.rs — expand()",
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — send_row_broadcasts_key_and_live_fields",
+]
+scaffold_templates = []
+
+[[features]]
+id = "list-broadcast-producer"
+name = "ListBroadcast — Server-Side List Patch Producer"
+domain = "pilcrow"
+status = "stable"
+summary = "ListBroadcast is a clone-safe broadcast channel for keyed list row changes. send_row<T: ListRow> extracts the key and live fields from a typed row and fans out a ListPatchEvent to all SSE subscribers."
+spec = """
+Register as an Axum Extension at startup. Mutation handlers call send_row or send_patch
+when a row changes. SSE handlers subscribe and relay events as SilcrowEvent::list_patch.
+
+  // Startup
+  let lb = ListBroadcast::new(256);
+  app.layer(Extension(lb.clone()));
+
+  // Mutation
+  lb.send_row("tickets", &updated_ticket);  // T: ListRow
+
+  // SSE route handler
+  let mut rx = lb.subscribe();
+  match rx.recv().await {
+      Ok(ev) => emit.send(SilcrowEvent::list_patch(ev.list_name, ev.key, ev.fields)).await?,
+      Err(RecvError::Lagged(_)) => continue,
+      Err(RecvError::Closed) => break Ok(()),
+  }
+"""
+constraints = [
+  "ListBroadcast is Clone and cheap to clone — it wraps a tokio::sync::broadcast::Sender<ListPatchEvent>.",
+  "Events may be dropped if subscribers lag behind by more than the capacity; handle RecvError::Lagged by continuing.",
+  "send_row and send_patch are no-ops (not panics) when there are no active subscribers.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — ListBroadcast, ListPatchEvent",
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_broadcast.rs — send_row_broadcasts_key_and_live_fields, send_patch_broadcasts_raw_fields, multiple_subscribers_all_receive, clone_shares_same_channel",
+]
+scaffold_templates = []
+
+[[features]]
+id = "runtime-url-unification"
+name = "Silcrow Runtime URL — /__pilcrow/runtime/"
+domain = "pilcrow"
+status = "stable"
+summary = "silcrow.js is now served at /__pilcrow/runtime/silcrow.{hash}.js (previously /_silcrow/). All Pilcrow runtime assets now share the /__pilcrow/ URL namespace. The /_silcrow/ SW exclude is removed (covered by /__pilcrow/)."
+spec = """
+silcrow_js_path() returns /__pilcrow/runtime/silcrow.{hash:08x}.js.
+The content-hash URL scheme (CRC32, 8 hex digits) is unchanged.
+Cache headers remain public, max-age=31536000, immutable.
+
+The service worker exclude list previously contained both /_silcrow/ and /__pilcrow/.
+/_silcrow/ is removed; /__pilcrow/ already covers the new path.
+
+Developer templates using pilcrow_web::assets::assets::script_tag()|safe automatically
+use the new URL without any template changes.
+"""
+constraints = [
+  "The /_silcrow/ URL prefix no longer serves any content — update bookmarks or hardcoded references.",
+  "silcrow_js_path() is the canonical source for the URL; do not hardcode the path.",
+]
+source_refs = [
+  "crates/runtime/src/assets/assets.rs — silcrow_js_path()",
+  "crates/runtime/src/sw.rs — SW exclude list",
+]
+test_refs = [
+  "crates/runtime/src/assets/assets.rs — silcrow_js_path_under_pilcrow_runtime",
+  "crates/runtime/src/sw.rs — sw_excludes_pilcrow_prefix_not_silcrow, sw_precaches_silcrow_at_new_path",
+]
+scaffold_templates = []
+
+[[features]]
+id = "inline-runtime-config"
+name = "inline_runtime Config Option"
+domain = "pilcrow"
+status = "stable"
+summary = "When [client] inline_runtime = true in Pilcrow.toml, assets::script_tag() returns an inline <script> block with the full Silcrow JS content instead of a <script src> tag. Set once at startup; read on every template render."
+spec = """
+[client]
+inline_runtime = true   # default: false
+
+Startup: start_with_adapter calls set_inline_runtime(config.client.inline_runtime),
+storing the value in a process-wide AtomicBool.
+
+Template: {{ pilcrow_web::assets::assets::script_tag()|safe }}
+  → false: <script src="/__pilcrow/runtime/silcrow.{hash}.js" defer></script>
+  → true:  <script>...35KB of Silcrow JS...</script>
+
+Use inline_runtime for:
+- Offline-capable apps that need the runtime available without any extra requests
+- Environments where the extra HTTP request is costly
+- E2E tests that need to avoid dynamic URLs
+"""
+constraints = [
+  "inline_runtime is read from a process-wide AtomicBool — not per-request. It cannot change after startup.",
+  "The developer must use script_tag()|safe in their _layout.html, not a manual <script src> tag, for inline_runtime to take effect.",
+  "Inline mode embeds the full (~35KB minified) Silcrow source in every HTML response.",
+]
+invalid_examples = [
+  "Manually writing <script src=\"/__pilcrow/runtime/silcrow.{hash}.js\"> — use script_tag()|safe instead",
+]
+source_refs = [
+  "crates/runtime/src/assets/assets.rs — INLINE_RUNTIME, set_inline_runtime, script_tag",
+  "crates/runtime/src/start.rs — set_inline_runtime call",
+  "crates/core/src/config/config.rs — ClientRuntimeConfig.inline_runtime",
+]
+test_refs = [
+  "crates/runtime/src/assets/assets.rs — script_tag_external_by_default, script_tag_inline_when_flag_set",
+]
+scaffold_templates = []
+
+[[features]]
+id = "windowed-prebake"
+name = "Windowed Pre-bake (prebake_next)"
+domain = "pilcrow"
+status = "stable"
+summary = "req.fsr.prebake_next(path) triggers a fire-and-forget background GET to the local server, warming the FSR/HTTP cache for the next cursor window before the user scrolls there."
+spec = """
+After serving cursor window N, call prebake_next with the URL for window N+1.
+A Tokio task spawns a GET to http://127.0.0.1:{port}{path}; the response is
+silently discarded. No-op if set_local_base has not been called.
+
+The local base URL is set once at startup by start_with_adapter via the
+on_bind callback passed to PilcrowAdapter::serve(). Each adapter calls
+on_bind with its actual bound address (from listener.local_addr()), so
+port-scanning (TokioAdapter) and $PORT env-var rewriting (PortEnvAdapter)
+are handled correctly. LambdaAdapter drops the callback.
+
+pub async fn load(req: Req) -> AppResult<Props> {
+    let tickets = db::tickets_page(&cursor).await?;
+    if let Some(next) = tickets.next_cursor {
+        req.fsr.prebake_next(&format!("/tickets?cursor={next}"));
+    }
+    Ok(Props { tickets })
+}
+"""
+constraints = [
+  "prebake_next is synchronous and non-blocking — it spawns a task and returns immediately.",
+  "The background GET uses the process-local address (127.0.0.1) — do not use in tests that have no running server.",
+  "The base URL is set once via prebake::set_local_base; calling it more than once is a no-op.",
+]
+source_refs = [
+  "crates/runtime/src/prebake.rs — set_local_base, trigger",
+  "crates/runtime/src/fsr/handle.rs — FsrHandle::prebake_next",
+  "crates/runtime/src/start.rs — on_bind closure passed to adapter.serve",
+]
+test_refs = [
+  "crates/runtime/src/prebake.rs — trigger_is_noop_without_base, set_local_base_accepts_valid_url",
+]
+scaffold_templates = []
+
+[[features]]
+id = "list-chunk-cache"
+name = "ListChunkCache — Per-row Pre-baked HTML"
+domain = "pilcrow"
+status = "stable"
+summary = "ListChunkCache trait + InMemoryListChunkCache impl store pre-baked HTML for individual list rows keyed by (list_name, row_key). Rows are invalidated after a ListBroadcast::send_row call."
+spec = """
+Key scheme: pilcrow:chunk:{list_name}:{row_key}
+(Matches the intended Redis key for a future live-props-redis impl.)
+
+pub trait ListChunkCache: Send + Sync + 'static {
+    fn get(&self, list_name: &str, key: &str) -> Option<String>;
+    fn set(&self, list_name: &str, key: &str, html: String);
+    fn invalidate(&self, list_name: &str, key: &str);
+    fn invalidate_list(&self, list_name: &str);
+}
+
+Register at startup:
+  let cache = Arc::new(InMemoryListChunkCache::new());
+  app.layer(Extension(cache as Arc<dyn ListChunkCache>));
+
+In a handler:
+  if let Some(html) = cache.get("tickets", &id) { /* serve */ }
+  else {
+      let html = render_ticket_row(&ticket);
+      cache.set("tickets", &id, html.clone());
+  }
+
+After a mutation:
+  lb.send_row("tickets", &updated);
+  cache.invalidate("tickets", &updated.id.to_string());
+"""
+constraints = [
+  "InMemoryListChunkCache is process-local — lost on restart. Use live-props-redis for persistence.",
+  "Invalidate the chunk after every ListBroadcast::send_row to prevent stale HTML.",
+  "list_chunk_key() is a formatting helper only; it does not interact with the cache.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_chunk.rs — ListChunkCache, InMemoryListChunkCache, list_chunk_key",
+  "crates/runtime/src/live_props/mod.rs",
+  "crates/runtime/src/lib.rs",
+]
+test_refs = [
+  "crates/runtime/src/live_props/list_chunk.rs — set_and_get_round_trips, get_missing_returns_none, invalidate_removes_single_row, invalidate_list_clears_all_rows_for_that_list, set_overwrites_existing_entry, list_chunk_key_format",
+]
+scaffold_templates = []
+
+[[features]]
+id = "canonical-list-dx"
+name = "Vec<T: ListRow> — Canonical List DX"
+domain = "pilcrow"
+status = "stable"
+summary = "Vec<T> where T: ListRow is the canonical list type. No LiveList<T> or AppendList<T> types exist or will be added. The full list surface is: #[derive(PilcrowListRow)], ListBroadcast, and data-pilcrow-list / data-pilcrow-key DOM attributes."
+spec = """
+Design lock — no new list container types.
+
+The list DX surface is exactly:
+  1. #[derive(PilcrowListRow)] on the row struct — generates ListRow impl.
+  2. Props { items: Vec<TicketRow> } — plain Vec in page props.
+  3. ListBroadcast — server-side push of individual row patches.
+  4. data-pilcrow-list="<name>" + data-pilcrow-key="{{ item.id }}" in HTML templates.
+
+Why no LiveList<T>:
+  - A Vec<T> + derive is already zero-boilerplate.
+  - Specialised container types create a parallel type hierarchy with no benefit.
+  - SSE patch delivery (list-patch wire format) does not require a container type.
+"""
+constraints = [
+  "Do not introduce LiveList<T>, AppendList<T>, or any other list container type.",
+  "List rows must derive PilcrowListRow (or implement ListRow manually).",
+  "Each list must have exactly one ListBroadcast instance per process.",
+]
+source_refs = [
+  "crates/runtime/src/live_props/list_row.rs — ListRow trait",
+  "crates/runtime/src/live_props/list_broadcast.rs — ListBroadcast",
+  "crates/macros/src/list_row_derive.rs — PilcrowListRow derive",
+]
+test_refs = []
 scaffold_templates = []

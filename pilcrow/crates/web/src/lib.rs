@@ -9,8 +9,8 @@ pub use runtime::response::response::{
 pub use runtime::response::response::{form_errors, json, navigate, ok, redirect, status};
 
 // ── Request handling ─────────────────────────────────────────
-pub use runtime::{FormMap, Locals, Next, Page, Req, Res};
 pub use runtime::SilcrowMutationId;
+pub use runtime::{FormMap, Locals, Next, Page, Req, Res};
 
 // ── Status & response primitives ─────────────────────────────
 pub use runtime::Response;
@@ -34,6 +34,9 @@ pub use runtime::{
 // ── Assets ───────────────────────────────────────────────────
 pub use runtime::assets;
 
+// ── Layout-aware navigation ───────────────────────────────────
+pub use runtime::extract_ps_fragment;
+
 // ── Domain primitives (from pilcrow-core) ────────────────────
 pub use pilcrow_core::{
     ApiEnvelope, AppError, AppResult, BackendConfig, HookError, Meta, PilcrowConfig, WebConfig,
@@ -43,13 +46,23 @@ pub use pilcrow_client::PilcrowClient;
 pub use pilcrow_macros::handler;
 pub use runtime::island_ssr::IslandSsrWorker;
 pub use runtime::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use runtime::{start, start_with_adapter, start_with_prerender};
+pub use runtime::{start, start_with_adapter};
 
 /// FSR (Field-Selective Rendering) developer-facing surface.
 ///
 /// Import all live types and macros with: `use pilcrow::live::*;`
 #[cfg(feature = "live-props")]
 pub mod live;
+
+#[cfg(feature = "live-props")]
+pub use pilcrow_macros::PilcrowListRow;
+
+// ── FSR codegen internals (used by generated app module) ─────
+#[doc(hidden)]
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::__register_codegen_scheduled_invalidations;
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::ScheduledInvalidation;
 
 /// Experimental APIs that may change before stabilization.
 #[cfg(feature = "experimental-baked-pages")]
@@ -419,8 +432,6 @@ pub mod adapters {
 // ── Live props (old per-route SSE system) ────────────────────
 pub use runtime::{__live_props_response, LiveProp, LiveTarget};
 
-// ── SSG cache ────────────────────────────────────────────────
-pub use runtime::{IsrCache, IsrCacheState, IsrHandle};
 // ── i18n ─────────────────────────────────────────────────────
 pub use runtime::{FmtHelper, I18nBundles};
 
@@ -429,8 +440,6 @@ pub use runtime::{FmtHelper, I18nBundles};
 pub use axum;
 #[doc(hidden)]
 pub use pilcrow_client;
-#[doc(hidden)]
-pub use runtime::__isr_cache_key;
 #[doc(hidden)]
 pub use runtime::csrf_middleware as __csrf_middleware;
 #[doc(hidden)]
@@ -504,11 +513,7 @@ macro_rules! pilcrow_app {
                 }
             };
             __pilcrow_app::__pilcrow_init().await;
-            ::pilcrow_web::start_with_prerender(router, |cache| async move {
-                __pilcrow_app::__pilcrow_prerender_all(&cache).await
-            })
-            .await;
+            ::pilcrow_web::start(router).await;
         }
-
     };
 }

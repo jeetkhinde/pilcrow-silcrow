@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 pub struct LiveProp<T> {
     pub value: T,
     pub depends_on: Vec<DependencyKey>,
-    pub promote_after: Option<u32>,
     pub patch_debounce: Option<u32>,
 }
 
@@ -20,14 +19,8 @@ impl<T: Serialize + Clone> LiveProp<T> {
         Self {
             value,
             depends_on,
-            promote_after: None,
             patch_debounce: None,
         }
-    }
-
-    pub fn promote_after(mut self, hits: u32) -> Self {
-        self.promote_after = Some(hits);
-        self
     }
 
     pub fn patch_debounce(mut self, seconds: u32) -> Self {
@@ -40,7 +33,6 @@ impl<T: Serialize + Clone> LiveProp<T> {
             field_name: field_name.into(),
             json_value: serde_json::to_value(&self.value).unwrap_or(serde_json::Value::Null),
             depends_on: self.depends_on.clone(),
-            promote_after: self.promote_after,
             patch_debounce: self.patch_debounce,
         }
     }
@@ -54,7 +46,6 @@ pub struct LiveFieldData {
     pub field_name: String,
     pub json_value: serde_json::Value,
     pub depends_on: Vec<DependencyKey>,
-    pub promote_after: Option<u32>,
     pub patch_debounce: Option<u32>,
 }
 
@@ -80,29 +71,24 @@ mod tests {
         let lp = LiveProp::new("Open".to_string(), vec![dep.clone()]);
         assert_eq!(lp.value, "Open");
         assert_eq!(lp.depends_on, vec![dep]);
-        assert!(lp.promote_after.is_none());
         assert!(lp.patch_debounce.is_none());
     }
 
     #[test]
-    fn live_props_builder_sets_options() {
-        let lp = LiveProp::new("Open".to_string(), vec![])
-            .promote_after(50)
-            .patch_debounce(30);
-        assert_eq!(lp.promote_after, Some(50));
+    fn live_props_builder_sets_patch_debounce() {
+        let lp = LiveProp::new("Open".to_string(), vec![]).patch_debounce(30);
         assert_eq!(lp.patch_debounce, Some(30));
     }
 
     #[test]
     fn live_field_data_from_live_props() {
         let dep = DependencyKey::new("tickets:id=123");
-        let lp = LiveProp::new("Open".to_string(), vec![dep.clone()]).promote_after(50);
+        let lp = LiveProp::new("Open".to_string(), vec![dep.clone()]).patch_debounce(5);
         let field = lp.to_field_data("status");
         assert_eq!(field.field_name, "status");
         assert_eq!(field.json_value, serde_json::json!("Open"));
         assert_eq!(field.depends_on, vec![dep]);
-        assert_eq!(field.promote_after, Some(50));
-        assert!(field.patch_debounce.is_none());
+        assert_eq!(field.patch_debounce, Some(5));
     }
 
     #[test]

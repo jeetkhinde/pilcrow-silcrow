@@ -34,11 +34,19 @@
 - `s-html`
 - `s-skip-history`
 - `s-preload`
+- `no-boost` — opt out of global boost interception for a specific `<a>` element
+
+**Layout-Aware Navigation (auto-injected by Pilcrow codegen)**
+- `data-ps-layout="<id>"` — marks the boundary of each auto-layout level (e.g. `"/"`, `"/tickets"`); read by Silcrow to build `X-PS-Present` header
+- `data-ps-slot="<pattern>"` — marks the page-content insertion point within a layout (e.g. `"/tickets/:id"`); Silcrow swaps only this element on fragment navigations
 
 **Live Connections**
 - `s-sse`
 - `s-ws`
 - `s-wss`
+- `data-pilcrow-live="<url>"` — auto-injected by Pilcrow codegen for pages with `LiveProp<T>` fields; Silcrow discovers this element and opens a managed SSE connection to `url`. Do not write manually.
+- `data-pilcrow-list="<field>"` — marks a list container; `list-patch` events target rows within this element by `data-pilcrow-key`. Auto-injected by Pilcrow codegen (Slice F).
+- `data-pilcrow-key="<key>"` — marks a list row with its unique key; targeted by `list-patch` events. Auto-injected by Pilcrow codegen (Slice F).
 
 **Atoms / Store**
 - `s-bind`
@@ -48,10 +56,14 @@
 
 ---
 
+## Request Headers (Client → Server)
+
+- `silcrow-target` — marks enhanced requests
+- `silcrow-mutation-id` — identifies an in-flight optimistic mutation
+- `X-PS-Present` — comma-separated list of `data-ps-layout` values currently in the DOM (e.g. `"/,/tickets"`); server uses this to determine whether a fragment-only response is safe
+
 ## Response Headers (Server → Client)
 
-- `silcrow-target` (request header — marks enhanced requests)
-- `silcrow-mutation-id` (request header — identifies an in-flight optimistic mutation)
 - `silcrow-patch` (response header — JSON array of `{target, data[, mutation_id]}` entries)
 - `silcrow-invalidate`
 - `silcrow-navigate`
@@ -62,6 +74,7 @@
 - `silcrow-push`
 - `silcrow-cache`
 - `silcrow-full-reload`
+- `Content-Type: text/html; x-ps-fragment=1` — signals a PS layout fragment response; Silcrow swaps `[data-ps-slot]` in the DOM and upserts head elements from `<template data-ps-head>`
 
 ---
 
@@ -73,6 +86,8 @@
 - `invalidate`
 - `navigate`
 - `custom`
+- `live` — payload: flat JSON object `{ "<field>": <value>, ... }`. Patches all `[data-pilcrow-live-field="field"]` text nodes. Emitted by Pilcrow's per-page SSE route (`/__pilcrow/live{pattern}`) for `LiveProp<T>` fields.
+- `list-patch` — payload: `{ "list": "<field>", "key": "<row_key>", "<changed_field>": <value>, ... }`. Silcrow finds `[data-pilcrow-list="field"]` then `[data-pilcrow-key="row_key"]` within it, and calls `patch(changes, row)`.
 
 ## WebSocket Message Types
 
@@ -172,7 +187,9 @@
 
 **WebSocket** — `wsHubs`, `normalizeWsEndpoint`, `createWsHub`, `getOrCreateWsHub`, `removeWsHub`, `connectWsHub`, `dispatchWsMessage`, `unsubscribeWs`, `openWsLive`, `sendWs`
 
-**Navigator** — `VERB_ATTRS`, `VERB_SELECTOR`, `FORM_VERB_SELECTOR`, `DEFAULT_TIMEOUT`, `CACHE_TTL`, `MAX_CACHE`, `abortMap`, `routeHandler`, `errorHandler`, `responseCache`, `preloadInflight`, `resolveVerb`, `getTarget`, `getTimeout`, `showLoading`, `hideLoading`, `cacheSet`, `cacheGet`, `bustCacheOnMutation`, `processSideEffectHeaders`, `buildFetchOptions`, `processResponseHeaders`, `prepareSwapContent`, `finalizeNavigation`, `navigate`, `onClick`, `onSubmit`, `onPopState`, `onMouseEnter`
+**Navigator** — `VERB_ATTRS`, `VERB_SELECTOR`, `FORM_VERB_SELECTOR`, `DEFAULT_TIMEOUT`, `CACHE_TTL`, `MAX_CACHE`, `abortMap`, `routeHandler`, `errorHandler`, `responseCache`, `preloadInflight`, `resolveVerb`, `getTarget`, `getTimeout`, `showLoading`, `hideLoading`, `cacheSet`, `cacheGet`, `bustCacheOnMutation`, `processSideEffectHeaders`, `collectLayoutPatterns`, `buildFetchOptions`, `processResponseHeaders`, `prepareSwapContent`, `finalizeNavigation`, `navigate`, `onClick`, `onSubmit`, `onPopState`, `onMouseEnter`
+
+**PS Fragment** — `extractHeadTemplate`, `applyHeadTemplate`, `parseFragmentSlot`, `applyFragment`, `resolveBoostTarget`
 
 **Optimistic** — `pendingMutations` (Map mutationId→{scope,snapshot}), `pendingByScope` (Map scope→Set<mutationId>), `publishOptimistic`, `confirmOptimistic`, `revertOptimistic`, `scopeForTarget`, `hasPendingMutationForTarget`
 

@@ -8,12 +8,14 @@ import ProductCard from "ui/ProductCard.html";
 
 <h1>Products</h1>
 
-<div class="categories">
+<div class="categories" role="navigation" aria-label="Product categories">
     <a href="/products" s-boost s-target="#page-content"
-       class="{% if active_category.is_empty() %}active{% endif %}">All</a>
+       class="{% if active_category.is_empty() %}active{% endif %}"
+       {% if active_category.is_empty() %}aria-current="page"{% endif %}>All</a>
     {% for cat in &categories %}
     <a href="/products?category={{ cat.slug }}" s-boost s-target="#page-content"
-       class="{% if active_category == cat.slug %}active{% endif %}">{{ cat.label }}</a>
+       class="{% if active_category == cat.slug %}active{% endif %}"
+       {% if active_category == cat.slug %}aria-current="page"{% endif %}>{{ cat.label }}</a>
     {% endfor %}
 </div>
 <div id="product-grid" class="product-grid">

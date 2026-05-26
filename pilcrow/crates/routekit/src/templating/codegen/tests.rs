@@ -89,6 +89,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("template module should generate");
 
@@ -112,6 +114,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("synthesized Props should compile");
 
@@ -138,6 +142,8 @@ mod tests {
                 optional: false,
                 catch_all: false,
             }],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("typed page params should generate");
 
@@ -162,6 +168,8 @@ mod tests {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect_err("duplicate props should fail");
 
@@ -197,6 +205,8 @@ pub struct Live {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect_err("mismatched FSR live slots should fail");
 
@@ -230,6 +240,85 @@ pub struct Live {
         assert!(
             script.contains("n.textContent=v==null"),
             "expected scalar textContent assignment in FSR script"
+        );
+    }
+
+    #[test]
+    fn live_anchor_emits_data_pilcrow_live_element() {
+        use super::app_module::{AppCodegenMaps, render_generated_app_module};
+        use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
+        use std::collections::HashMap;
+
+        let page_entry = GeneratedPageRoute {
+            pattern: "/dashboard".to_string(),
+            template_path: "/tmp/src/pages/dashboard.html".to_string(),
+            symbol: "page_dashboard".to_string(),
+            render_symbol: "render_page_dashboard".to_string(),
+            route_params: vec![],
+            param_matchers: HashMap::new(),
+        };
+
+        let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
+        live_fields_map.insert(
+            "page_dashboard".to_string(),
+            vec!["counter".to_string()],
+        );
+
+        let mut load_map: HashMap<String, Option<crate::templating::codegen::LoadSignature>> =
+            HashMap::new();
+        load_map.insert(
+            "page_dashboard".to_string(),
+            Some(crate::templating::codegen::LoadSignature {
+                is_async: true,
+                wants_client: false,
+                wants_req: true,
+                wants_page: false,
+                wants_live: false,
+                returns_result: true,
+            }),
+        );
+
+        let maps = AppCodegenMaps {
+            load_map: &load_map,
+            layout_fields_map: &HashMap::new(),
+            error_module_for_page: &HashMap::new(),
+            not_found_module: None,
+            loading_module_for_page: &HashMap::new(),
+            action_map: &HashMap::new(),
+            page_options_map: &HashMap::new(),
+            live_fields_map: &live_fields_map,
+            has_live_fn_map: &HashMap::new(),
+            fsr_live_source_map: &HashMap::new(),
+            fsr_live_fields_map: &HashMap::new(),
+            layout_chain_ids_map: &HashMap::new(),
+            page_slot_map: &HashMap::new(),
+        };
+
+        let source = render_generated_app_module(
+            &[page_entry],
+            &[],
+            &maps,
+            HookFlags {
+                has_handle: false,
+                has_handle_error: false,
+                has_init: false,
+            },
+            false,
+            false,
+        )
+        .expect("render_generated_app_module should succeed");
+
+        assert!(
+            source.contains("data-pilcrow-live"),
+            "expected data-pilcrow-live anchor element, got:\n{source}"
+        );
+        assert!(
+            !source.contains("__LIVE_SHIM"),
+            "__LIVE_SHIM should not appear in generated source"
+        );
+        assert!(
+            !source.contains("window.__pilcrow_live_patch"),
+            "inline patch function should not appear in generated source"
         );
     }
 
@@ -369,6 +458,7 @@ pub struct Live {
     }
 
     #[test]
+<<<<<<< HEAD
     fn removed_isr_constants_cause_build_errors() {
         for (constant, snippet) in &[
             ("REVALIDATE", "pub const REVALIDATE: u64 = 60;"),
@@ -406,6 +496,11 @@ pub struct Live {
     fn ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map() {
         let frontmatter = r#"
 pub const PRERENDER: bool = true;
+=======
+    fn promote_after_constant_is_stripped_and_recorded_in_page_options() {
+        let frontmatter = r#"
+pub const PROMOTE_AFTER: u32 = 0;
+>>>>>>> origin/main
 
 pub struct Props {
     pub title: String,
@@ -424,30 +519,37 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
-        .expect("should generate with PRERENDER constant");
+        .expect("should generate with PROMOTE_AFTER constant");
 
-        // PRERENDER must not appear in the emitted source.
+        // PROMOTE_AFTER must not appear in the emitted source.
         assert!(
-            !generated.source.contains("PRERENDER"),
-            "PRERENDER leaked into emitted source"
+            !generated.source.contains("PROMOTE_AFTER"),
+            "PROMOTE_AFTER leaked into emitted source"
         );
 
-        // SSG config must be recorded.
-        let ssg = generated
-            .ssg_config_map
+        // promote_after must be recorded in page_options.
+        let opts = generated
+            .page_options
             .get("page_about")
+<<<<<<< HEAD
             .expect("page_about should have SSG config");
         assert!(ssg.prerender);
         assert!(!ssg.has_entries_fn);
 
         // ISR is removed; no isr_config_map to check.
+=======
+            .expect("page_about should have page options");
+        assert_eq!(opts.fsr.promote_after, Some(0));
+>>>>>>> origin/main
     }
 
     #[test]
     fn entries_fn_is_detected_in_ssg_opts() {
         let frontmatter = r#"
-pub const PRERENDER: bool = true;
+pub const PROMOTE_AFTER: u32 = 0;
 
 pub struct Props {
     pub name: String,
@@ -470,19 +572,25 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("should generate with entries fn");
 
-        let ssg = generated
-            .ssg_config_map
+        let opts = generated
+            .page_options
             .get("page_products_id")
-            .expect("page_products_id should have SSG config");
-        assert!(ssg.prerender);
-        assert!(ssg.has_entries_fn);
+            .expect("page_products_id should have page options");
+        assert_eq!(opts.fsr.promote_after, Some(0));
+        assert!(opts.ssg.has_entries_fn);
     }
 
     #[test]
+<<<<<<< HEAD
     fn non_ssg_page_has_no_ssg_config() {
+=======
+    fn page_without_promote_after_has_no_fsr_promote_threshold() {
+>>>>>>> origin/main
         let generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_index".to_string(),
             render_symbol: "render_page_index".to_string(),
@@ -492,8 +600,11 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
         .expect("should generate");
+<<<<<<< HEAD
         assert!(generated.ssg_config_map.get("page_index").is_none());
     }
 
@@ -501,6 +612,178 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     fn streaming_constant_causes_build_error() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
         let err = render_generated_templates_module(&[TemplateCodegenInput {
+=======
+
+        let opts = generated.page_options.get("page_index");
+        let promote_after = opts.map(|o| o.fsr.promote_after).unwrap_or(None);
+        assert!(promote_after.is_none(), "expected no promote_after threshold for a plain page");
+    }
+
+    #[test]
+    fn revalidate_attr_stripped_from_props_and_recorded_in_live_field_attrs() {
+        let frontmatter = r#"
+pub struct Props {
+    pub status: LiveProp<String>,
+    pub title: String,
+}
+
+#[pilcrow::live(revalidate = 60)]
+pub status: LiveProp<String>;
+"#;
+        // Build a frontmatter that puts #[pilcrow::live(revalidate = N)] on a Props field.
+        let frontmatter = r#"
+pub struct Props {
+    #[pilcrow::live(revalidate = 60)]
+    pub status: LiveProp<String>,
+    pub title: String,
+}
+
+pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
+    Ok(Props { status: Default::default(), title: "Hello".to_string() })
+}
+"#;
+        let generated = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_tickets".to_string(),
+            render_symbol: "render_page_tickets".to_string(),
+            source_path: "/tmp/src/pages/tickets/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>{{ title }}</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect("should generate with revalidate attr");
+
+        // Attr must be stripped from emitted source.
+        assert!(
+            !generated.source.contains("revalidate"),
+            "revalidate attr leaked into emitted source:\n{}", generated.source
+        );
+
+        // Must be recorded in page_options.
+        let opts = generated
+            .page_options
+            .get("page_tickets")
+            .expect("page_tickets should have page options");
+        let status_attr = opts.fsr.live_field_attrs.get("status")
+            .expect("status should have LiveFieldAttr");
+        assert_eq!(status_attr.revalidate_secs, Some(60));
+
+        // title has no attr — should not appear in live_field_attrs.
+        assert!(opts.fsr.live_field_attrs.get("title").is_none());
+    }
+
+    #[test]
+    fn scheduled_invalidations_emitted_in_pilcrow_init() {
+        use super::app_module::{AppCodegenMaps, render_generated_app_module};
+        use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
+        use crate::templating::page_options::{FsrOpts, LiveFieldAttr, PageOptions};
+        use std::collections::HashMap;
+
+        let page_entry = GeneratedPageRoute {
+            pattern: "/tickets".to_string(),
+            template_path: "/tmp/src/pages/tickets/index.html".to_string(),
+            symbol: "page_tickets".to_string(),
+            render_symbol: "render_page_tickets".to_string(),
+            route_params: vec![],
+            param_matchers: HashMap::new(),
+        };
+
+        let mut live_field_attrs = HashMap::new();
+        live_field_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60) });
+
+        let mut page_opts = PageOptions::default();
+        page_opts.fsr.live_field_attrs = live_field_attrs;
+
+        let mut page_options_map = HashMap::new();
+        page_options_map.insert("page_tickets".to_string(), page_opts);
+
+        let mut load_map = HashMap::new();
+        load_map.insert("page_tickets".to_string(), None::<crate::templating::codegen::LoadSignature>);
+
+        let maps = AppCodegenMaps {
+            load_map: &load_map,
+            layout_fields_map: &HashMap::new(),
+            error_module_for_page: &HashMap::new(),
+            not_found_module: None,
+            loading_module_for_page: &HashMap::new(),
+            action_map: &HashMap::new(),
+            page_options_map: &page_options_map,
+            live_fields_map: &HashMap::new(),
+            has_live_fn_map: &HashMap::new(),
+            fsr_live_source_map: &HashMap::new(),
+            fsr_live_fields_map: &HashMap::new(),
+            layout_chain_ids_map: &HashMap::new(),
+            page_slot_map: &HashMap::new(),
+        };
+
+        let source = render_generated_app_module(
+            &[page_entry],
+            &[],
+            &maps,
+            HookFlags {
+                has_handle: false,
+                has_handle_error: false,
+                has_init: false,
+            },
+            false,
+            false,
+        )
+        .expect("render_generated_app_module should succeed");
+
+        assert!(
+            source.contains("__register_codegen_scheduled_invalidations"),
+            "expected __register_codegen_scheduled_invalidations in __pilcrow_init:\n{source}"
+        );
+        assert!(
+            source.contains("ScheduledInvalidation::new"),
+            "expected ScheduledInvalidation::new in __pilcrow_init:\n{source}"
+        );
+        assert!(
+            source.contains("\"page_tickets::status\""),
+            "expected dep key page_tickets::status in scheduled invalidation:\n{source}"
+        );
+        assert!(
+            source.contains("from_secs(60u64)"),
+            "expected 60s interval in scheduled invalidation:\n{source}"
+        );
+    }
+
+    #[test]
+    fn unknown_key_in_props_live_attr_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[pilcrow::live(promote_after = 0)]
+    pub status: LiveProp<String>,
+}
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_tickets".to_string(),
+            render_symbol: "render_page_tickets".to_string(),
+            source_path: "/tmp/src/pages/tickets/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("unknown key in #[pilcrow::live(...)] on Props field should fail");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(msg.contains("unknown key `promote_after`"), "got: {msg}");
+        assert!(msg.contains("Only `revalidate` is accepted"), "got: {msg}");
+    }
+
+    #[test]
+    fn streaming_constant_is_silently_stripped() {
+        let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
+        let generated = render_generated_templates_module(&[TemplateCodegenInput {
+>>>>>>> origin/main
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),
@@ -509,7 +792,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             layout_chain: vec![],
             fragment_url_prefix: None,
             route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
         }])
+<<<<<<< HEAD
         .expect_err("STREAMING should cause a build error");
         assert!(
             err.to_string().contains("STREAMING"),
@@ -518,6 +804,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         );
     }
 
+=======
+        .expect("STREAMING should be ignored, not a build error");
+    }
+>>>>>>> origin/main
 
     #[test]
     fn emit_action_route_uses_custom_error_module_when_provided() {

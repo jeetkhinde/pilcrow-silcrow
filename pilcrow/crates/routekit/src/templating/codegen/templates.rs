@@ -34,7 +34,10 @@ pub fn render_generated_templates_module(
     let mut load_map = HashMap::new();
     let mut action_map: HashMap<String, Vec<ActionFn>> = HashMap::new();
     let mut page_options_map: HashMap<String, PageOptions> = HashMap::new();
+<<<<<<< HEAD
     let mut ssg_config_map: HashMap<String, SsgOpts> = HashMap::new();
+=======
+>>>>>>> origin/main
     let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
     let mut has_live_fn_map: HashMap<String, bool> = HashMap::new();
     let mut fsr_live_source_map: HashMap<String, String> = HashMap::new();
@@ -142,7 +145,8 @@ pub fn render_generated_templates_module(
             let route_params: Vec<String> =
                 entry.route_params.iter().map(|p| p.name.clone()).collect();
             let page_route_promote_after = instrumented.page_options.fsr.promote_after;
-            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after) {
+            let auto_attrs = &instrumented.page_options.fsr.live_field_attrs;
+            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after, auto_attrs, &entry.module_name) {
                 Ok((src, fields)) => {
                     crate::fsr::validate_live_template_slots(
                         &entry.template_source,
@@ -173,6 +177,7 @@ pub fn render_generated_templates_module(
             }
         }
 
+<<<<<<< HEAD
 
         if instrumented.page_options.ssg.prerender {
             ssg_config_map.insert(
@@ -180,6 +185,8 @@ pub fn render_generated_templates_module(
                 instrumented.page_options.ssg.clone(),
             );
         }
+=======
+>>>>>>> origin/main
 
         let module_ident = syn::Ident::new(&entry.module_name, Span::call_site());
         let render_ident = syn::Ident::new(&entry.render_symbol, Span::call_site());
@@ -307,7 +314,10 @@ pub fn render_generated_templates_module(
         layout_fields_map,
         action_map,
         page_options: page_options_map,
+<<<<<<< HEAD
         ssg_config_map,
+=======
+>>>>>>> origin/main
         live_fields_map,
         has_live_fn_map,
         fsr_live_source_map,
@@ -391,7 +401,10 @@ pub fn write_generated_templates_module(
         layout_fields_map: generated.layout_fields_map,
         action_map: generated.action_map,
         page_options: generated.page_options,
+<<<<<<< HEAD
         ssg_config_map: generated.ssg_config_map,
+=======
+>>>>>>> origin/main
         live_fields_map: generated.live_fields_map,
         has_live_fn_map: generated.has_live_fn_map,
         fsr_live_source_map: generated.fsr_live_source_map,

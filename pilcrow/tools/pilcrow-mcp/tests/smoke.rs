@@ -262,6 +262,29 @@ fn smoke_list_features_returns_features() {
         "list_features should return non-empty content"
     );
 }
+#[test]
+fn smoke_list_features_surfaces_fsr_redis_requirements() {
+    let mut client = McpClient::spawn();
+    let resp = client.call_tool("list_features", json!({ "domain": "pilcrow" }));
+    assert!(resp["error"].is_null(), "list_features errored: {resp}");
+    let body = resp.to_string();
+    assert!(
+        body.contains("\"id\":\"fsr\""),
+        "missing fsr summary: {resp}"
+    );
+    assert!(
+        body.contains("live-props-redis"),
+        "fsr summary should mention live-props-redis: {resp}"
+    );
+    assert!(
+        body.contains("Redis cache/pub-sub") || body.contains("Redis mode uses pub/sub"),
+        "fsr summary should mention Redis pub/sub: {resp}"
+    );
+    assert!(
+        body.contains("[fsr].redis_url"),
+        "fsr summary should mention [fsr].redis_url: {resp}"
+    );
+}
 
 /// Knowledge / registry group — feature spec
 #[test]
@@ -269,6 +292,29 @@ fn smoke_get_feature_spec_for_ssr_pages() {
     let mut client = McpClient::spawn();
     let resp = client.call_tool("get_feature_spec", json!({ "id": "ssr-pages" }));
     assert!(resp["error"].is_null(), "get_feature_spec errored: {resp}");
+}
+
+#[test]
+fn smoke_get_feature_spec_for_fsr_keeps_redis_contract() {
+    let mut client = McpClient::spawn();
+    let resp = client.call_tool("get_feature_spec", json!({ "id": "fsr" }));
+    assert!(resp["error"].is_null(), "get_feature_spec errored: {resp}");
+    let body = resp.to_string();
+    for expected in [
+        "live-props-redis",
+        "Redis is the hot path",
+        "Postgres is the truth layer",
+        "disk is async recovery",
+        "pilcrow:invalidate",
+        "pilcrow:patch",
+        "500ms polling",
+        "[fsr]",
+    ] {
+        assert!(
+            body.contains(expected),
+            "fsr spec should include {expected:?}: {resp}"
+        );
+    }
 }
 
 /// Knowledge / registry group — React production pattern
@@ -451,8 +497,8 @@ fn smoke_validate_island_directive_returns_error_finding() {
 }
 
 #[test]
-fn smoke_validate_prerender_const_is_accepted() {
-    // PRERENDER is now a stable SSG feature — pub const PRERENDER: bool = true is valid.
+fn smoke_validate_prerender_const_is_rejected() {
+    // PRERENDER: bool is removed — using it should produce an error-level finding.
     let mut client = McpClient::spawn();
     let resp = client.call_tool(
         "validate_implementation",
@@ -463,10 +509,9 @@ fn smoke_validate_prerender_const_is_accepted() {
     );
     assert!(resp["error"].is_null(), "validate_implementation errored");
     let text = serde_json::to_string(&resp["result"]).unwrap_or_default();
-    // Valid SSG declaration should produce no error-level findings.
     assert!(
-        text.contains("\"valid\":true") || text.contains("findings\":[]"),
-        "PRERENDER = true should be accepted as valid SSG syntax; got: {text}"
+        text.contains("pilcrow-prerender-removed") || text.contains("PROMOTE_AFTER"),
+        "PRERENDER = true should be rejected with pilcrow-prerender-removed; got: {text}"
     );
 }
 

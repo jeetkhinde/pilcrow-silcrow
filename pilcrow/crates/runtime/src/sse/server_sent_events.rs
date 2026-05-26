@@ -35,6 +35,11 @@ pub(crate) enum EventKind {
         event: String,
         data: Result<serde_json::Value, String>,
     },
+    ListPatch {
+        list: String,
+        key: String,
+        data: Result<serde_json::Value, String>,
+    },
 }
 
 impl SilcrowEvent {
@@ -95,6 +100,23 @@ impl SilcrowEvent {
         }
     }
 
+    /// Sends a keyed list-row patch. `data` contains only the changed fields.
+    /// Client targets `[data-pilcrow-list="list"][data-pilcrow-key="key"]`.
+    pub fn list_patch(
+        list: impl Into<String>,
+        key: impl Into<String>,
+        data: impl serde::Serialize,
+    ) -> Self {
+        Self {
+            kind: EventKind::ListPatch {
+                list: list.into(),
+                key: key.into(),
+                data: serde_json::to_value(data).map_err(|e| e.to_string()),
+            },
+            id: None,
+        }
+    }
+
     /// Attach a `Last-Event-ID` so reconnecting clients can resume from this event.
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
@@ -103,7 +125,11 @@ impl SilcrowEvent {
 
     /// Tag a `patch` event with a client-side mutation id so the client can confirm it.
     pub fn with_mutation_id(mut self, mutation_id: impl Into<String>) -> Self {
-        if let EventKind::Patch { mutation_id: ref mut mid, .. } = self.kind {
+        if let EventKind::Patch {
+            mutation_id: ref mut mid,
+            ..
+        } = self.kind
+        {
             *mid = Some(mutation_id.into());
         }
         self
@@ -111,9 +137,9 @@ impl SilcrowEvent {
 
     fn serialize_check(&self) -> Result<(), String> {
         match &self.kind {
-            EventKind::Patch { data, .. } | EventKind::Custom { data, .. } => {
-                data.as_ref().map(|_| ()).map_err(Clone::clone)
-            }
+            EventKind::Patch { data, .. }
+            | EventKind::Custom { data, .. }
+            | EventKind::ListPatch { data, .. } => data.as_ref().map(|_| ()).map_err(Clone::clone),
             _ => Ok(()),
         }
     }
@@ -130,7 +156,11 @@ impl From<SilcrowEvent> for Event {
     fn from(evt: SilcrowEvent) -> Event {
         let id = evt.id;
         match evt.kind {
-            EventKind::Patch { data, target, mutation_id } => match data {
+            EventKind::Patch {
+                data,
+                target,
+                mutation_id,
+            } => match data {
                 Err(e) => {
                     tracing::warn!("SilcrowEvent::patch dropped — serialization failed: {e}");
                     Event::default().comment("pilcrow:serialize_error")
@@ -174,6 +204,25 @@ impl From<SilcrowEvent> for Event {
                         .unwrap_or_else(|_| Event::default().comment("pilcrow:encode_error")),
                     id,
                 ),
+            },
+            EventKind::ListPatch { list, key, data } => match data {
+                Err(e) => {
+                    tracing::warn!("SilcrowEvent::list_patch dropped — serialization failed: {e}");
+                    Event::default().comment("pilcrow:serialize_error")
+                }
+                Ok(mut payload) => {
+                    if let serde_json::Value::Object(ref mut map) = payload {
+                        map.insert("list".to_string(), serde_json::Value::String(list));
+                        map.insert("key".to_string(), serde_json::Value::String(key));
+                    }
+                    apply_id(
+                        Event::default()
+                            .event("list-patch")
+                            .json_data(payload)
+                            .unwrap_or_else(|_| Event::default().comment("pilcrow:encode_error")),
+                        id,
+                    )
+                }
             },
         }
     }
@@ -245,4 +294,34 @@ where
     S: Stream<Item = Result<Event, Infallible>> + Send + 'static,
 {
     Sse::new(stream).keep_alive(KeepAlive::default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn event_to_string(e: SilcrowEvent) -> String {
+        let axum_event: axum::response::sse::Event = e.into();
+        format!("{axum_event:?}")
+    }
+
+    #[test]
+    fn list_patch_serialises_with_all_fields() {
+        let data = serde_json::json!({"status": "open", "priority": 1});
+        let evt = SilcrowEvent::list_patch("tickets", "ticket:42", data);
+        let rendered = event_to_string(evt);
+        assert!(rendered.contains("list-patch"), "event name missing: {rendered}");
+        assert!(rendered.contains("tickets"), "list name missing: {rendered}");
+        assert!(rendered.contains("ticket:42"), "key missing: {rendered}");
+        assert!(rendered.contains("status"), "changed field missing: {rendered}");
+    }
+
+    #[test]
+    fn list_patch_numeric_key_serialises() {
+        let data = serde_json::json!({"count": 5});
+        let evt = SilcrowEvent::list_patch("items", "99", data);
+        let rendered = event_to_string(evt);
+        assert!(rendered.contains("list-patch"));
+        assert!(rendered.contains("99"));
+    }
 }

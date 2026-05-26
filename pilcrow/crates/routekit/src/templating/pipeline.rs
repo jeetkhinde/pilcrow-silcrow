@@ -68,6 +68,15 @@ pub struct PreprocessedHtmlFile {
     pub layout_chain: Vec<String>,
     /// URL prefix for fragment directory entries (e.g. `"widgets"`). `None` for non-fragments.
     pub fragment_url_prefix: Option<String>,
+    /// Layout IDs for each auto-layout in the chain (outermost first).
+    /// Only populated for page modules that have at least one auto-layout.
+    pub layout_chain_ids: Vec<String>,
+    /// Route pattern used as the data-ps-slot value for this page.
+    /// Only set for page modules.
+    pub page_slot: Option<String>,
+    /// Inner content of `<pilcrow:head>` extracted before the pipeline strips it.
+    /// Used to populate `<template data-ps-head>` in the post-processed template.
+    pub ps_head_inner: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -267,6 +276,9 @@ pub fn compile_to_out_dir_with_config(
                 } else {
                     None
                 },
+                layout_chain_ids: vec![],
+                page_slot: None,
+                ps_head_inner: None,
             });
         }
 
@@ -360,6 +372,8 @@ pub fn compile_to_out_dir_with_config(
                 .get(&normalize_path_text(&file.source_path))
                 .cloned()
                 .unwrap_or_default(),
+            layout_chain_ids: file.layout_chain_ids.clone(),
+            page_slot: file.page_slot.clone(),
         })
         .collect::<Vec<_>>();
     let templates_output =
@@ -423,6 +437,18 @@ pub fn compile_to_out_dir_with_config(
         .chain(fragment_routes.iter().cloned())
         .collect();
 
+    // Build maps from module symbol → layout chain IDs and page slot pattern.
+    // These are derived from the preprocessed files which have the ps data populated.
+    let layout_chain_ids_map: HashMap<String, Vec<String>> = files
+        .iter()
+        .filter(|f| !f.layout_chain_ids.is_empty())
+        .map(|f| (f.module_name.clone(), f.layout_chain_ids.clone()))
+        .collect();
+    let page_slot_map: HashMap<String, String> = files
+        .iter()
+        .filter_map(|f| f.page_slot.as_ref().map(|s| (f.module_name.clone(), s.clone())))
+        .collect();
+
     // Write the unified app module with auto-wired router.
     write_generated_app_module(
         &all_page_routes,
@@ -435,11 +461,16 @@ pub fn compile_to_out_dir_with_config(
             loading_module_for_page: &loading_module_for_page,
             action_map: &templates_output.action_map,
             page_options_map: &templates_output.page_options,
+<<<<<<< HEAD
             ssg_config_map: &templates_output.ssg_config_map,
+=======
+>>>>>>> origin/main
             live_fields_map: &templates_output.live_fields_map,
             has_live_fn_map: &templates_output.has_live_fn_map,
             fsr_live_source_map: &templates_output.fsr_live_source_map,
             fsr_live_fields_map: &templates_output.fsr_live_fields_map,
+            layout_chain_ids_map: &layout_chain_ids_map,
+            page_slot_map: &page_slot_map,
         },
         hook_flags,
         !react_urls.is_empty(),
@@ -734,6 +765,13 @@ struct HtmlModuleSource {
     layout_chain: Vec<String>,
     /// When true (from `pub const LAYOUT: &str = "none"`), skip all auto-layout wrapping.
     skip_layout: bool,
+    /// Layout IDs for each auto-layout in the chain (outermost first).
+    layout_chain_ids: Vec<String>,
+    /// Route pattern used as the data-ps-slot value for this page.
+    page_slot: Option<String>,
+    /// Inner content of `<pilcrow:head>` from the page template, extracted before
+    /// the pipeline strips it. Used to emit `<template data-ps-head>` in the output.
+    ps_head_inner: Option<String>,
 }
 
 fn preprocess_discovered_sources(
@@ -834,10 +872,22 @@ fn preprocess_discovered_sources(
             continue;
         }
 
+        // Compute layout chain IDs and page slot pattern for data-ps-* attributes.
+        let layout_ids: Vec<String> = auto_chain
+            .iter()
+            .map(|(lp, _)| layout_id_from_path(lp, &pages_dir))
+            .collect();
+        let slot_pat = page_slot_pattern(page_path, &pages_dir);
+
         // Inject synthetic imports and wrap the template.
         {
             let page_module = modules.get_mut(page_path).expect("page path exists");
             let original = page_module.template_source.clone();
+
+            // Extract pilcrow:head inner content for the data-ps-head template injection.
+            // This is extracted now because <pilcrow:head> is stripped by transpile_pilcrow_tags
+            // and will not be visible after the expansion pipeline.
+            let head_inner = extract_pilcrow_head_inner(&original).unwrap_or_default();
 
             // Add synthetic import aliases: PilcrowAutoLayout0 (outermost), PilcrowAutoLayout1, ...
             for (i, (layout_path, _)) in auto_chain.iter().enumerate() {
@@ -846,12 +896,38 @@ fn preprocess_discovered_sources(
             }
 
             // Wrap template from innermost to outermost.
-            let mut wrapped = original;
+            // NOTE: data-ps-* wrapper elements are injected as a POST-PROCESSING step AFTER
+            // expand_known_components completes (see inject_ps_nav_markers below). We use
+            // plain-text sentinel strings here — they become part of the default slot content
+            // and are passed through by collect_slot_assignments unchanged, while named-slot
+            // elements (slot="header") remain visible as direct children of the invocation.
+            //
+            // Sentinels:
+            //   __PS_SLOT_OPEN__<slot_pat>__   — marks where <div data-ps-slot> starts
+            //   __PS_SLOT_CLOSE__               — marks where <div data-ps-slot> ends
+            //   __PS_LAYOUT_OPEN__<layout_id>__ — marks where <div data-ps-layout> starts
+            //   __PS_LAYOUT_CLOSE__             — marks where <div data-ps-layout> ends
+            // head_inner is stored separately in HtmlModuleSource.ps_head_inner.
+            let mut wrapped = format!(
+                "__PS_SLOT_OPEN__{slot_pat}__\
+                 {original}\
+                 __PS_SLOT_CLOSE__"
+            );
             for i in (0..auto_chain.len()).rev() {
                 let alias = format!("PilcrowAutoLayout{i}");
-                wrapped = format!("<{alias}>{wrapped}</{alias}>");
+                let layout_id = &layout_ids[i];
+                wrapped = format!(
+                    "<{alias}>__PS_LAYOUT_OPEN__{layout_id}__\
+                     {wrapped}\
+                     __PS_LAYOUT_CLOSE__</{alias}>"
+                );
             }
             page_module.template_source = wrapped;
+
+            // Store layout chain ids, page slot, and extracted head content on the module.
+            page_module.layout_chain_ids = layout_ids.clone();
+            page_module.page_slot = Some(slot_pat.clone());
+            page_module.ps_head_inner = Some(head_inner);
         }
 
         // Prepend auto-layout module names to the layout_chain (outermost first).
@@ -875,13 +951,20 @@ fn preprocess_discovered_sources(
             .expect("module path from keys should exist");
 
         let mut stack = vec![module.source_path.clone()];
-        let expanded = expand_known_components(
+        let expanded_raw = expand_known_components(
             &module.template_source,
             &module.source_path,
             &modules,
             &mut stack,
             0,
         )?;
+        // Inject PS nav markers into the expanded template (only for pages with auto-layout).
+        let expanded = if module.kind == HtmlSourceKind::Page && !module.layout_chain_ids.is_empty()
+        {
+            inject_ps_nav_markers(&expanded_raw, module.ps_head_inner.as_deref())
+        } else {
+            expanded_raw
+        };
         let url_base = if module.kind == HtmlSourceKind::Page {
             page_url_base(&module.source_path, &pages_dir)
         } else {
@@ -929,6 +1012,9 @@ fn preprocess_discovered_sources(
             render_symbol: module.render_symbol.clone(),
             layout_chain: module.layout_chain.clone(),
             fragment_url_prefix: None,
+            layout_chain_ids: module.layout_chain_ids.clone(),
+            page_slot: module.page_slot.clone(),
+            ps_head_inner: module.ps_head_inner.clone(),
         });
     }
 
@@ -1052,6 +1138,9 @@ fn load_source_group(
                 imports,
                 layout_chain,
                 skip_layout,
+                layout_chain_ids: vec![],
+                page_slot: None,
+                ps_head_inner: None,
             },
         );
     }
@@ -1144,6 +1233,9 @@ fn load_fragment_source_group(
                 imports,
                 layout_chain: vec![],
                 skip_layout: false,
+                layout_chain_ids: vec![],
+                page_slot: None,
+                ps_head_inner: None,
             },
         );
     }
@@ -1182,6 +1274,107 @@ fn load_imported_modules(
     }
 
     Ok(())
+}
+
+/// Replace PS navigation sentinel strings with real HTML elements.
+///
+/// The sentinel strings were injected into the template source BEFORE
+/// `expand_known_components` so that they survive the slot distribution system
+/// (plain-text sentinels are treated as opaque default-slot content).
+///
+/// After expansion:
+/// - `__PS_LAYOUT_OPEN__<id>__...__PS_LAYOUT_CLOSE__` → `<div data-ps-layout="<id>">...</div>`
+/// - `__PS_SLOT_OPEN__<pat>__...__PS_SLOT_CLOSE__`     → `<div data-ps-slot="<pat>">...</div>`
+///
+/// The `<template data-ps-head>` is prepended using `head_inner` which was extracted
+/// before the pipeline stripped `<pilcrow:head>` blocks.
+fn inject_ps_nav_markers(template: &str, head_inner: Option<&str>) -> String {
+    let mut out = template.to_string();
+
+    // Replace nested layout markers: __PS_LAYOUT_OPEN__<id>__...__PS_LAYOUT_CLOSE__
+    // Process iteratively until no more remain (supports multiple nesting levels).
+    for _ in 0..16 {
+        const LO: &str = "__PS_LAYOUT_OPEN__";
+        const LS: &str = "__";
+        const LC: &str = "__PS_LAYOUT_CLOSE__";
+        let Some(lo_pos) = out.rfind(LO) else { break };
+        let id_start = lo_pos + LO.len();
+        let Some(sep_off) = out[id_start..].find(LS) else { break };
+        let id = out[id_start..id_start + sep_off].to_string();
+        let content_start = id_start + sep_off + LS.len();
+        let Some(lc_off) = out[content_start..].find(LC) else { break };
+        let content = &out[content_start..content_start + lc_off];
+        let replacement = format!("<div data-ps-layout=\"{id}\">{content}</div>");
+        let end = content_start + lc_off + LC.len();
+        out.replace_range(lo_pos..end, &replacement);
+    }
+
+    // Replace slot marker: __PS_SLOT_OPEN__<pat>__...__PS_SLOT_CLOSE__
+    {
+        const SO: &str = "__PS_SLOT_OPEN__";
+        const SS: &str = "__"; // separator after pattern
+        const SC: &str = "__PS_SLOT_CLOSE__";
+        if let Some(so_pos) = out.find(SO) {
+            let pat_start = so_pos + SO.len();
+            if let Some(sep_off) = out[pat_start..].find(SS) {
+                let pat = out[pat_start..pat_start + sep_off].to_string();
+                let content_start = pat_start + sep_off + SS.len();
+                if let Some(sc_off) = out[content_start..].find(SC) {
+                    let content = out[content_start..content_start + sc_off].to_string();
+                    let head_tpl = match head_inner {
+                        Some(h) if !h.is_empty() => {
+                            format!("<template data-ps-head>{h}</template>")
+                        }
+                        _ => String::new(),
+                    };
+                    let replacement =
+                        format!("{head_tpl}<div data-ps-slot=\"{pat}\">{content}</div>");
+                    out = format!(
+                        "{}{}{}",
+                        &out[..so_pos],
+                        replacement,
+                        &out[content_start + sc_off + SC.len()..]
+                    );
+                }
+            }
+        }
+    }
+
+    out
+}
+
+/// Derive a stable layout identifier from its file path.
+/// `pages/_layout.html` → `"/"`
+/// `pages/tickets/_layout.html` → `"/tickets"`
+fn layout_id_from_path(layout_path: &Path, pages_dir: &Path) -> String {
+    let dir = layout_path.parent().unwrap_or(pages_dir);
+    let rel = dir.strip_prefix(pages_dir).unwrap_or(Path::new(""));
+    let s = rel.to_string_lossy().replace('\\', "/");
+    if s.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{s}")
+    }
+}
+
+/// Derive the route pattern for a page file (same logic as the router).
+fn page_slot_pattern(page_path: &Path, pages_dir: &Path) -> String {
+    let file_path = path_to_unix(page_path);
+    let pages_dir_str = path_to_unix(pages_dir);
+    let route = crate::Route::from_path(&file_path, &pages_dir_str);
+    route.pattern
+}
+
+/// Extract the inner text of the first `<pilcrow:head>…</pilcrow:head>` block.
+fn extract_pilcrow_head_inner(template: &str) -> Option<String> {
+    const OPEN_PREFIX: &str = "<pilcrow:head";
+    let start = template.find(OPEN_PREFIX)?;
+    let after_prefix = &template[start + OPEN_PREFIX.len()..];
+    let gt = after_prefix.find('>')?;
+    let inner_start = start + OPEN_PREFIX.len() + gt + 1;
+    const CLOSE: &str = "</pilcrow:head>";
+    let close_off = template[inner_start..].find(CLOSE)?;
+    Some(template[inner_start..inner_start + close_off].to_string())
 }
 
 /// Walk up from a page's directory (within `pages_dir`) and collect any
@@ -4043,5 +4236,22 @@ pub const LAYOUT: &str = "none";
             "head content stripped"
         );
         assert!(rendered.contains("<p>Body only</p>"), "body preserved");
+    }
+}
+
+#[cfg(test)]
+mod nav_marker_tests {
+    use super::inject_ps_nav_markers;
+
+    #[test]
+    fn nested_layout_markers_process_inside_out() {
+        let input = "__PS_LAYOUT_OPEN__/__OUTER__PS_LAYOUT_OPEN__/tickets__INNER__PS_LAYOUT_CLOSE____PS_LAYOUT_CLOSE__";
+        let result = inject_ps_nav_markers(input, None);
+        assert!(result.contains(r#"data-ps-layout="/""#), "outer missing: {result}");
+        assert!(result.contains(r#"data-ps-layout="/tickets""#), "inner missing: {result}");
+        // Inner must be nested inside outer
+        let outer_start = result.find(r#"data-ps-layout="/""#).unwrap();
+        let inner_start = result.find(r#"data-ps-layout="/tickets""#).unwrap();
+        assert!(inner_start > outer_start, "inner should be nested inside outer: {result}");
     }
 }

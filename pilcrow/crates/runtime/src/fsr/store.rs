@@ -85,20 +85,18 @@ impl FsrStore {
         query_sql: &str,
         query_params: &serde_json::Value,
         depends_on: &[String],
-        promote_after: Option<u32>,
         debounce_secs: Option<u32>,
         column_name: Option<&str>,
     ) -> sqlx::Result<()> {
         sqlx::query(
             r#"
             INSERT INTO pilcrow_fsr
-                (route, slot, query, query_params, depends_on, promote_after, debounce_secs, column_name)
-            VALUES ($1, $2, $3, $4, $5::text[], $6, $7, $8)
+                (route, slot, query, query_params, depends_on, debounce_secs, column_name)
+            VALUES ($1, $2, $3, $4, $5::text[], $6, $7)
             ON CONFLICT (route, slot) DO UPDATE SET
                 query         = EXCLUDED.query,
                 query_params  = EXCLUDED.query_params,
                 depends_on    = EXCLUDED.depends_on,
-                promote_after = EXCLUDED.promote_after,
                 debounce_secs = EXCLUDED.debounce_secs,
                 column_name   = EXCLUDED.column_name
             "#,
@@ -108,7 +106,6 @@ impl FsrStore {
         .bind(query_sql)
         .bind(query_params)
         .bind(depends_on)
-        .bind(promote_after.map(|n| n as i32))
         .bind(debounce_secs.map(|n| n as i32))
         .bind(column_name)
         .execute(&*self.pool)
@@ -155,14 +152,22 @@ impl FsrStore {
             .fetch_optional(&*self.pool)
             .await?
             .unwrap_or(false);
-            return Ok(if tombstoned { HitStatus::Tombstoned } else { HitStatus::Normal });
+            return Ok(if tombstoned {
+                HitStatus::Tombstoned
+            } else {
+                HitStatus::Normal
+            });
         };
 
         let just_promoted = promote_after
-            .map(|threshold| promoted && (hit_count - 1) < threshold && hit_count >= threshold)
+            .map(|threshold| promoted && hit_count == threshold)
             .unwrap_or(false);
 
-        Ok(if just_promoted { HitStatus::JustPromoted } else { HitStatus::Normal })
+        Ok(if just_promoted {
+            HitStatus::JustPromoted
+        } else {
+            HitStatus::Normal
+        })
     }
 
     /// Mark a route as tombstoned — its baked entity was deleted.
@@ -220,12 +225,11 @@ impl FsrStore {
 
     /// Returns `true` when the route-level row exists and is tombstoned.
     pub async fn is_tombstoned(&self, route: &str) -> sqlx::Result<bool> {
-        let row: Option<(bool,)> = sqlx::query_as(
-            "SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = ''",
-        )
-        .bind(route)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let row: Option<(bool,)> =
+            sqlx::query_as("SELECT tombstoned FROM pilcrow_fsr WHERE route = $1 AND slot = ''")
+                .bind(route)
+                .fetch_optional(&*self.pool)
+                .await?;
         Ok(row.map(|(t,)| t).unwrap_or(false))
     }
 
@@ -256,21 +260,24 @@ impl FsrStore {
 
         #[cfg(feature = "live-props-redis")]
         if let Some(ref redis) = self.redis {
-            for route in &routes {
+            let futures = routes.iter().map(|route| {
                 let payload = InvalidatePayload {
                     route: route.clone(),
                     slots: vec![],
                     deps: vec![dep_key.to_string()],
                 };
-                if let Err(e) = redis.publish_invalidate(&payload).await {
-                    tracing::warn!(
-                        dep_key,
-                        route,
-                        error = %e,
-                        "FsrStore: Redis publish_invalidate failed"
-                    );
+                async move {
+                    if let Err(e) = redis.publish_invalidate(&payload).await {
+                        tracing::warn!(
+                            dep_key,
+                            route,
+                            error = %e,
+                            "FsrStore: Redis publish_invalidate failed"
+                        );
+                    }
                 }
-            }
+            });
+            futures_util::future::join_all(futures).await;
         }
 
         Ok(routes)
@@ -359,6 +366,31 @@ impl FsrStore {
         .execute(&*self.pool)
         .await?;
         Ok(())
+    }
+
+    /// Un-promote routes that have had no traffic for longer than `threshold_secs`.
+    ///
+    /// Sets `promoted = FALSE` and resets `hit_count = 0` on the route-level row so the
+    /// route re-enters the normal promotion cycle on the next request. Returns the route
+    /// path and baked-artifact paths so the caller can evict Redis keys and remove disk files.
+    pub async fn evict_idle_routes(
+        &self,
+        threshold_secs: u64,
+    ) -> sqlx::Result<Vec<EvictedRoute>> {
+        sqlx::query_as(
+            r#"
+            UPDATE pilcrow_fsr
+            SET promoted = FALSE, hit_count = 0
+            WHERE slot = ''
+              AND promoted = TRUE
+              AND NOT tombstoned
+              AND last_hit < now() - ($1::bigint * interval '1 second')
+            RETURNING route, html_path, json_path
+            "#,
+        )
+        .bind(threshold_secs as i64)
+        .fetch_all(&*self.pool)
+        .await
     }
 
     /// Fetch all rows for the FSR dev-inspect endpoint.
@@ -467,6 +499,14 @@ pub struct InspectRow {
     pub json_path: Option<String>,
     /// Formatted as `"YYYY-MM-DD HH:MM:SS UTC"` by the query, or `None` if never hit.
     pub last_hit: Option<String>,
+}
+
+/// A promoted route evicted by the idle-eviction task.
+#[derive(Debug, sqlx::FromRow)]
+pub struct EvictedRoute {
+    pub route: String,
+    pub html_path: Option<String>,
+    pub json_path: Option<String>,
 }
 
 /// A stale slot fetched for watcher re-execution.

@@ -10,11 +10,11 @@ public/
 pilcrow/target/
 silcrow/node_modules
 graphify-out/
+.claude/worktrees/
 
 
 node_modules/
 .pilcrow-baked/
-
 # Cargo lock file (for libraries)
 /Cargo.lock
 # IDE / Editor files

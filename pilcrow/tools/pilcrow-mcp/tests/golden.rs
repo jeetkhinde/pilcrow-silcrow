@@ -715,19 +715,17 @@ fn client_island_in_rs_file_flagged() {
 }
 
 #[test]
-fn prerender_const_in_rust_accepted() {
-    // PRERENDER is now a recognized ISR constant — routekit strips it from emitted code.
-    // Build-time pre-warming (SSG) is not yet active, but the constant causes no error.
+fn prerender_const_in_rust_rejected() {
+    // PRERENDER: bool is removed — using it must produce a pilcrow-prerender-removed error.
     let code = "pub const PRERENDER: bool = true;";
     let report = validate_implementation(code, Some("src/pages/index.rs"), None);
-    // The constant should not produce an error-level finding.
     assert!(
-        !report
+        report
             .findings
             .iter()
-            .any(|f| f.rule_id == "pilcrow-planned-static-output"
+            .any(|f| f.rule_id == "pilcrow-prerender-removed"
                 && f.severity == pilcrow_mcp::validation::Severity::Error),
-        "PRERENDER should not produce an error-level finding now that ISR is implemented"
+        "PRERENDER: bool = true must produce a pilcrow-prerender-removed error finding"
     );
 }
 

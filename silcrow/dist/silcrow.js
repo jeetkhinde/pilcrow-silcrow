@@ -245,15 +245,18 @@ function mergePath(prev, next) {
   if (!isPlainMergeable(prev) || !isPlainMergeable(next)) return next;
   if (Array.isArray(prev) !== Array.isArray(next)) return next;
 
-  const out = Array.isArray(prev) ? prev.slice() : Object.assign({}, prev);
+  let out = prev;
   let changed = false;
   for (const k in next) {
     if (!Object.prototype.hasOwnProperty.call(next, k)) continue;
     if (BLOCKED_ATOM_KEYS.has(k)) continue;
     const merged = mergePath(prev[k], next[k]);
     if (!Object.is(merged, prev[k])) {
+      if (!changed) {
+        out = Array.isArray(prev) ? prev.slice() : Object.assign({}, prev);
+        changed = true;
+      }
       out[k] = merged;
-      changed = true;
     }
   }
   return changed ? out : prev;
@@ -562,21 +565,35 @@ const URL_BINDING_PROPS = new Set([
   "poster", "cite", "background"
 ]);
 
-const BLOCKED_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
 // ── Internal Utilities ──────────────────────────────────────
+
+// Caches path string → split segments so repeated lookups skip regex + split.
+// Stores null for paths that fail validation so they short-circuit on reuse.
+const pathCache = new Map();
 
 function resolvePath(obj, path) {
   if (typeof obj !== "object" || obj === null) return undefined;
-  if (!isValidPath(path)) return undefined;
-  const parts = path.split(".");
+
+  let parts = pathCache.get(path);
+  if (parts === undefined) {
+    if (!PATH_RE.test(path)) {
+      pathCache.set(path, null);
+      return undefined;
+    }
+    parts = path.split(".");
+    pathCache.set(path, parts);
+  } else if (parts === null) {
+    return undefined;
+  }
+
   let cur = obj;
-  for (const part of parts) {
-    if (BLOCKED_KEYS.has(part)) return undefined;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part === "__proto__" || part === "constructor" || part === "prototype") return undefined;
     if (!Object.prototype.hasOwnProperty.call(cur, part)) return undefined;
     cur = cur[part];
     if (cur === null || cur === undefined) {
-      return parts.indexOf(part) === parts.length - 1 ? cur : undefined;
+      return i === parts.length - 1 ? cur : undefined;
     }
   }
   return cur;
@@ -607,6 +624,9 @@ function parseForExpression(expr) {
   return match ? {alias: match[1], path: match[2]} : null;
 }
 
+function isOnHandler(prop) {
+  return typeof prop === "string" && prop.toLowerCase().startsWith("on");
+}
 // ── Binding Engine ──────────────────────────────────────────
 
 function setValue(el, prop, value) {
@@ -835,11 +855,17 @@ function buildMaps(root) {
 }
 
 function patch(data, root, options = {}) {
-  const element = resolveRoot(root);
-
   let transformedData = data;
   try {
-    transformedData = patchMiddleware.reduce((acc, fn) => fn(safeClone(acc)) ?? acc, safeClone(data));
+    if (patchMiddleware.length > 0) {
+      let acc = safeClone(data);
+      for (const fn of patchMiddleware) {
+        acc = fn(acc) ?? acc;
+      }
+      transformedData = acc;
+    } else if (data?._toasts) {
+      transformedData = Array.isArray(data) ? data.slice() : Object.assign({}, data);
+    }
   } catch (err) {
     transformedData = data;
   }
@@ -856,7 +882,7 @@ function patch(data, root, options = {}) {
   ) {
     transformedData = transformedData.data;
   }
-
+  const element = resolveRoot(root);
   let instance = instanceCache.get(element);
   if (!instance || options.invalidate) {
     instance = buildMaps(element);
@@ -1263,6 +1289,45 @@ function connectSseHub(hub) {
     }
   });
 
+  es.addEventListener("live", function (e) {
+    try {
+      const data = JSON.parse(e.data);
+      if (!data || typeof data !== "object" || Array.isArray(data)) return;
+      Object.keys(data).forEach(function (k) {
+        const v = data[k];
+        document.querySelectorAll('[data-pilcrow-live-field="' + k + '"]').forEach(function (n) {
+          n.textContent = v == null ? "" : String(v);
+        });
+      });
+    } catch (err) {
+      warn("Failed to parse SSE live event: " + err.message);
+    }
+  });
+
+  es.addEventListener("list-patch", function (e) {
+    try {
+      const payload = JSON.parse(e.data);
+      if (!payload || typeof payload !== "object") return;
+      const listName = payload.list;
+      const key = String(payload.key);
+      if (!listName || payload.key == null) return;
+      const container = document.querySelector(
+        '[data-pilcrow-list="' + CSS.escape(listName) + '"]'
+      );
+      if (!container) return;
+      const row = container.querySelector(
+        '[data-pilcrow-key="' + CSS.escape(key) + '"]'
+      );
+      if (!row) return;
+      const changes = Object.assign({}, payload);
+      delete changes.list;
+      delete changes.key;
+      patch(changes, row);
+    } catch (err) {
+      warn("Failed to parse SSE list-patch event: " + err.message);
+    }
+  });
+
   es.onerror = function () {
     es.close();
     hub.es = null;
@@ -1363,13 +1428,19 @@ function destroyAllLive() {
  * Strict protocol enforcement.
  */
 function initLiveElements() {
-  // 1. Server-Sent Events (SSE)
+  // 1. Pilcrow-injected live prop anchor (auto-injected by codegen)
+  document.querySelectorAll("[data-pilcrow-live]").forEach(el => {
+    const url = el.getAttribute("data-pilcrow-live");
+    if (url) openLive(el, url);
+  });
+
+  // 2. Server-Sent Events (SSE)
   document.querySelectorAll("[s-sse]").forEach(el => {
     const url = el.getAttribute("s-sse");
     if (url) openLive(el, url);
   });
 
-  // 2. WebSockets (WS/WSS)
+  // 3. WebSockets (WS/WSS)
   document.querySelectorAll("[s-ws], [s-wss]").forEach(el => {
     const url = el.getAttribute("s-ws") || el.getAttribute("s-wss");
     if (url) openWsLive(el, url);
@@ -1735,16 +1806,40 @@ function getTarget(el) {
 
 // ── Boost helpers ──────────────────────────────────────────
 function isSafeBoostHref(anchor) {
+  if (anchor.hasAttribute("no-boost")) return false;
   const href = anchor.getAttribute("href");
   if (!href || href.startsWith("#")) return false;
   if (anchor.hasAttribute("download")) return false;
   if (anchor.getAttribute("target") === "_blank") return false;
   try {
     const url = new URL(href, location.origin);
-    return url.origin === location.origin;
+    if (url.protocol === "mailto:" || url.protocol === "tel:") return false;
+    if (url.origin !== location.origin) return false;
+    // Don't intercept same-page hash jumps; let the browser handle native scrolling.
+    if (url.hash && url.pathname === location.pathname) return false;
+    return true;
   } catch (e) {
     return false;
   }
+}
+
+function resolveBoostTarget(anchor) {
+  // 1. anchor[s-target] attribute
+  const sel = anchor.getAttribute("s-target");
+  if (sel) {
+    const t = document.querySelector(sel);
+    if (t) return {el: t, selector: sel};
+  }
+  // 2. closest ancestor with [s-target]
+  const parent = anchor.closest("[s-target]");
+  if (parent) {
+    const sel2 = parent.getAttribute("s-target");
+    if (sel2) {
+      const t2 = document.querySelector(sel2);
+      if (t2) return {el: t2, selector: sel2};
+    }
+  }
+  return {el: document.body, selector: null};
 }
 
 function getBoostTarget(boostEl) {
@@ -1847,6 +1942,17 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
   }
 }
 
+// ── Layout-Aware Navigation Helpers ───────────────────────
+function collectLayoutPatterns() {
+  const els = document.querySelectorAll("[data-ps-layout]");
+  const patterns = [];
+  els.forEach(function(el) {
+    const v = el.getAttribute("data-ps-layout");
+    if (v) patterns.push(v);
+  });
+  return patterns.length > 0 ? patterns.join(",") : "";
+}
+
 // ── Fetch Request Construction ─────────────────────────────
 function buildFetchOptions(method, body, wantsHTML, signal) {
   const opts = {
@@ -1857,6 +1963,12 @@ function buildFetchOptions(method, body, wantsHTML, signal) {
     },
     signal,
   };
+
+  // Add X-PS-Present for GET requests (layout-aware navigation)
+  if (method === "GET") {
+    const present = collectLayoutPatterns();
+    if (present) opts.headers["X-PS-Present"] = present;
+  }
 
   if (body) {
     if (body instanceof FormData) {
@@ -1935,22 +2047,36 @@ function prepareSwapContent(text, contentType, targetSelector) {
 // ── Post-Swap Finalization ─────────────────────────────────
 function finalizeNavigation(ctx) {
   const {pushUrl, redirected, finalUrl, fullUrl, shouldPushHistory,
-    trigger, targetSelector, targetEl, sideEffects} = ctx;
+    trigger, targetSelector, targetEl, sideEffects, isFragment} = ctx;
 
   processSideEffectHeaders(sideEffects, targetEl);
 
+  // #9: Include layoutHash in history state for layout-aware back/forward
   const finalHistoryUrl = pushUrl || (redirected ? finalUrl : fullUrl);
   if (shouldPushHistory && trigger !== "popstate") {
+    const layoutHash = collectLayoutPatterns();
     history.pushState(
-      {silcrow: true, url: finalHistoryUrl, targetSelector},
+      {silcrow: true, url: finalHistoryUrl, targetSelector, layoutHash, scrollY: window.scrollY},
       "",
       finalHistoryUrl
     );
   }
 
+  // #7: Scroll behavior per mode
+  // - Full page (no slot): scroll to top
+  // - Fragment to body slot: scroll to top
+  // - Fragment to element slot: no scroll (preserve position)
+  // - JSON: preserve (no scroll)
+  // - Popstate: restore saved scrollY
   if (trigger === "popstate") {
     const saved = (history.state || {}).scrollY;
     window.scrollTo(0, saved || 0);
+  } else if (isFragment) {
+    // Fragment nav: scroll to top only if target is document.body
+    if (targetEl === document.body) {
+      window.scrollTo(0, 0);
+    }
+    // else: element swap, preserve scroll position
   } else if (shouldPushHistory) {
     window.scrollTo(0, 0);
   }
@@ -1962,14 +2088,74 @@ function finalizeNavigation(ctx) {
     })
   );
 
-  // Re-initialize any [s-sse] elements that arrived in the swapped content.
+  // Re-initialize any live connection elements that arrived in the swapped content.
   // The MutationObserver cleans up removed elements; this connects the new ones.
   if (targetEl) {
+    targetEl.querySelectorAll("[data-pilcrow-live]").forEach(function (el) {
+      const url = el.getAttribute("data-pilcrow-live");
+      if (url) openLive(el, url);
+    });
     targetEl.querySelectorAll("[s-sse]").forEach(function (el) {
       const url = el.getAttribute("s-sse");
       if (url) openLive(el, url);
     });
   }
+}
+
+// ── PS Fragment Helpers ────────────────────────────────────
+function extractHeadTemplate(html) {
+  const match = html.match(/<template data-ps-head>([\s\S]*?)<\/template>/);
+  return match ? match[1] : null;
+}
+
+function applyHeadTemplate(headHtml) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = headHtml;
+  const nodes = Array.from(tpl.content.childNodes);
+  nodes.forEach(function(node) {
+    if (node.nodeType !== 1) return; // Element nodes only
+    const tag = node.tagName.toLowerCase();
+    if (tag === "title") {
+      document.title = node.textContent;
+    } else if (tag === "meta") {
+      const name = node.getAttribute("name") || node.getAttribute("property");
+      if (name) {
+        const escaped = name.replace(/"/g, '\\"');
+        const existing = document.head.querySelector(
+          `meta[name="${escaped}"], meta[property="${escaped}"]`
+        );
+        if (existing) existing.replaceWith(node.cloneNode(true));
+        else document.head.appendChild(node.cloneNode(true));
+      }
+    } else if (tag === "link" && node.getAttribute("rel") === "canonical") {
+      const existing = document.head.querySelector("link[rel=canonical]");
+      if (existing) existing.replaceWith(node.cloneNode(true));
+      else document.head.appendChild(node.cloneNode(true));
+    }
+  });
+}
+
+function parseFragmentSlot(html) {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  return tpl.content.querySelector("[data-ps-slot]");
+}
+
+function applyFragment(fragmentHtml) {
+  // 1. Extract and apply head template
+  const headHtml = extractHeadTemplate(fragmentHtml);
+  if (headHtml) applyHeadTemplate(headHtml);
+
+  // 2. Extract slot div and swap
+  const slotEl = parseFragmentSlot(fragmentHtml);
+  if (!slotEl) return false;
+  const slotPattern = slotEl.getAttribute("data-ps-slot");
+  const domSlot = slotPattern
+    ? document.querySelector(`[data-ps-slot="${CSS.escape(slotPattern)}"]`)
+    : null;
+  if (!domSlot) return false;
+  safeSetHTML(domSlot, slotEl.innerHTML, {allowStyleTags: false});
+  return true;
 }
 
 // ── Core Navigate ──────────────────────────────────────────
@@ -1981,11 +2167,12 @@ async function navigate(url, options = {}) {
     trigger = "click",
     skipHistory = false,
     sourceEl = null,
+    targetSelector: explicitTargetSelector = null,
   } = options;
 
   const fullUrl = new URL(url, location.origin).href;
   let targetEl = target || document.body;
-  const targetSelector = sourceEl?.getAttribute("s-target") || null;
+  const targetSelector = explicitTargetSelector || sourceEl?.getAttribute("s-target") || null;
   const shouldPushHistory = !skipHistory && !targetSelector && method === "GET";
 
   const event = new CustomEvent("silcrow:navigate", {
@@ -2010,7 +2197,8 @@ async function navigate(url, options = {}) {
   showLoading(targetEl);
 
   try {
-    let cached = method === "GET" ? cacheGet(fullUrl) : null;
+    const navCacheKey = method === "GET" ? fullUrl + "|" + (collectLayoutPatterns() || "") : null;
+    let cached = navCacheKey ? cacheGet(navCacheKey) : null;
 
     let text, contentType, redirected = false, finalUrl = fullUrl, pushUrl = null;
     let sideEffects = null;
@@ -2054,8 +2242,8 @@ async function navigate(url, options = {}) {
       contentType = response.headers.get("Content-Type") || "";
 
       const cacheControl = response.headers.get("silcrow-cache");
-      if (method === "GET" && !redirected && cacheControl !== "no-cache") {
-        cacheSet(fullUrl, {text, contentType, ts: Date.now()});
+      if (method === "GET" && !redirected && cacheControl !== "no-cache" && navCacheKey) {
+        cacheSet(navCacheKey, {text, contentType, ts: Date.now()});
       }
 
       if (method !== "GET") {
@@ -2085,30 +2273,54 @@ async function navigate(url, options = {}) {
       );
     }
 
+    // Detect PS fragment response
+    const isFragment = contentType.includes("x-ps-fragment=1");
+
     // Prepare and execute swap
-    const {swapContent, isJSON} = prepareSwapContent(text, contentType, targetSelector);
+    const {swapContent, isJSON} = isFragment
+      ? {swapContent: text, isJSON: false}
+      : prepareSwapContent(text, contentType, targetSelector);
 
     let swapExecuted = false;
     const proceed = () => {
       if (swapExecuted) return;
       swapExecuted = true;
-      if (isJSON) {
+      if (isFragment) {
+        // PS fragment: swap only the changed slot, update head
+        const applied = applyFragment(text);
+        if (!applied) {
+          // Slot absent in current DOM — fall back to full browser navigation.
+          window.location.assign(finalUrl);
+          return;
+        }
+      } else if (isJSON) {
         patch(swapContent, targetEl);
       } else {
         safeSetHTML(targetEl, swapContent, {
           allowStyleTags: method === "GET" && !targetSelector && targetEl === document.body,
         });
+        // #8: Apply head updates from <template data-ps-head> in full page nav
+        if (!isJSON && !isFragment && targetEl === document.body) {
+          const headTplEl = targetEl.querySelector("template[data-ps-head]");
+          if (headTplEl) applyHeadTemplate(headTplEl.innerHTML);
+        }
       }
     };
 
     const beforeSwap = new CustomEvent("silcrow:before-swap", {
       bubbles: true,
       cancelable: true,
-      detail: {url: finalUrl, target: targetEl, content: swapContent, isJSON, proceed},
+      detail: {url: finalUrl, target: targetEl, content: swapContent, isJSON, isFragment, proceed},
     });
 
     if (!document.dispatchEvent(beforeSwap)) return;
-    if (!swapExecuted) proceed();
+
+    // #10: Wrap swap in View Transitions API if available
+    if (document.startViewTransition) {
+      document.startViewTransition(() => { if (!swapExecuted) proceed(); });
+    } else {
+      if (!swapExecuted) proceed();
+    }
 
     // Mirror top-level GET JSON into the route atom for headless consumers.
     // Skip fragment swaps (s-target set), non-GET, and HTML responses.
@@ -2124,7 +2336,7 @@ async function navigate(url, options = {}) {
     finalizeNavigation({
       pushUrl, redirected, finalUrl, fullUrl,
       shouldPushHistory, trigger, targetSelector, targetEl,
-      sideEffects,
+      sideEffects, isFragment,
     });
 
   } catch (err) {
@@ -2190,20 +2402,23 @@ async function onClick(e) {
     return;
   }
 
-  // 2. s-boost: intercept plain <a href> inside boosted containers
+  // 2. Global boost: intercept all same-origin <a href> unless no-boost
   const anchor = e.target.closest("a[href]");
   if (!anchor || !isSafeBoostHref(anchor)) return;
-  const boostEl = anchor.closest("[s-boost]");
-  if (!boostEl) return;
 
   e.preventDefault();
   const boostedUrl = new URL(anchor.getAttribute("href"), location.origin).href;
-  const inflight = preloadInflight.get(boostedUrl);
+  const boostCacheKey = boostedUrl + "|" + (collectLayoutPatterns() || "");
+  const inflight = preloadInflight.get(boostCacheKey);
   if (inflight) await inflight;
+
+  // Target resolution: anchor[s-target] → closest([s-target]) → document.body
+  const {el: targetEl, selector: boostTargetSelector} = resolveBoostTarget(anchor);
 
   navigate(boostedUrl, {
     method: "GET",
-    target: getBoostTarget(boostEl),
+    target: targetEl,
+    targetSelector: boostTargetSelector,
     skipHistory: anchor.hasAttribute("s-skip-history"),
     sourceEl: anchor,
     trigger: "click",
@@ -2269,10 +2484,14 @@ function onPopState(e) {
 
 // ── Preload Handler ────────────────────────────────────────
 function startPreload(url, wantsHTML) {
-  if (responseCache.has(url) || preloadInflight.has(url)) return;
+  const cacheKey = url + "|" + (collectLayoutPatterns() || "");
+  if (responseCache.has(cacheKey) || preloadInflight.has(cacheKey)) return;
   const controller = new AbortController();
+  const present = collectLayoutPatterns();
+  const fetchHeaders = {"silcrow-target": "true", "Accept": wantsHTML ? "text/html" : "application/json"};
+  if (present) fetchHeaders["X-PS-Present"] = present;
   const promise = fetch(url, {
-    headers: {"silcrow-target": "true", "Accept": wantsHTML ? "text/html" : "application/json"},
+    headers: fetchHeaders,
     signal: controller.signal,
   })
     .then((r) => {
@@ -2286,12 +2505,12 @@ function startPreload(url, wantsHTML) {
       if (!entry) return;
       const {text, contentType, cacheControl} = entry;
       if (cacheControl !== "no-cache") {
-        cacheSet(url, {text, contentType, ts: Date.now()});
+        cacheSet(cacheKey, {text, contentType, ts: Date.now()});
       }
     })
     .catch(() => {})
-    .finally(() => preloadInflight.delete(url));
-  preloadInflight.set(url, promise);
+    .finally(() => preloadInflight.delete(cacheKey));
+  preloadInflight.set(cacheKey, promise);
 }
 
 function onMouseEnter(e) {
@@ -2305,8 +2524,8 @@ function onMouseEnter(e) {
     return;
   }
 
-  // s-boost: preload plain anchors with s-preload inside boosted containers
-  if (el.tagName === "A" && isSafeBoostHref(el) && el.closest("[s-boost]")) {
+  // Global boost: preload plain anchors with s-preload
+  if (el.tagName === "A" && isSafeBoostHref(el)) {
     const url = new URL(el.getAttribute("href"), location.origin).href;
     startPreload(url, el.hasAttribute("s-html"));
   }
@@ -2451,7 +2670,7 @@ function init() {
         unbindElementAtoms(removed);
 
         if (removed.querySelectorAll) {
-          for (const child of removed.querySelectorAll("[s-sse], [s-ws], [s-wss]")) {
+          for (const child of removed.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]")) {
             cleanupLiveNode(child);
           }
           for (const child of removed.querySelectorAll("[s-bind]")) {

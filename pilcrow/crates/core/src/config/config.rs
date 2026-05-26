@@ -73,6 +73,17 @@ pub struct FsrConfig {
     /// Redis connection URL (`redis://...`). When set, the embedded watcher uses
     /// Redis pub/sub instead of polling and the FSR cache layer is activated.
     pub redis_url: Option<String>,
+    /// TTL for Redis artifact keys (`pilcrow:html:*`, `pilcrow:json:*`, `pilcrow:slot:*`)
+    /// in seconds. Keys expire automatically, so Redis memory is bounded even for
+    /// dynamic routes that generate many unique keys. Default: `86400` (24 h).
+    /// Set to `0` to disable TTLs (keys persist until tombstoned or idle-evicted).
+    pub artifact_ttl_secs: u64,
+    /// How often the idle-eviction background task runs, in seconds. Default: `1800` (30 min).
+    /// Set to `0` to disable idle eviction entirely.
+    pub idle_evict_secs: u64,
+    /// Routes with no traffic for longer than this (in seconds) are un-promoted and
+    /// their Redis keys evicted. Default: `86400` (24 h).
+    pub idle_threshold_secs: u64,
 }
 
 impl Default for FsrConfig {
@@ -87,15 +98,28 @@ impl Default for FsrConfig {
             connection_ttl_secs: 3600,
             keepalive_secs: 30,
             redis_url: None,
+            artifact_ttl_secs: 86_400,
+            idle_evict_secs: 1_800,
+            idle_threshold_secs: 86_400,
         }
     }
 }
 
 /// Runtime client-side feature configuration (mirrors the build-time `[client]` table).
+///
+/// ```toml
+/// [client]
+/// inline_runtime = true  # embed Silcrow JS inline instead of <script src>
+/// ```
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ClientRuntimeConfig {
     #[serde(default)]
     pub react: ReactRuntimeConfig,
+    /// Embed the Silcrow runtime inline in each HTML response rather than serving it
+    /// from `/__pilcrow/runtime/silcrow.{hash}.js`. Eliminates the extra HTTP request
+    /// at the cost of a larger initial HTML payload. Default: `false`.
+    #[serde(default)]
+    pub inline_runtime: bool,
 }
 
 /// Runtime React island configuration.
@@ -171,6 +195,10 @@ pub struct ImageConfig {
     /// Maximum concurrent image transforms (CPU-bound). Default: 4.
     #[serde(default = "default_image_concurrency")]
     pub concurrency: usize,
+    /// Root directory that local `src` paths are resolved against.
+    /// Paths that escape this directory are rejected. Default: `"public"`.
+    #[serde(default = "default_image_static_dir")]
+    pub static_dir: String,
 }
 
 impl Default for ImageConfig {
@@ -184,6 +212,7 @@ impl Default for ImageConfig {
             quality: default_image_quality(),
             formats: default_image_formats(),
             concurrency: default_image_concurrency(),
+            static_dir: default_image_static_dir(),
         }
     }
 }
@@ -235,7 +264,7 @@ pub struct ServiceWorkerConfig {
     #[serde(default)]
     pub precache: Vec<String>,
     /// URL substrings to exclude from service worker interception.
-    /// `/_silcrow/` and `/__pilcrow/` are always excluded.
+    /// `/__pilcrow/` is always excluded (covers all Pilcrow runtime assets).
     #[serde(default)]
     pub exclude: Vec<String>,
     /// URL to serve when a request fails and no cached response exists.
@@ -262,12 +291,9 @@ pub struct CacheConfig {
     pub url: Option<String>,
     /// SQLite database path. Used when `provider = "sqlite"`.
     pub path: Option<String>,
-    /// Directory for filesystem-backed ISR cache. Used when `provider = "filesystem"`.
+    /// Cache storage directory. Used when `provider = "filesystem"`.
     /// Defaults to `.pilcrow-cache` in the current directory.
     pub dir: Option<String>,
-    /// Maximum duration (seconds) a background revalidation task may run before abort.
-    #[serde(default = "default_revalidate_timeout_secs")]
-    pub revalidate_timeout_secs: u64,
 }
 
 impl Default for CacheConfig {
@@ -277,12 +303,10 @@ impl Default for CacheConfig {
             url: None,
             path: None,
             dir: None,
-            revalidate_timeout_secs: default_revalidate_timeout_secs(),
         }
     }
 }
 
-/// Which backing store to use for the ISR cache.
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum CacheProvider {
@@ -306,6 +330,10 @@ pub struct WebConfig {
     pub port: u16,
     #[serde(default = "default_backend_url")]
     pub backend_url: String,
+    /// Maximum request body size in bytes. Requests exceeding this are rejected
+    /// with 413 before reaching any handler. Defaults to 2 MiB.
+    #[serde(default = "default_request_body_limit")]
+    pub request_body_limit_bytes: usize,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -322,6 +350,7 @@ impl Default for WebConfig {
             host: default_web_host(),
             port: default_web_port(),
             backend_url: default_backend_url(),
+            request_body_limit_bytes: default_request_body_limit(),
         }
     }
 }
@@ -430,10 +459,6 @@ fn default_locales_dir() -> String {
     "locales".to_string()
 }
 
-fn default_revalidate_timeout_secs() -> u64 {
-    30
-}
-
 fn default_web_host() -> String {
     "127.0.0.1".to_string()
 }
@@ -444,6 +469,10 @@ fn default_web_port() -> u16 {
 
 fn default_backend_url() -> String {
     "http://127.0.0.1:4000".to_string()
+}
+
+fn default_request_body_limit() -> usize {
+    2 * 1024 * 1024 // 2 MiB
 }
 
 fn default_backend_host() -> String {
@@ -474,6 +503,10 @@ fn default_image_concurrency() -> usize {
     4
 }
 
+fn default_image_static_dir() -> String {
+    "public".to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -484,6 +517,9 @@ mod tests {
         assert_eq!(cfg.max_sse_connections, 1000);
         assert_eq!(cfg.connection_ttl_secs, 3600);
         assert_eq!(cfg.keepalive_secs, 30);
+        assert_eq!(cfg.artifact_ttl_secs, 86_400);
+        assert_eq!(cfg.idle_evict_secs, 1_800);
+        assert_eq!(cfg.idle_threshold_secs, 86_400);
     }
 
     #[test]
@@ -497,5 +533,18 @@ mod tests {
         assert_eq!(cfg.max_sse_connections, 500);
         assert_eq!(cfg.connection_ttl_secs, 7200);
         assert_eq!(cfg.keepalive_secs, 45);
+    }
+
+    #[test]
+    fn fsr_config_idle_eviction_fields_deserialize_from_toml() {
+        let toml = r#"
+            artifact_ttl_secs   = 3600
+            idle_evict_secs     = 900
+            idle_threshold_secs = 7200
+        "#;
+        let cfg: FsrConfig = toml::from_str(toml).unwrap();
+        assert_eq!(cfg.artifact_ttl_secs, 3600);
+        assert_eq!(cfg.idle_evict_secs, 900);
+        assert_eq!(cfg.idle_threshold_secs, 7200);
     }
 }

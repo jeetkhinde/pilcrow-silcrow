@@ -1,0 +1,119 @@
+<h2>Slice D — Final Design</h2>
+<p class="subtitle">All decisions locked. Review before spec is written.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem;grid-column:1/-1">
+    <div class="label" style="color:var(--accent)">#5 — Global Boost (s-boost REMOVED)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+      <div>
+        <p style="font-size:0.83rem;margin:0 0 0.5rem">Every <code>&lt;a href&gt;</code> is boosted. No container needed.</p>
+        <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.78rem;line-height:1.7">
+          <span style="color:#6b7280">&lt;!-- just works --&gt;</span><br>
+          &lt;a href="/dashboard"&gt;Go&lt;/a&gt;<br><br>
+          <span style="color:#6b7280">&lt;!-- opt-out --&gt;</span><br>
+          &lt;a href="/pdf" <strong style="color:#ef4444">no-boost</strong>&gt;PDF&lt;/a&gt;<br><br>
+          <span style="color:#6b7280">&lt;!-- partial swap via s-target --&gt;</span><br>
+          &lt;div <strong style="color:#8b5cf6">s-target="#detail"</strong>&gt;<br>
+          &nbsp;&nbsp;&lt;a href="/t/1"&gt;Ticket 1&lt;/a&gt;<br>
+          &lt;/div&gt;
+        </div>
+      </div>
+      <div>
+        <p style="font-size:0.83rem;margin:0 0 0.5rem">Auto-skip rules (safety):</p>
+        <table style="font-size:0.78rem;width:100%;border-collapse:collapse">
+          <tr><td style="padding:0.2rem 0"><code>no-boost</code></td><td style="color:#ef4444">→ skip</td></tr>
+          <tr><td style="padding:0.2rem 0">External origin</td><td style="color:#ef4444">→ skip</td></tr>
+          <tr><td style="padding:0.2rem 0"><code>download</code></td><td style="color:#ef4444">→ skip</td></tr>
+          <tr><td style="padding:0.2rem 0"><code>target="_blank"</code></td><td style="color:#ef4444">→ skip</td></tr>
+          <tr><td style="padding:0.2rem 0"><code>href="#…"</code></td><td style="color:#ef4444">→ skip</td></tr>
+          <tr><td style="padding:0.2rem 0"><code>mailto:</code> / <code>tel:</code></td><td style="color:#ef4444">→ skip</td></tr>
+        </table>
+        <p style="font-size:0.78rem;margin:0.75rem 0 0;color:var(--text-secondary)">Target resolution:<br>1. <code>anchor[s-target]</code><br>2. <code>closest("[s-target]")</code><br>3. <code>document.body</code></p>
+      </div>
+    </div>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+    <div class="label" style="color:#8b5cf6">#6 — Three-Mode Navigation</div>
+    <p style="font-size:0.83rem;margin:0.5rem 0">Server signals mode via response header. Client uses <code>s-target</code> for WHERE.</p>
+    <table style="font-size:0.78rem;width:100%;border-collapse:collapse;margin-top:0.5rem">
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--accent)">full</td>
+        <td style="padding:0.3rem 0.4rem">No header. Full page HTML. Target = body.</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:#8b5cf6">fragment</td>
+        <td style="padding:0.3rem 0.4rem"><code>X-Pilcrow-Layout: fragment</code>. Partial HTML (no shell). Target = s-target.</td>
+      </tr>
+      <tr>
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:#10b981">json</td>
+        <td style="padding:0.3rem 0.4rem"><code>X-Pilcrow-Layout: json</code>. Props JSON. Patched in-place. Target = s-target.</td>
+      </tr>
+    </table>
+    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0 0"><code>data-ps-slot</code> dropped. <code>s-target</code> is the only targeting mechanism.</p>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+    <div class="label" style="color:#10b981">#7 — Scroll per mode</div>
+    <table style="font-size:0.78rem;width:100%;border-collapse:collapse;margin-top:0.5rem">
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--accent)">full</td>
+        <td style="padding:0.3rem 0.4rem"><code>window.scrollTo(0,0)</code></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:#8b5cf6">fragment</td>
+        <td style="padding:0.3rem 0.4rem">target = body → scroll top; target = element → no scroll (panel already visible)</td>
+      </tr>
+      <tr>
+        <td style="padding:0.3rem 0.4rem;font-weight:600;color:#10b981">json</td>
+        <td style="padding:0.3rem 0.4rem">Preserve scroll position</td>
+      </tr>
+    </table>
+    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0 0">Popstate: always restore <code>history.state.scrollY</code> regardless of mode.</p>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+    <div class="label" style="color:#f59e0b">#8 — &lt;pilcrow:head&gt; on all nav</div>
+    <p style="font-size:0.83rem;margin:0.5rem 0">Codegen prepends to every page body:</p>
+    <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.78rem;line-height:1.6">
+      &lt;<strong>template</strong> data-ps-head&gt;<br>
+      &nbsp;&nbsp;&lt;title&gt;{{ props.title }}&lt;/title&gt;<br>
+      &nbsp;&nbsp;&lt;meta name="description" …&gt;<br>
+      &lt;/template&gt;
+    </div>
+    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0 0">Fragment: extract <code>template.content</code>, upsert into <code>document.head</code><br>JSON: server adds <code>__ps_head</code> string to props payload; client parses + applies<br>Upsert rules: title, meta[name], meta[property], link[rel=canonical]</p>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+    <div class="label" style="color:#ef4444">#9 — History stores layout hash</div>
+    <p style="font-size:0.83rem;margin:0.5rem 0">Codegen emits fingerprint on <code>&lt;body&gt;</code>:</p>
+    <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.78rem">
+      &lt;body data-ps-layout="a3f7c2"&gt;
+    </div>
+    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0 0">Hash = short hash of layout chain file paths (build-time constant). On <code>pushState</code>: include <code>{ layoutHash, scrollY, url }</code>. Enables popstate to know which mode was active.</p>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:8px;padding:1rem">
+    <div class="label" style="color:#06b6d4">#10 — View Transitions (all modes)</div>
+    <div style="background:var(--code-bg);border-radius:6px;padding:0.6rem 0.8rem;font-family:monospace;font-size:0.78rem;line-height:1.7">
+      if (document.startViewTransition) {<br>
+      &nbsp;&nbsp;document.startViewTransition(() =&gt; proceed());<br>
+      } else {<br>
+      &nbsp;&nbsp;proceed(); <span style="color:#6b7280">// graceful fallback</span><br>
+      }
+    </div>
+    <p style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0 0">Wraps all three modes uniformly. Developer controls animation via CSS <code>@view-transition</code> rules. No Silcrow config needed.</p>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <div class="label">Files touched</div>
+  <table style="font-size:0.8rem;width:100%;border-collapse:collapse">
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.3rem 0.5rem;font-family:monospace">silcrow/src/silcrow.js</td><td style="padding:0.3rem 0.5rem;color:var(--text-secondary)">onClick handler (global boost, no-boost, s-target resolution), navigate() (mode switch, scroll, VT), finalizeNavigation (head apply)</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.3rem 0.5rem;font-family:monospace">pilcrow/crates/routekit/src/templating/pipeline.rs</td><td style="padding:0.3rem 0.5rem;color:var(--text-secondary)">Emit <code>data-ps-layout</code> on &lt;body&gt;; prepend <code>&lt;template data-ps-head&gt;</code></td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.3rem 0.5rem;font-family:monospace">pilcrow/crates/routekit/src/templating/codegen/app_module.rs</td><td style="padding:0.3rem 0.5rem;color:var(--text-secondary)">Emit <code>X-Pilcrow-Layout</code> response header per route mode</td></tr>
+    <tr><td style="padding:0.3rem 0.5rem;font-family:monospace">silcrow/docs/silcrow-api.md</td><td style="padding:0.3rem 0.5rem;color:var(--text-secondary)">Remove s-boost; add no-boost, X-Pilcrow-Layout, data-ps-layout, data-ps-head</td></tr>
+  </table>
+</div>

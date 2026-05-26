@@ -229,8 +229,9 @@ pub async fn dev_inject_layer(
         return response;
     }
 
+    const DEV_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
     let (mut parts, body) = response.into_parts();
-    let bytes = match axum::body::to_bytes(body, usize::MAX).await {
+    let bytes = match axum::body::to_bytes(body, DEV_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
         Err(_) => return axum::response::Response::from_parts(parts, axum::body::Body::empty()),
     };

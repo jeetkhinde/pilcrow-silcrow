@@ -52,7 +52,6 @@ fn extract_live_fields(fields: &Fields) -> TokenStream2 {
         let field_name_str = field_ident.to_string();
 
         let column_name = find_str_attr(&field.attrs, "column");
-        let promote_after = find_u32_attr(&field.attrs, "promote_after");
         let patch_debounce = find_u32_attr(&field.attrs, "patch_debounce");
 
         extractions = quote! {
@@ -62,9 +61,6 @@ fn extract_live_fields(fields: &Fields) -> TokenStream2 {
                 let mut __name = #field_name_str.to_string();
                 if let ::std::option::Option::Some(__c) = #column_name {
                     __name = __c;
-                }
-                if let ::std::option::Option::Some(__n) = #promote_after {
-                    __lp = __lp.promote_after(__n);
                 }
                 if let ::std::option::Option::Some(__n) = #patch_debounce {
                     __lp = __lp.patch_debounce(__n);

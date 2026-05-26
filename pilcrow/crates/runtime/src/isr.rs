@@ -75,7 +75,9 @@ pub struct IsrCache {
 
 impl IsrCache {
     pub fn new() -> Self {
-        Self { map: Arc::new(DashMap::new()) }
+        Self {
+            map: Arc::new(DashMap::new()),
+        }
     }
 
     /// Check the cache state for a given key.
@@ -128,14 +130,7 @@ impl IsrCache {
 
     /// Remove all cache entries whose key starts with `path`.
     pub fn invalidate_path(&self, path: &str) {
-        let keys: Vec<String> = self
-            .map
-            .iter()
-            .filter_map(|entry| entry.key().starts_with(path).then(|| entry.key().clone()))
-            .collect();
-        for key in keys {
-            self.map.remove(&key);
-        }
+        self.map.retain(|k, _| !k.starts_with(path));
     }
 }
 
@@ -210,5 +205,9 @@ pub fn __isr_cache_key(
         .collect::<Vec<_>>()
         .join("&");
 
-    if qs.is_empty() { path.to_string() } else { format!("{path}?{qs}") }
+    if qs.is_empty() {
+        path.to_string()
+    } else {
+        format!("{path}?{qs}")
+    }
 }

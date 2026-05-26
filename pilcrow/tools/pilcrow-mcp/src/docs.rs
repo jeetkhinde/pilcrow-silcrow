@@ -320,6 +320,7 @@ fn status_label(status: &crate::registry::FeatureStatus) -> &'static str {
         crate::registry::FeatureStatus::Experimental => "experimental",
         crate::registry::FeatureStatus::Planned => "planned",
         crate::registry::FeatureStatus::Deprecated => "deprecated",
+        crate::registry::FeatureStatus::Removed => "removed",
     }
 }
 
