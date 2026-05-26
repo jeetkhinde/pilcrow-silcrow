@@ -209,6 +209,8 @@ where
                             patch_debounce_secs: fsr_config.patch_debounce_secs,
                             purge_after_seconds: fsr_config.purge_after_seconds,
                             scheduled_invalidations: crate::fsr::codegen_scheduled_invalidations(),
+                            idle_evict_secs: fsr_config.idle_evict_secs,
+                            idle_threshold_secs: fsr_config.idle_threshold_secs,
                         };
 
                         // If Redis is configured, use the pub/sub-driven watcher and
@@ -222,7 +224,9 @@ where
                             if let Some(ref redis_url) = fsr_config.redis_url {
                                 match RedisCache::connect(redis_url).await {
                                     Ok(cache) => {
-                                        let redis = Arc::new(cache);
+                                        let redis = Arc::new(
+                                            cache.with_artifact_ttl(fsr_config.artifact_ttl_secs),
+                                        );
                                         app = app.layer(axum::Extension(Arc::clone(&redis)));
 
                                         // Rebuild fsr_store with Redis attached so that

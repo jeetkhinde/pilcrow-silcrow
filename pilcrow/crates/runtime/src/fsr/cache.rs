@@ -29,16 +29,23 @@ mod inner {
     /// Wraps a multiplexed `ConnectionManager` for regular commands.
     /// Pub/sub connections are opened via `client()` and managed by the caller
     /// (pub/sub requires a dedicated connection separate from the command pool).
+    ///
+    /// When `artifact_ttl_secs` is set (non-zero), every write to `pilcrow:html:*`,
+    /// `pilcrow:json:*`, and `pilcrow:slot:*` keys includes an expiry so Redis memory
+    /// is bounded even for high-cardinality dynamic routes.
     #[derive(Clone)]
     pub struct RedisCache {
         client: Client,
         conn: ConnectionManager,
+        /// TTL applied to artifact keys on write. `0` means no TTL.
+        artifact_ttl_secs: u64,
     }
 
     impl std::fmt::Debug for RedisCache {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             f.debug_struct("RedisCache")
                 .field("client", &self.client.get_connection_info())
+                .field("artifact_ttl_secs", &self.artifact_ttl_secs)
                 .finish_non_exhaustive()
         }
     }
@@ -48,7 +55,13 @@ mod inner {
         pub async fn connect(url: &str) -> redis::RedisResult<Self> {
             let client = Client::open(url)?;
             let conn = ConnectionManager::new(client.clone()).await?;
-            Ok(Self { client, conn })
+            Ok(Self { client, conn, artifact_ttl_secs: 0 })
+        }
+
+        /// Set the TTL applied to artifact keys on every write. `0` disables TTLs.
+        pub fn with_artifact_ttl(mut self, ttl_secs: u64) -> Self {
+            self.artifact_ttl_secs = ttl_secs;
+            self
         }
 
         /// Raw `Client` — use to open dedicated pub/sub connections.
@@ -62,13 +75,17 @@ mod inner {
             c.get(html_key(route)).await
         }
 
-        /// `SET pilcrow:html:<route>`
+        /// `SET pilcrow:html:<route> [EX artifact_ttl_secs]`
         pub async fn set_html(&self, route: &str, html: &str) -> redis::RedisResult<()> {
             let mut c = self.conn.clone();
-            c.set(html_key(route), html).await
+            if self.artifact_ttl_secs > 0 {
+                c.set_ex(html_key(route), html, self.artifact_ttl_secs).await
+            } else {
+                c.set(html_key(route), html).await
+            }
         }
 
-        /// `HSET pilcrow:slot:<route> <slot> <value>`
+        /// `HSET pilcrow:slot:<route> <slot> <value>` + optional `EXPIRE`
         pub async fn patch_slot(
             &self,
             route: &str,
@@ -76,7 +93,15 @@ mod inner {
             value: &str,
         ) -> redis::RedisResult<()> {
             let mut c = self.conn.clone();
-            c.hset(slot_key(route), slot, value).await
+            if self.artifact_ttl_secs > 0 {
+                let key = slot_key(route);
+                let mut pipe = redis::pipe();
+                pipe.hset(&key, slot, value).ignore();
+                pipe.expire(&key, self.artifact_ttl_secs as i64).ignore();
+                pipe.query_async(&mut c).await
+            } else {
+                c.hset(slot_key(route), slot, value).await
+            }
         }
 
         /// `HGETALL pilcrow:slot:<route>`
@@ -85,14 +110,18 @@ mod inner {
             c.hgetall(slot_key(route)).await
         }
 
-        /// `SET pilcrow:json:<route>` (serialised JSON string)
+        /// `SET pilcrow:json:<route> [EX artifact_ttl_secs]` (serialised JSON string)
         pub async fn set_json(
             &self,
             route: &str,
             json: &serde_json::Value,
         ) -> redis::RedisResult<()> {
             let mut c = self.conn.clone();
-            c.set(json_key(route), json.to_string()).await
+            if self.artifact_ttl_secs > 0 {
+                c.set_ex(json_key(route), json.to_string(), self.artifact_ttl_secs).await
+            } else {
+                c.set(json_key(route), json.to_string()).await
+            }
         }
 
         /// `GET pilcrow:json:<route>`

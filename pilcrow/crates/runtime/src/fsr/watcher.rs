@@ -1,5 +1,5 @@
 use super::baking::inject_fsr_slots;
-use super::store::{FsrStore, StaleSlot};
+use super::store::{EvictedRoute, FsrStore, StaleSlot};
 use futures_util::StreamExt as _;
 use std::sync::Arc;
 use std::time::Duration;
@@ -56,6 +56,11 @@ pub struct WatcherConfig {
     /// specified interval, marking all dependent slots stale for re-baking. This replaces
     /// the old `REVALIDATE` TTL pattern for FSR routes.
     pub scheduled_invalidations: Vec<ScheduledInvalidation>,
+    /// How often the idle-eviction task runs, in seconds. `0` disables idle eviction.
+    pub idle_evict_secs: u64,
+    /// Routes with no traffic for longer than this (in seconds) are un-promoted and
+    /// their Redis keys evicted. Only meaningful when `idle_evict_secs > 0`.
+    pub idle_threshold_secs: u64,
 }
 
 impl WatcherConfig {
@@ -66,6 +71,8 @@ impl WatcherConfig {
             patch_debounce_secs: 30,
             purge_after_seconds: 2_592_000,
             scheduled_invalidations: Vec::new(),
+            idle_evict_secs: 1_800,
+            idle_threshold_secs: 86_400,
         }
     }
 }
@@ -418,6 +425,50 @@ async fn patch_json_file(json_path: &str, slot: &str, value: &serde_json::Value)
     }
 }
 
+/// Un-promote idle routes and remove their baked disk artifacts.
+///
+/// Routes with no traffic for longer than `threshold_secs` have `promoted` reset to
+/// `FALSE` and `hit_count` reset to `0`. They re-enter the normal promotion cycle on
+/// the next request, so Redis misses fall through safely to `load()`.
+async fn idle_evict_tick(store: &FsrStore, threshold_secs: u64) {
+    match store.evict_idle_routes(threshold_secs).await {
+        Ok(evicted) => {
+            for r in evicted {
+                tracing::info!(route = %r.route, "FSR: idle eviction");
+                schedule_artifact_cleanup(r.html_path, r.json_path);
+            }
+        }
+        Err(e) => tracing::error!(error = %e, "FSR: idle eviction query failed"),
+    }
+}
+
+/// Un-promote idle routes, delete their Redis keys, and remove baked disk artifacts.
+#[cfg(feature = "live-props-redis")]
+async fn idle_evict_tick_redis(store: &FsrStore, threshold_secs: u64, redis: &RedisCache) {
+    match store.evict_idle_routes(threshold_secs).await {
+        Ok(evicted) => {
+            for r in evicted {
+                tracing::info!(route = %r.route, "FSR: idle eviction");
+                redis.delete_route_keys(&r.route).await.ok();
+                schedule_artifact_cleanup(r.html_path, r.json_path);
+            }
+        }
+        Err(e) => tracing::error!(error = %e, "FSR: idle eviction query failed"),
+    }
+}
+
+/// Fire-and-forget removal of baked disk artifacts; errors are non-fatal.
+fn schedule_artifact_cleanup(html_path: Option<String>, json_path: Option<String>) {
+    tokio::spawn(async move {
+        if let Some(p) = html_path {
+            tokio::fs::remove_file(&p).await.ok();
+        }
+        if let Some(p) = json_path {
+            tokio::fs::remove_file(&p).await.ok();
+        }
+    });
+}
+
 /// Serialise a JSON value to a compact string suitable for Redis HSET storage.
 #[cfg(feature = "live-props-redis")]
 fn value_to_string(v: &serde_json::Value) -> String {
@@ -487,7 +538,9 @@ fn spawn_supervised_invalidation(store: Arc<FsrStore>, scheduled: ScheduledInval
 /// old `REVALIDATE` TTL pattern for FSR routes.
 ///
 /// All spawned tasks are supervised: a panic logs an error and the task restarts after
-/// a 1-second backoff instead of silently dying.
+/// a 1-second backoff instead of silently dying. When `config.idle_evict_secs > 0`,
+/// also spawns an idle-eviction task that un-promotes routes cold for longer than
+/// `config.idle_threshold_secs`.
 pub fn spawn_embedded_watcher(
     store: Arc<FsrStore>,
     config: WatcherConfig,
@@ -495,6 +548,22 @@ pub fn spawn_embedded_watcher(
 ) -> tokio::task::JoinHandle<()> {
     for scheduled in config.scheduled_invalidations.iter().cloned() {
         spawn_supervised_invalidation(Arc::clone(&store), scheduled);
+    }
+
+    // Idle eviction: un-promote cold routes and remove their baked artifacts.
+    if config.idle_evict_secs > 0 {
+        let store_evict = Arc::clone(&store);
+        let threshold = config.idle_threshold_secs;
+        let evict_interval = config.idle_evict_secs;
+        tokio::spawn(async move {
+            let mut ticker = time::interval(Duration::from_secs(evict_interval));
+            ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            ticker.tick().await; // skip the immediate tick at startup
+            loop {
+                ticker.tick().await;
+                idle_evict_tick(&store_evict, threshold).await;
+            }
+        });
     }
 
     tokio::spawn(async move {
@@ -553,7 +622,8 @@ pub fn spawn_embedded_watcher(
 ///
 /// Also spawns one background timer task per `config.scheduled_invalidations` entry
 /// (same as the non-Redis variant). All spawned tasks are supervised — panics restart
-/// after a 1-second backoff instead of silently dying.
+/// after a 1-second backoff instead of silently dying. When `config.idle_evict_secs > 0`,
+/// also spawns an idle-eviction task that deletes Redis keys for cold routes.
 #[cfg(feature = "live-props-redis")]
 pub fn spawn_embedded_watcher_redis(
     store: Arc<FsrStore>,
@@ -563,6 +633,23 @@ pub fn spawn_embedded_watcher_redis(
 ) -> tokio::task::JoinHandle<()> {
     for scheduled in config.scheduled_invalidations.iter().cloned() {
         spawn_supervised_invalidation(Arc::clone(&store), scheduled);
+    }
+
+    // Idle eviction: un-promote cold routes, evict Redis keys, and remove baked artifacts.
+    if config.idle_evict_secs > 0 {
+        let store_evict = Arc::clone(&store);
+        let redis_evict = Arc::clone(&redis);
+        let threshold = config.idle_threshold_secs;
+        let evict_interval = config.idle_evict_secs;
+        tokio::spawn(async move {
+            let mut ticker = time::interval(Duration::from_secs(evict_interval));
+            ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+            ticker.tick().await; // skip the immediate tick at startup
+            loop {
+                ticker.tick().await;
+                idle_evict_tick_redis(&store_evict, threshold, &redis_evict).await;
+            }
+        });
     }
 
     tokio::spawn(async move {

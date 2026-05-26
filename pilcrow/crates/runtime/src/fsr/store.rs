@@ -368,6 +368,31 @@ impl FsrStore {
         Ok(())
     }
 
+    /// Un-promote routes that have had no traffic for longer than `threshold_secs`.
+    ///
+    /// Sets `promoted = FALSE` and resets `hit_count = 0` on the route-level row so the
+    /// route re-enters the normal promotion cycle on the next request. Returns the route
+    /// path and baked-artifact paths so the caller can evict Redis keys and remove disk files.
+    pub async fn evict_idle_routes(
+        &self,
+        threshold_secs: u64,
+    ) -> sqlx::Result<Vec<EvictedRoute>> {
+        sqlx::query_as(
+            r#"
+            UPDATE pilcrow_fsr
+            SET promoted = FALSE, hit_count = 0
+            WHERE slot = ''
+              AND promoted = TRUE
+              AND NOT tombstoned
+              AND last_hit < now() - ($1::bigint * interval '1 second')
+            RETURNING route, html_path, json_path
+            "#,
+        )
+        .bind(threshold_secs as i64)
+        .fetch_all(&*self.pool)
+        .await
+    }
+
     /// Fetch all rows for the FSR dev-inspect endpoint.
     pub async fn fetch_all_for_inspect(&self) -> sqlx::Result<Vec<InspectRow>> {
         sqlx::query_as(
@@ -474,6 +499,14 @@ pub struct InspectRow {
     pub json_path: Option<String>,
     /// Formatted as `"YYYY-MM-DD HH:MM:SS UTC"` by the query, or `None` if never hit.
     pub last_hit: Option<String>,
+}
+
+/// A promoted route evicted by the idle-eviction task.
+#[derive(Debug, sqlx::FromRow)]
+pub struct EvictedRoute {
+    pub route: String,
+    pub html_path: Option<String>,
+    pub json_path: Option<String>,
 }
 
 /// A stale slot fetched for watcher re-execution.
