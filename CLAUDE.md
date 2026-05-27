@@ -103,7 +103,12 @@ For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 
 **Removed modes:** ISR (`REVALIDATE`), SSR Streaming (`STREAMING`), `Deferred<T>` / `DeferredHtml`, Static Export, `PRERENDER: bool` — all produce build errors now.
 
-**FSR scheduled revalidation:** `#[revalidate(N)]` on a Props `LiveProp<T>` field auto-wires a timer that calls `invalidate_dep_key` every N seconds. Auto-derives dep key `"{module_name}::{field_name}"` and injects it as `depends_on` in the field's `from_row()` impl when no explicit `depends_on` is set in `live.rs`. No manual `WatcherConfig` or `hooks.rs` needed. Alternatively, `#[depends_on("key")]` wires the field to an existing static dep key — mutually exclusive with `#[revalidate(N)]`; using both is a build error.
+**FSR revalidation cascade (precedence: field-level > global > 24h default):**
+- `#[revalidate(N)]` on a Props `LiveProp<T>` field always wins — generates synthetic dep key `"{module}::__revalidate_{N}s"`, shared across all fields on the same route with the same interval (one timer per route+interval pair).
+- `#[depends_on("key")]` wires the field to a static dep key — no timer; mutually exclusive with `#[revalidate(N)]`.
+- Fields with an explicit `depends_on` in `live.rs` (DB-driven via `dep!()`) are excluded from all revalidation timers.
+- Fields with none of the above receive a default timer using `[fsr] revalidate_seconds` from `Pilcrow.toml`; if that is unset, 86400 (24 h) is the hardcoded fallback.
+- Synthetic dep keys (`__revalidate_Ns`, `__revalidate_default`) are framework-internal — invisible to developers.
 
 **FSR promotion threshold:** `pub const PROMOTE_AFTER: u32 = N` in `page.rs` is the **only** surface. `0` = bake on first hit. `#[pilcrow::promote_after(N)]` on `live.rs` fields no longer exists — it was removed because it controlled the whole route via an arbitrary `fields.first()` fallback, not any field-level concept.
 

@@ -84,6 +84,10 @@ pub struct FsrConfig {
     /// Routes with no traffic for longer than this (in seconds) are un-promoted and
     /// their Redis keys evicted. Default: `86400` (24 h).
     pub idle_threshold_secs: u64,
+    /// Global fallback revalidation interval (seconds) for `LiveProp` fields that have
+    /// no field-level `#[revalidate(N)]`. When absent, the framework defaults to 86400 (24 h).
+    /// Field-level `#[revalidate(N)]` always takes precedence over this value.
+    pub revalidate_seconds: Option<u64>,
 }
 
 impl Default for FsrConfig {
@@ -101,6 +105,7 @@ impl Default for FsrConfig {
             artifact_ttl_secs: 86_400,
             idle_evict_secs: 1_800,
             idle_threshold_secs: 86_400,
+            revalidate_seconds: None,
         }
     }
 }

@@ -247,7 +247,7 @@ pub struct Live {
     fn live_anchor_emits_data_pilcrow_live_element() {
         use super::app_module::{AppCodegenMaps, render_generated_app_module};
         use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
-        use std::collections::HashMap;
+        use std::collections::{HashMap, HashSet};
 
         let page_entry = GeneratedPageRoute {
             pattern: "/dashboard".to_string(),
@@ -290,6 +290,7 @@ pub struct Live {
             has_live_fn_map: &HashMap::new(),
             fsr_live_source_map: &HashMap::new(),
             fsr_live_fields_map: &HashMap::new(),
+            fsr_default_revalidate_symbols: &HashSet::new(),
             layout_chain_ids_map: &HashMap::new(),
             page_slot_map: &HashMap::new(),
         };
@@ -610,7 +611,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         use super::app_module::{AppCodegenMaps, render_generated_app_module};
         use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
         use crate::templating::page_options::{FsrOpts, LiveFieldAttr, PageOptions};
-        use std::collections::HashMap;
+        use std::collections::{HashMap, HashSet};
 
         let page_entry = GeneratedPageRoute {
             pattern: "/tickets".to_string(),
@@ -645,6 +646,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             has_live_fn_map: &HashMap::new(),
             fsr_live_source_map: &HashMap::new(),
             fsr_live_fields_map: &HashMap::new(),
+            fsr_default_revalidate_symbols: &HashSet::new(),
             layout_chain_ids_map: &HashMap::new(),
             page_slot_map: &HashMap::new(),
         };
@@ -672,12 +674,74 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             "expected ScheduledInvalidation::new in __pilcrow_init:\n{source}"
         );
         assert!(
-            source.contains("\"page_tickets::status\""),
-            "expected dep key page_tickets::status in scheduled invalidation:\n{source}"
+            source.contains("\"page_tickets::__revalidate_60s\""),
+            "expected shared synthetic dep key page_tickets::__revalidate_60s in scheduled invalidation:\n{source}"
         );
         assert!(
             source.contains("from_secs(60u64)"),
             "expected 60s interval in scheduled invalidation:\n{source}"
+        );
+    }
+
+    #[test]
+    fn default_revalidate_routes_emitted_when_fields_lack_explicit_revalidate() {
+        use super::app_module::{AppCodegenMaps, render_generated_app_module};
+        use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
+        use std::collections::{HashMap, HashSet};
+
+        let page_entry = GeneratedPageRoute {
+            pattern: "/dash".to_string(),
+            template_path: "/tmp/src/pages/dash/index.html".to_string(),
+            symbol: "page_dash".to_string(),
+            render_symbol: "render_page_dash".to_string(),
+            route_params: vec![],
+            param_matchers: HashMap::new(),
+        };
+
+        let mut load_map = HashMap::new();
+        load_map.insert("page_dash".to_string(), None::<crate::templating::codegen::LoadSignature>);
+
+        let mut default_routes = HashSet::new();
+        default_routes.insert("page_dash".to_string());
+
+        let maps = AppCodegenMaps {
+            load_map: &load_map,
+            layout_fields_map: &HashMap::new(),
+            error_module_for_page: &HashMap::new(),
+            not_found_module: None,
+            loading_module_for_page: &HashMap::new(),
+            action_map: &HashMap::new(),
+            page_options_map: &HashMap::new(),
+            live_fields_map: &HashMap::new(),
+            has_live_fn_map: &HashMap::new(),
+            fsr_live_source_map: &HashMap::new(),
+            fsr_live_fields_map: &HashMap::new(),
+            fsr_default_revalidate_symbols: &default_routes,
+            layout_chain_ids_map: &HashMap::new(),
+            page_slot_map: &HashMap::new(),
+        };
+
+        let source = render_generated_app_module(
+            &[page_entry],
+            &[],
+            &maps,
+            HookFlags { has_handle: false, has_handle_error: false, has_init: false },
+            false,
+            false,
+        )
+        .expect("render_generated_app_module should succeed");
+
+        assert!(
+            source.contains("__register_codegen_default_revalidate_routes"),
+            "expected __register_codegen_default_revalidate_routes in __pilcrow_init:\n{source}"
+        );
+        assert!(
+            source.contains("\"page_dash\""),
+            "expected page_dash route name in default revalidate registration:\n{source}"
+        );
+        assert!(
+            !source.contains("__register_codegen_scheduled_invalidations"),
+            "no field-level timers expected when only default routes are registered:\n{source}"
         );
     }
 

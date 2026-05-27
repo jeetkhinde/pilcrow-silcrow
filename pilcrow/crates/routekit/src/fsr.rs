@@ -491,22 +491,23 @@ fn generate_from_row_impl(
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
-        // Resolve depends_on priority: explicit live.rs > #[depends_on("key")] > #[revalidate(N)] auto key
-        let auto_dep_key = auto_attrs.get(name).and_then(|a| {
-            if let Some(ref key) = a.depends_on {
-                Some(key.clone())
-            } else if a.revalidate_secs.is_some() {
-                Some(format!("{module_name}::{name}"))
-            } else {
-                None
-            }
-        });
+        // Resolve depends_on priority: explicit live.rs > #[depends_on("key")] > #[revalidate(N)] deduped timer > default timer
         let effective_depends_on = if field.depends_on.is_some() {
+            // Explicit live.rs dep wins; this field is DB-driven, no revalidation timer.
             generate_depends_on(&field.depends_on)
-        } else if let Some(ref key) = auto_dep_key {
-            format!("::std::vec![\"{key}\".to_string()]")
         } else {
-            generate_depends_on(&None)
+            let dep_key = auto_attrs.get(name)
+                .and_then(|a| {
+                    if let Some(ref key) = a.depends_on {
+                        Some(key.clone())  // #[depends_on("key")] — static dep, no timer
+                    } else if let Some(secs) = a.revalidate_secs {
+                        Some(format!("{module_name}::__revalidate_{secs}s"))  // shared per-interval timer
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
+            format!("::std::vec![\"{dep_key}\".to_string()]")
         };
         out.push_str(&format!(
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
@@ -538,21 +539,21 @@ fn generate_from_row_impl(
     out.push_str("        ::std::vec![\n");
     for field in fields {
         let name = &field.name;
-        let auto_dep_key = auto_attrs.get(name).and_then(|a| {
-            if let Some(ref key) = a.depends_on {
-                Some(key.clone())
-            } else if a.revalidate_secs.is_some() {
-                Some(format!("{module_name}::{name}"))
-            } else {
-                None
-            }
-        });
         let effective_depends_on_vec = if field.depends_on.is_some() {
             generate_depends_on_vec(&field.depends_on)
-        } else if let Some(ref key) = auto_dep_key {
-            format!("::std::vec![\"{key}\".to_string()]")
         } else {
-            generate_depends_on_vec(&None)
+            let dep_key = auto_attrs.get(name)
+                .and_then(|a| {
+                    if let Some(ref key) = a.depends_on {
+                        Some(key.clone())
+                    } else if let Some(secs) = a.revalidate_secs {
+                        Some(format!("{module_name}::__revalidate_{secs}s"))
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
+            format!("::std::vec![\"{dep_key}\".to_string()]")
         };
 
         out.push_str("            ::pilcrow_runtime::fsr::LiveFieldRegistration {\n");
@@ -953,12 +954,14 @@ mod tests {
         let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
         let _ = fs::remove_file(path);
 
-        // status → auto dep key injected in both from_row and live_fields (2 locations).
-        assert_eq!(source.matches("\"page_tickets::status\"").count(), 2,
-            "expected dep key for status in both from_row and live_fields");
-        // priority → no auto_attr, so no dep key.
-        assert!(!source.contains("\"page_tickets::priority\""),
-            "priority has no revalidate so no dep key should be injected");
+        // status → shared synthetic dep key injected in both from_row and live_fields.
+        assert_eq!(source.matches("\"page_tickets::__revalidate_60s\"").count(), 2,
+            "expected shared synthetic dep key for status in both from_row and live_fields");
+        // priority → no auto_attr, so falls back to default dep key.
+        assert!(source.contains("\"page_tickets::__revalidate_default\""),
+            "priority has no revalidate so should use default dep key");
+        assert!(!source.contains("\"page_tickets::status\""),
+            "old per-field dep key must not appear");
     }
 
     #[test]
@@ -988,6 +991,85 @@ mod tests {
             "expected static dep key in both from_row and live_fields");
         assert!(!source.contains("\"page_tickets::status\""),
             "auto dep key must not appear when static depends_on is set");
+    }
+
+    #[test]
+    fn fields_without_revalidate_use_default_dep_key() {
+        // A field with no #[revalidate] and no explicit depends_on should use
+        // the __revalidate_default synthetic dep key so it gets the global/24h timer.
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub summary: LiveProp<String>,
+            }
+            ",
+        );
+
+        let auto_attrs = HashMap::new(); // no attrs at all
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_dash").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        assert_eq!(source.matches("\"page_dash::__revalidate_default\"").count(), 2,
+            "expected default dep key in both from_row and live_fields");
+    }
+
+    #[test]
+    fn same_interval_on_same_route_produces_shared_dep_key() {
+        // Two fields with the same #[revalidate(N)] on the same route must resolve
+        // to the SAME synthetic dep key (shared timer, not per-field).
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub price: LiveProp<f64>,
+                pub market_cap: LiveProp<f64>,
+            }
+            ",
+        );
+
+        let mut auto_attrs = HashMap::new();
+        auto_attrs.insert("price".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
+        auto_attrs.insert("market_cap".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        // Both fields get the same synthetic dep key, appearing 4 times total
+        // (once in from_row + once in live_fields, per field = 4).
+        assert_eq!(source.matches("\"page_market::__revalidate_10s\"").count(), 4,
+            "both fields should share one synthetic dep key");
+        assert!(!source.contains("__revalidate_default"),
+            "no default key when all fields have explicit revalidate");
+    }
+
+    #[test]
+    fn different_intervals_produce_distinct_dep_keys() {
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub price: LiveProp<f64>,
+                pub volume: LiveProp<u64>,
+            }
+            ",
+        );
+
+        let mut auto_attrs = HashMap::new();
+        auto_attrs.insert("price".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
+        auto_attrs.insert("volume".to_string(), LiveFieldAttr { revalidate_secs: Some(30), depends_on: None });
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        assert_eq!(source.matches("\"page_market::__revalidate_10s\"").count(), 2,
+            "price gets 10s dep key");
+        assert_eq!(source.matches("\"page_market::__revalidate_30s\"").count(), 2,
+            "volume gets 30s dep key");
     }
 
     fn explicit_depends_on_beats_auto_dep_key() {

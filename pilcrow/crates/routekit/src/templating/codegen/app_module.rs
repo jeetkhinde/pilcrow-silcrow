@@ -23,6 +23,8 @@ pub struct AppCodegenMaps<'a> {
     pub has_live_fn_map: &'a HashMap<String, bool>,
     pub fsr_live_source_map: &'a HashMap<String, String>,
     pub fsr_live_fields_map: &'a HashMap<String, Vec<String>>,
+    /// Set of FSR module names that have fields needing the global/default revalidation timer.
+    pub fsr_default_revalidate_symbols: &'a HashSet<String>,
     /// Maps page module symbol → layout IDs for X-PS-Present comparison.
     pub layout_chain_ids_map: &'a HashMap<String, Vec<String>>,
     /// Maps page module symbol → data-ps-slot route pattern.
@@ -305,6 +307,7 @@ pub fn render_generated_app_module(
         has_live_fn_map,
         fsr_live_source_map,
         fsr_live_fields_map: _fsr_live_fields_map,
+        fsr_default_revalidate_symbols,
         layout_chain_ids_map,
         page_slot_map,
     } = maps;
@@ -920,20 +923,23 @@ pub fn render_generated_app_module(
         out.push_str("    crate::hooks::init().await;\n");
     }
     // Collect scheduled invalidations from per-field #[revalidate(N)] attrs.
-    let mut scheduled: Vec<(String, u64)> = Vec::new();
+    // Same route + same interval → one shared timer (dedup by (module, interval)).
+    // Synthetic dep key: `{module}::__revalidate_{N}s`
+    use std::collections::BTreeMap;
+    let mut deduped: BTreeMap<(String, u64), ()> = BTreeMap::new();
     for entry in page_entries {
         if let Some(opts) = page_options_map.get(&entry.symbol) {
-            let mut pairs: Vec<_> = opts.fsr.live_field_attrs.iter()
-                .filter_map(|(field_name, attr)| {
-                    attr.revalidate_secs.map(|secs| {
-                        (format!("{}::{}", entry.symbol, field_name), secs)
-                    })
-                })
-                .collect();
-            pairs.sort_by_key(|(k, _)| k.clone());
-            scheduled.extend(pairs);
+            for attr in opts.fsr.live_field_attrs.values() {
+                if let Some(secs) = attr.revalidate_secs {
+                    deduped.insert((entry.symbol.clone(), secs), ());
+                }
+            }
         }
     }
+    let scheduled: Vec<(String, u64)> = deduped
+        .into_keys()
+        .map(|(module, secs)| (format!("{module}::__revalidate_{secs}s"), secs))
+        .collect();
     if !scheduled.is_empty() {
         out.push_str("    ::pilcrow_web::__register_codegen_scheduled_invalidations(::std::vec![\n");
         for (dep_key, secs) in &scheduled {
@@ -942,6 +948,20 @@ pub fn render_generated_app_module(
                 out,
                 "        ::pilcrow_web::ScheduledInvalidation::new({key_lit}, ::std::time::Duration::from_secs({secs}u64)),"
             );
+        }
+        out.push_str("    ]);\n");
+    }
+    // Register routes that need the global/default revalidation timer.
+    let mut default_routes: Vec<&str> = fsr_default_revalidate_symbols
+        .iter()
+        .map(String::as_str)
+        .collect();
+    default_routes.sort();
+    if !default_routes.is_empty() {
+        out.push_str("    ::pilcrow_web::__register_codegen_default_revalidate_routes(::std::vec![\n");
+        for route in &default_routes {
+            let route_lit = rust_string(route);
+            let _ = writeln!(out, "        {route_lit}.to_string(),");
         }
         out.push_str("    ]);\n");
     }

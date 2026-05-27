@@ -203,12 +203,26 @@ where
                     app = app.layer(axum::Extension(Arc::clone(&fsr_store)));
 
                     if fsr_config.watcher == "embedded" {
+                        // Merge field-level timers (explicit #[revalidate(N)]) with default timers
+                        // (routes whose fields have no explicit revalidation — use global or 24h).
+                        let default_secs = fsr_config.revalidate_seconds.unwrap_or(86_400);
+                        let extra = crate::fsr::codegen_default_revalidate_routes()
+                            .into_iter()
+                            .map(|route| ScheduledInvalidation::new(
+                                format!("{route}::__revalidate_default"),
+                                std::time::Duration::from_secs(default_secs),
+                            ));
+                        let all_invalidations: Vec<ScheduledInvalidation> =
+                            crate::fsr::codegen_scheduled_invalidations()
+                                .into_iter()
+                                .chain(extra)
+                                .collect();
                         let watcher_cfg = WatcherConfig {
                             poll_interval_ms: fsr_config.poll_interval_ms,
                             promote_after_hits: fsr_config.promote_after_hits,
                             patch_debounce_secs: fsr_config.patch_debounce_secs,
                             purge_after_seconds: fsr_config.purge_after_seconds,
-                            scheduled_invalidations: crate::fsr::codegen_scheduled_invalidations(),
+                            scheduled_invalidations: all_invalidations,
                             idle_evict_secs: fsr_config.idle_evict_secs,
                             idle_threshold_secs: fsr_config.idle_threshold_secs,
                         };

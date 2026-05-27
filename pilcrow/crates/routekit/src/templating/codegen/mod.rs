@@ -17,7 +17,7 @@ pub use self::util::*;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::io;
@@ -91,4 +91,6 @@ pub struct WrittenTemplatesOutput {
     pub fsr_live_source_map: HashMap<String, String>,
     /// Map from page module_name to LiveProp field names from live.rs.
     pub fsr_live_fields_map: HashMap<String, Vec<String>>,
+    /// Set of FSR module names that have fields needing the global/default revalidation timer.
+    pub fsr_default_revalidate_symbols: HashSet<String>,
 }
