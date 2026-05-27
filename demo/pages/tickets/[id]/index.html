@@ -244,8 +244,16 @@
     var status = document.getElementById('sel-status').value;
     var priority = document.getElementById('sel-priority').value;
     var msg = document.getElementById('save-msg');
-    msg.textContent = 'Saved!';
-    msg.style.color = '#16a34a';
+    function showStatus(text, color) {
+      msg.textContent = text;
+      msg.style.color = color;
+      msg.style.display = 'inline';
+    }
+    if (msg._saveTimer) {
+      clearTimeout(msg._saveTimer);
+      msg._saveTimer = null;
+    }
+    msg.textContent = '';
     msg.style.display = 'none';
     try {
       var res = await fetch('/api/tickets/{{ id }}', {
@@ -253,19 +261,17 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({status: status, priority: priority})
       });
-      if (res.ok) {
-        msg.style.display = 'inline';
-        setTimeout(function () {msg.style.display = 'none';}, 2000);
-      } else {
-        msg.textContent = 'Save failed';
-        msg.style.color = '#dc2626';
-        msg.style.display = 'inline';
+      if (!res.ok) {
+        throw new Error('Save failed');
       }
+      showStatus('Saved!', '#16a34a');
+      msg._saveTimer = setTimeout(function () {
+        msg.style.display = 'none';
+        msg._saveTimer = null;
+      }, 2000);
     } catch (e) {
       console.error('save failed', e);
-      msg.textContent = 'Save failed';
-      msg.style.color = '#dc2626';
-      msg.style.display = 'inline';
+      showStatus('Save failed', '#dc2626');
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
