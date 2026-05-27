@@ -219,7 +219,7 @@
         </select>
       </div>
       <button class="btn-save" id="btn-save">Save</button>
-      <span id="save-msg">Saved!</span>
+      <span id="save-msg" role="status" aria-live="polite">Saved!</span>
     </div>
   </div>
 </div>
@@ -244,18 +244,34 @@
     var status = document.getElementById('sel-status').value;
     var priority = document.getElementById('sel-priority').value;
     var msg = document.getElementById('save-msg');
+    function showStatus(text, color) {
+      msg.textContent = text;
+      msg.style.color = color;
+      msg.style.display = 'inline';
+    }
+    if (msg._saveTimer) {
+      clearTimeout(msg._saveTimer);
+      msg._saveTimer = null;
+    }
+    msg.textContent = '';
+    msg.style.display = 'none';
     try {
       var res = await fetch('/api/tickets/{{ id }}', {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({status: status, priority: priority})
       });
-      if (res.ok) {
-        msg.style.display = 'inline';
-        setTimeout(function () {msg.style.display = 'none';}, 2000);
+      if (!res.ok) {
+        throw new Error('Save failed');
       }
+      showStatus('Saved!', '#16a34a');
+      msg._saveTimer = setTimeout(function () {
+        msg.style.display = 'none';
+        msg._saveTimer = null;
+      }, 2000);
     } catch (e) {
       console.error('save failed', e);
+      showStatus('Save failed', '#dc2626');
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
