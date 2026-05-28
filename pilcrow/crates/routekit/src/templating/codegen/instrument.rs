@@ -291,14 +291,47 @@ pub fn instrument_frontmatter(
             let mut live_attr = LiveFieldAttr::default();
             field.attrs.retain(|a| {
                 if is_revalidate_field_attr(a) {
-                    if let Ok(n) = a.parse_args::<syn::LitInt>() {
-                        live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
+                    match a.parse_args::<syn::LitInt>().and_then(|n| n.base10_parse::<u64>()) {
+                        Ok(0) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: `#[revalidate(0)]` on field `{field_name}` \
+                                     is not allowed — use a positive interval (seconds)."
+                                ),
+                            ));
+                        }
+                        Ok(secs) => {
+                            live_attr.revalidate_secs = Some(secs);
+                        }
+                        Err(err) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: failed to parse `#[revalidate(...)]` on \
+                                     field `{field_name}`: {err}. Expected a positive integer \
+                                     (e.g. `#[revalidate(60)]`)."
+                                ),
+                            ));
+                        }
                     }
                     return false; // strip
                 }
                 if is_depends_on_props_attr(a) {
-                    if let Ok(s) = a.parse_args::<syn::LitStr>() {
-                        live_attr.depends_on = Some(s.value());
+                    match a.parse_args::<syn::LitStr>() {
+                        Ok(s) => {
+                            live_attr.depends_on = Some(s.value());
+                        }
+                        Err(err) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: failed to parse `#[depends_on(...)]` on \
+                                     field `{field_name}`: {err}. Expected a string literal \
+                                     (e.g. `#[depends_on(\"my:key\")]`)."
+                                ),
+                            ));
+                        }
                     }
                     return false; // strip
                 }
@@ -531,15 +564,13 @@ pub fn normalize_derive_path(input: &str) -> String {
 
 /// Returns true if the attribute is `#[revalidate(...)]` on a `LiveProp<T>` field.
 fn is_revalidate_field_attr(attr: &syn::Attribute) -> bool {
-    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
-    segs == ["revalidate"]
+    attr.path().is_ident("revalidate")
 }
 
 /// Returns true if the attribute is `#[depends_on(...)]` on a `LiveProp<T>` Props field.
 /// (Distinct from `#[pilcrow::depends_on]` used in `live.rs` for runtime dep expressions.)
 fn is_depends_on_props_attr(attr: &syn::Attribute) -> bool {
-    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
-    segs == ["depends_on"]
+    attr.path().is_ident("depends_on")
 }
 
 /// Parse a `u64` literal from a `pub const X: u64 = N;` expression.

@@ -779,6 +779,93 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
+    fn revalidate_zero_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[revalidate(0)]
+    pub price: LiveProp<f64>,
+}
+pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(Props { price: Default::default() }) }
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_market".to_string(),
+            render_symbol: "render_page_market".to_string(),
+            source_path: "/tmp/src/pages/market/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("#[revalidate(0)] should fail with a build error");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(msg.contains("revalidate(0)"), "got: {msg}");
+        assert!(msg.contains("price"), "got: {msg}");
+    }
+
+    #[test]
+    fn revalidate_invalid_arg_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[revalidate("sixty")]
+    pub price: LiveProp<f64>,
+}
+pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(Props { price: Default::default() }) }
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_market".to_string(),
+            render_symbol: "render_page_market".to_string(),
+            source_path: "/tmp/src/pages/market/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("#[revalidate(\"sixty\")] should fail with a build error");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(msg.contains("revalidate"), "got: {msg}");
+        assert!(msg.contains("price"), "got: {msg}");
+    }
+
+    #[test]
+    fn depends_on_invalid_arg_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[depends_on(42)]
+    pub price: LiveProp<f64>,
+}
+pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(Props { price: Default::default() }) }
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_market".to_string(),
+            render_symbol: "render_page_market".to_string(),
+            source_path: "/tmp/src/pages/market/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("#[depends_on(42)] should fail with a build error");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(msg.contains("depends_on"), "got: {msg}");
+        assert!(msg.contains("price"), "got: {msg}");
+    }
+
+    #[test]
     fn streaming_constant_is_silently_stripped() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
         let generated = render_generated_templates_module(&[TemplateCodegenInput {

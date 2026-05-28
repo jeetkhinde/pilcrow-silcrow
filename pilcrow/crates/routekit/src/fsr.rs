@@ -507,7 +507,8 @@ fn generate_from_row_impl(
                     }
                 })
                 .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
-            format!("::std::vec![\"{dep_key}\".to_string()]")
+            // Use {:?} to safely escape the dep key as a Rust string literal.
+            format!("::std::vec![{dep_key:?}.to_string()]")
         };
         out.push_str(&format!(
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
@@ -553,7 +554,7 @@ fn generate_from_row_impl(
                     }
                 })
                 .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
-            format!("::std::vec![\"{dep_key}\".to_string()]")
+            format!("::std::vec![{dep_key:?}.to_string()]")
         };
 
         out.push_str("            ::pilcrow_runtime::fsr::LiveFieldRegistration {\n");
