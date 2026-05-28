@@ -1294,11 +1294,11 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      Object.keys(data).forEach(function (k) {
-        const v = data[k];
-        document.querySelectorAll('[data-pilcrow-live-field="' + k + '"]').forEach(function (n) {
-          n.textContent = v == null ? "" : String(v);
-        });
+      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
+        const k = n.getAttribute("data-pilcrow-live-field");
+        if (k in data) {
+          n.textContent = data[k] == null ? "" : String(data[k]);
+        }
       });
     } catch (err) {
       warn("Failed to parse SSE live event: " + err.message);
@@ -2636,11 +2636,11 @@ function init() {
     if (typeof window.__pilcrow_live_patch === "function") {
       window.__pilcrow_live_patch(data);
     } else {
-      Object.keys(data).forEach(function (k) {
-        const v = data[k];
-        document.querySelectorAll('[data-pilcrow-live-field="' + k + '"]').forEach(function (n) {
-          n.textContent = v == null ? "" : String(v);
-        });
+      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
+        const k = n.getAttribute("data-pilcrow-live-field");
+        if (k in data) {
+          n.textContent = data[k] == null ? "" : String(data[k]);
+        }
       });
     }
   });
