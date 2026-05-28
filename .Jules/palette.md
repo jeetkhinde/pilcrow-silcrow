@@ -12,3 +12,7 @@
 ## 2024-05-23 - Accessible Async Form Submission Feedback
 **Learning:** When making async calls (like fetch PUT requests), visual status indicators (e.g. "Saved!") are often missed by screen readers if they are not explicitly marked. Furthermore, providing only "happy path" feedback leaves users in the dark when an error occurs, making the application feel unreliable and confusing for both sighted and non-sighted users.
 **Action:** Always include `role="status"` and `aria-live="polite"` on status message containers. Ensure that `try/catch` blocks for fetch requests provide explicit error messages in the UI (e.g., changing color to red and updating the text) rather than silently failing or only logging to the console.
+
+## 2026-05-26 - Accessible Labels for Inline Forms
+**Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
+**Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
