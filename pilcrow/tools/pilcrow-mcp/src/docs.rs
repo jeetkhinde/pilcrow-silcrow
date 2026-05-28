@@ -81,7 +81,8 @@ pub fn resources() -> Vec<KnowledgeResource> {
         KnowledgeResource {
             uri: ROUTEKIT_FEATURES_URI,
             title: "Routekit features",
-            description: "Routekit routing, templating, codegen, page options, and feature registry.",
+            description:
+                "Routekit routing, templating, codegen, page options, and feature registry.",
             category: KnowledgeCategory::Routekit,
         },
     ]
@@ -128,7 +129,8 @@ impl KnowledgeBase {
                 title: "Pilcrow feature registry".to_string(),
                 path: "registry.toml".to_string(),
                 category: KnowledgeCategory::Routekit,
-                text: serde_json::to_string_pretty(&registry.features).unwrap_or_else(|_| "[]".to_string()),
+                text: serde_json::to_string_pretty(&registry.features)
+                    .unwrap_or_else(|_| "[]".to_string()),
             });
         }
         Some(ResourcePayload {
@@ -246,8 +248,15 @@ fn build_answer(
     evidence: &[Evidence],
     silcrow_delegation: bool,
 ) -> String {
+    let lower_question = question.to_ascii_lowercase();
     if silcrow_delegation {
         return "This is partly outside Pilcrow MCP ownership: exact silcrow.js runtime behavior belongs to silcrow-mcp. On the Pilcrow side, use server-rendered pages, code-behind actions, response helpers, and routekit-generated wiring; validate the server shape here, then ask silcrow-mcp for client directive/runtime details.".to_string();
+    }
+    if lower_question.contains("generated file")
+        || lower_question.contains("out_dir")
+        || (lower_question.contains("inspect") && lower_question.contains("route"))
+    {
+        return "Inspect the routekit OUT_DIR artifacts for generated route wiring. Start with generated_app.rs for handler/router code, then generated_routes.rs for typed route metadata and URL patterns. Use inspect_generated_route when you know the route path.".to_string();
     }
     if let Some(feature) = features.first() {
         return format!(
@@ -267,17 +276,36 @@ fn build_answer(
 
 fn matching_features<'a>(registry: &'a Registry, query: &str) -> Vec<&'a Feature> {
     let query_terms = terms(query);
-    registry
+    let mut matches = registry
         .features
         .iter()
-        .filter(|feature| {
+        .filter_map(|feature| {
             let haystack = format!(
                 "{} {} {} {}",
                 feature.id, feature.name, feature.summary, feature.spec
             )
             .to_ascii_lowercase();
-            query_terms.iter().any(|term| haystack.contains(term))
+            let score = query_terms
+                .iter()
+                .map(|term| {
+                    if haystack.contains(term) {
+                        if feature.id.eq_ignore_ascii_case(term) {
+                            4
+                        } else {
+                            1
+                        }
+                    } else {
+                        0
+                    }
+                })
+                .sum::<usize>();
+            (score > 0).then_some((score, feature))
         })
+        .collect::<Vec<_>>();
+    matches.sort_by(|left, right| right.0.cmp(&left.0));
+    matches
+        .into_iter()
+        .map(|(_, feature)| feature)
         .take(5)
         .collect()
 }
@@ -395,6 +423,20 @@ mod tests {
         let registry = Registry::load_from_project(&root).unwrap();
         let answer = kb.answer_question(&registry, "How does s-boost patch the DOM?");
         assert!(answer.silcrow_delegation.is_some());
+    }
+
+    #[test]
+    fn debounce_question_matches_fsr() {
+        let root = root();
+        let kb = KnowledgeBase::load(&root).unwrap();
+        let registry = Registry::load_from_project(&root).unwrap();
+        let answer = kb.answer_question(&registry, "What does #[debounce(30)] mean in FSR?");
+        assert!(
+            answer.answer.contains("#[debounce")
+                && answer.answer.contains("debounce_secs")
+                && answer.status_note.contains("fsr is stable"),
+            "unexpected answer: {answer:#?}"
+        );
     }
 
     #[test]

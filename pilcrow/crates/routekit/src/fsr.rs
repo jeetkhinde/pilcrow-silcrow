@@ -126,7 +126,7 @@ pub fn process_live_rs(
         }
 
         let struct_defaults = parse_live_defaults(&s.attrs, &route_params)?;
-        s.attrs.retain(|attr| !is_pilcrow_attr(attr));
+        s.attrs.retain(|attr| !is_live_codegen_attr(attr));
 
         // Ensure Live derives serde::Serialize so it can be a field in Props (which
         // gets #[derive(Serialize)] injected by codegen).
@@ -147,8 +147,8 @@ pub fn process_live_rs(
         for field in &mut named.named {
             let field_defaults = parse_field_defaults(&field.attrs, &route_params)?;
 
-            // Strip all #[pilcrow::*] attributes.
-            field.attrs.retain(|attr| !is_pilcrow_attr(attr));
+            // Strip codegen-only live metadata before Rust compiles the generated module.
+            field.attrs.retain(|attr| !is_live_codegen_attr(attr));
 
             // Collect LiveProp<T> fields.
             let Some(ident) = &field.ident else { continue };
@@ -338,19 +338,33 @@ fn is_pilcrow_attr(attr: &syn::Attribute) -> bool {
         .is_some_and(|seg| seg.ident == "pilcrow")
 }
 
+fn is_live_codegen_attr(attr: &syn::Attribute) -> bool {
+    is_pilcrow_attr(attr)
+        || attr
+            .path()
+            .segments
+            .last()
+            .is_some_and(|seg| seg.ident == "debounce")
+}
+
 fn parse_live_defaults(
     attrs: &[syn::Attribute],
     route_params: &HashSet<&str>,
 ) -> io::Result<LiveDefaults> {
     let mut defaults = LiveDefaults::default();
     for attr in attrs {
-        if !is_pilcrow_attr(attr) {
+        if !is_live_codegen_attr(attr) {
             continue;
         }
         let Some(last) = attr.path().segments.last() else {
             continue;
         };
-        if last.ident == "live" {
+        if last.ident == "debounce" {
+            defaults.patch_debounce = attr
+                .parse_args::<LitInt>()
+                .ok()
+                .and_then(|lit| lit.base10_parse::<u32>().ok());
+        } else if last.ident == "live" {
             if let Ok(items) = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
             {
                 for item in items {
@@ -379,13 +393,13 @@ fn parse_field_defaults(
 ) -> io::Result<LiveDefaults> {
     let mut defaults = LiveDefaults::default();
     for attr in attrs {
-        if !is_pilcrow_attr(attr) {
+        if !is_live_codegen_attr(attr) {
             continue;
         }
         let Some(last) = attr.path().segments.last() else {
             continue;
         };
-        if last.ident == "patch_debounce" {
+        if last.ident == "debounce" || last.ident == "patch_debounce" {
             defaults.patch_debounce = attr
                 .parse_args::<LitInt>()
                 .ok()
@@ -758,10 +772,8 @@ mod tests {
             "
             use pilcrow_web::live::*;
 
-            #[pilcrow::live(
-                patch_debounce = 30,
-                depends_on = dep!(tickets, id, params.id)
-            )]
+            #[debounce(30)]
+            #[pilcrow::live(depends_on = dep!(tickets, id, params.id))]
             pub struct Live {
                 pub ticket_status: LiveProp<String>,
                 pub ticket_priority: LiveProp<String>,
@@ -780,6 +792,7 @@ mod tests {
         assert_eq!(source.matches("\"tickets:id={}\"").count(), 4);
         assert!(source.contains("_params.get(\"id\")"));
         assert!(!source.contains("# [pilcrow :: live"));
+        assert!(!source.contains("# [debounce"));
     }
 
     #[test]
@@ -788,12 +801,10 @@ mod tests {
             "
             use pilcrow_web::live::*;
 
-            #[pilcrow::live(
-                patch_debounce = 30,
-                depends_on = dep!(tickets, id, params.id)
-            )]
+            #[debounce(30)]
+            #[pilcrow::live(depends_on = dep!(tickets, id, params.id))]
             pub struct Live {
-                #[pilcrow::patch_debounce(3)]
+                #[debounce(3)]
                 #[pilcrow::depends_on(dep!(ticket_priorities, ticket_id, params.id))]
                 pub ticket_priority: LiveProp<String>,
                 pub ticket_status: LiveProp<String>,
@@ -814,6 +825,7 @@ mod tests {
         assert!(source.contains("patch_debounce: ::std::option::Option::Some(30)"));
         assert!(source.contains("\"tickets:id={}\""));
         assert!(!source.contains("# [pilcrow :: depends_on"));
+        assert!(!source.contains("# [debounce"));
     }
 
     #[test]
