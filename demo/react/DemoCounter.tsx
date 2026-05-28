@@ -5,6 +5,8 @@ export default function DemoCounter() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
       <button
+        type="button"
+        aria-label="Decrease count"
         onClick={() => setCount((c) => c - 1)}
         style={{ padding: "0.25rem 0.75rem", fontSize: "1.1rem", cursor: "pointer" }}
       >
@@ -14,6 +16,8 @@ export default function DemoCounter() {
         {count}
       </span>
       <button
+        type="button"
+        aria-label="Increase count"
         onClick={() => setCount((c) => c + 1)}
         style={{ padding: "0.25rem 0.75rem", fontSize: "1.1rem", cursor: "pointer" }}
       >
