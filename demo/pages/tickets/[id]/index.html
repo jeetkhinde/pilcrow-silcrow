@@ -257,11 +257,13 @@
         body: JSON.stringify({status: status, priority: priority})
       });
       if (res.ok) {
+        if (msg._timer) clearTimeout(msg._timer);
+        if (msg._clearTimer) clearTimeout(msg._clearTimer);
         msg.textContent = 'Saved!';
         msg.classList.add('show');
-        setTimeout(function () {
+        msg._timer = setTimeout(function () {
           msg.classList.remove('show');
-          setTimeout(function() { msg.textContent = ''; }, 200);
+          msg._clearTimer = setTimeout(function() { msg.textContent = ''; }, 200);
         }, 2000);
       }
     } catch (e) {
