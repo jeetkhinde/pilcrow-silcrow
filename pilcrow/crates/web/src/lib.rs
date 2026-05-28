@@ -61,6 +61,9 @@ pub use pilcrow_macros::PilcrowListRow;
 #[doc(hidden)]
 #[cfg(feature = "live-props")]
 pub use runtime::fsr::__register_codegen_scheduled_invalidations;
+#[doc(hidden)]
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::__register_codegen_default_revalidate_routes;
 #[cfg(feature = "live-props")]
 pub use runtime::fsr::ScheduledInvalidation;
 
