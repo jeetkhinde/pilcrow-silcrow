@@ -324,6 +324,15 @@ pub fn instrument_frontmatter(
                         .parse_args::<syn::LitInt>()
                         .and_then(|n| n.base10_parse::<u64>())
                     {
+                        Ok(0) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: `#[revalidate(0)]` on field `{field_name}` \
+                                     is not allowed — use a positive interval (seconds)."
+                                ),
+                            ));
+                        }
                         Ok(secs) => {
                             live_attr.revalidate_secs = Some(secs);
                         }
