@@ -259,10 +259,7 @@ pub struct Live {
         };
 
         let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
-        live_fields_map.insert(
-            "page_dashboard".to_string(),
-            vec!["counter".to_string()],
-        );
+        live_fields_map.insert("page_dashboard".to_string(), vec!["counter".to_string()]);
 
         let mut load_map: HashMap<String, Option<crate::templating::codegen::LoadSignature>> =
             HashMap::new();
@@ -556,7 +553,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
 
         let opts = generated.page_options.get("page_index");
         let promote_after = opts.map(|o| o.fsr.promote_after).unwrap_or(None);
-        assert!(promote_after.is_none(), "expected no promote_after threshold for a plain page");
+        assert!(
+            promote_after.is_none(),
+            "expected no promote_after threshold for a plain page"
+        );
     }
 
     #[test]
@@ -590,7 +590,8 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         // Attr must be stripped from emitted source.
         assert!(
             !generated.source.contains("revalidate"),
-            "revalidate attr leaked into emitted source:\n{}", generated.source
+            "revalidate attr leaked into emitted source:\n{}",
+            generated.source
         );
 
         // Must be recorded in page_options.
@@ -598,7 +599,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             .page_options
             .get("page_tickets")
             .expect("page_tickets should have page options");
-        let status_attr = opts.fsr.live_field_attrs.get("status")
+        let status_attr = opts
+            .fsr
+            .live_field_attrs
+            .get("status")
             .expect("status should have LiveFieldAttr");
         assert_eq!(status_attr.revalidate_secs, Some(60));
 
@@ -607,10 +611,80 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     }
 
     #[test]
+    fn malformed_revalidate_attr_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[revalidate("60")]
+    pub status: LiveProp<String>,
+}
+
+pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
+    Ok(Props { status: Default::default() })
+}
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_tickets".to_string(),
+            render_symbol: "render_page_tickets".to_string(),
+            source_path: "/tmp/src/pages/tickets/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("malformed #[revalidate] should fail");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(
+            msg.contains("failed to parse `#[revalidate(...)]`"),
+            "got: {msg}"
+        );
+        assert!(msg.contains("status"), "got: {msg}");
+    }
+
+    #[test]
+    fn malformed_depends_on_attr_is_a_build_error() {
+        let frontmatter = r#"
+pub struct Props {
+    #[depends_on(123)]
+    pub status: LiveProp<String>,
+}
+
+pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
+    Ok(Props { status: Default::default() })
+}
+"#;
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_tickets".to_string(),
+            render_symbol: "render_page_tickets".to_string(),
+            source_path: "/tmp/src/pages/tickets/index.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("malformed #[depends_on] should fail");
+
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        let msg = err.to_string();
+        assert!(
+            msg.contains("failed to parse `#[depends_on(...)]`"),
+            "got: {msg}"
+        );
+        assert!(msg.contains("status"), "got: {msg}");
+    }
+
+    #[test]
     fn scheduled_invalidations_emitted_in_pilcrow_init() {
         use super::app_module::{AppCodegenMaps, render_generated_app_module};
         use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
-        use crate::templating::page_options::{FsrOpts, LiveFieldAttr, PageOptions};
+        use crate::templating::page_options::{LiveFieldAttr, PageOptions};
         use std::collections::{HashMap, HashSet};
 
         let page_entry = GeneratedPageRoute {
@@ -623,7 +697,13 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         };
 
         let mut live_field_attrs = HashMap::new();
-        live_field_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60), depends_on: None });
+        live_field_attrs.insert(
+            "status".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(60),
+                depends_on: None,
+            },
+        );
 
         let mut page_opts = PageOptions::default();
         page_opts.fsr.live_field_attrs = live_field_attrs;
@@ -632,7 +712,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         page_options_map.insert("page_tickets".to_string(), page_opts);
 
         let mut load_map = HashMap::new();
-        load_map.insert("page_tickets".to_string(), None::<crate::templating::codegen::LoadSignature>);
+        load_map.insert(
+            "page_tickets".to_string(),
+            None::<crate::templating::codegen::LoadSignature>,
+        );
 
         let maps = AppCodegenMaps {
             load_map: &load_map,
@@ -699,7 +782,10 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         };
 
         let mut load_map = HashMap::new();
-        load_map.insert("page_dash".to_string(), None::<crate::templating::codegen::LoadSignature>);
+        load_map.insert(
+            "page_dash".to_string(),
+            None::<crate::templating::codegen::LoadSignature>,
+        );
 
         let mut default_routes = HashSet::new();
         default_routes.insert("page_dash".to_string());
@@ -725,7 +811,11 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
             &[page_entry],
             &[],
             &maps,
-            HookFlags { has_handle: false, has_handle_error: false, has_init: false },
+            HookFlags {
+                has_handle: false,
+                has_handle_error: false,
+                has_init: false,
+            },
             false,
             false,
         )
@@ -734,6 +824,11 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
         assert!(
             source.contains("__register_codegen_default_revalidate_routes"),
             "expected __register_codegen_default_revalidate_routes in __pilcrow_init:\n{source}"
+        );
+        assert!(
+            source.contains("pub fn build_router()")
+                && source.contains("__pilcrow_register_codegen_revalidation();"),
+            "expected build_router to register default revalidation before direct start():\n{source}"
         );
         assert!(
             source.contains("\"page_dash\""),
@@ -781,7 +876,7 @@ pub async fn load(_req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> {
     #[test]
     fn streaming_constant_is_silently_stripped() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
-        let generated = render_generated_templates_module(&[TemplateCodegenInput {
+        let _generated = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),

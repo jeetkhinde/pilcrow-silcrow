@@ -161,7 +161,8 @@ where
     {
         use crate::fsr::watcher::spawn_embedded_watcher;
         use crate::fsr::{
-            FsrConnectionCounter, FsrHubConfig, FsrStore, WatcherConfig, WatcherEventTx,
+            FsrConnectionCounter, FsrHubConfig, FsrStore, ScheduledInvalidation, WatcherConfig,
+            WatcherEventTx,
         };
         use std::sync::atomic::AtomicUsize;
 
@@ -208,10 +209,12 @@ where
                         let default_secs = fsr_config.revalidate_seconds.unwrap_or(86_400);
                         let extra = crate::fsr::codegen_default_revalidate_routes()
                             .into_iter()
-                            .map(|route| ScheduledInvalidation::new(
-                                format!("{route}::__revalidate_default"),
-                                std::time::Duration::from_secs(default_secs),
-                            ));
+                            .map(|route| {
+                                ScheduledInvalidation::new(
+                                    format!("{route}::__revalidate_default"),
+                                    std::time::Duration::from_secs(default_secs),
+                                )
+                            });
                         let all_invalidations: Vec<ScheduledInvalidation> =
                             crate::fsr::codegen_scheduled_invalidations()
                                 .into_iter()
@@ -311,7 +314,9 @@ where
     }
 
     let mut app = app
-        .layer(axum::extract::DefaultBodyLimit::max(request_body_limit_bytes))
+        .layer(axum::extract::DefaultBodyLimit::max(
+            request_body_limit_bytes,
+        ))
         .layer(axum::middleware::from_fn(request_timeout_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CompressionLayer::new());
@@ -347,15 +352,21 @@ where
     // SSR placeholder middleware — no-op when no worker Extension is present.
     let app = app.layer(axum::middleware::from_fn(island_ssr_middleware));
 
-    adapter.serve(&bind_addr, app, Box::new(|actual| {
-        // Normalize 0.0.0.0 (all-interfaces bind) to loopback for local prebake requests.
-        let base = if let Some(port) = actual.strip_prefix("0.0.0.0:") {
-            format!("http://127.0.0.1:{port}")
-        } else {
-            format!("http://{actual}")
-        };
-        crate::prebake::set_local_base(base);
-    })).await;
+    adapter
+        .serve(
+            &bind_addr,
+            app,
+            Box::new(|actual| {
+                // Normalize 0.0.0.0 (all-interfaces bind) to loopback for local prebake requests.
+                let base = if let Some(port) = actual.strip_prefix("0.0.0.0:") {
+                    format!("http://127.0.0.1:{port}")
+                } else {
+                    format!("http://{actual}")
+                };
+                crate::prebake::set_local_base(base);
+            }),
+        )
+        .await;
 }
 
 /// Enforce a per-request timeout and log the path when it fires.
@@ -364,12 +375,7 @@ async fn request_timeout_middleware(
     next: axum::middleware::Next,
 ) -> axum::response::Response {
     let path = req.uri().path().to_owned();
-    match tokio::time::timeout(
-        Duration::from_secs(REQUEST_TIMEOUT_SECS),
-        next.run(req),
-    )
-    .await
-    {
+    match tokio::time::timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS), next.run(req)).await {
         Ok(response) => response,
         Err(_) => {
             tracing::warn!(path = %path, timeout_secs = REQUEST_TIMEOUT_SECS, "request timed out");
@@ -411,7 +417,9 @@ async fn island_ssr_middleware(
     let bytes = match axum::body::to_bytes(body, SSR_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
         Err(_) => {
-            tracing::warn!("island_ssr_middleware: response body exceeded SSR_BODY_LIMIT_BYTES or read failed; SSR skipped");
+            tracing::warn!(
+                "island_ssr_middleware: response body exceeded SSR_BODY_LIMIT_BYTES or read failed; SSR skipped"
+            );
             return axum::response::Response::from_parts(parts, axum::body::Body::empty());
         }
     };
@@ -431,9 +439,7 @@ async fn island_ssr_middleware(
     // stdin/stdout (blocking I/O). Run it on the blocking thread pool to
     // avoid stalling Tokio workers and serialising all SSR requests.
     let html_owned = html.to_owned();
-    let task = tokio::task::spawn_blocking(move || {
-        replace_ssr_placeholders(&html_owned, &worker)
-    });
+    let task = tokio::task::spawn_blocking(move || replace_ssr_placeholders(&html_owned, &worker));
     let replaced = match tokio::time::timeout(SSR_WORKER_TIMEOUT, task).await {
         Ok(Ok(html)) => html,
         Ok(Err(panic)) => {
@@ -441,7 +447,10 @@ async fn island_ssr_middleware(
             return axum::response::Response::from_parts(parts, axum::body::Body::empty());
         }
         Err(_elapsed) => {
-            tracing::error!("island SSR worker timed out after {}s", SSR_WORKER_TIMEOUT.as_secs());
+            tracing::error!(
+                "island SSR worker timed out after {}s",
+                SSR_WORKER_TIMEOUT.as_secs()
+            );
             return axum::response::Response::from_parts(parts, axum::body::Body::empty());
         }
     };

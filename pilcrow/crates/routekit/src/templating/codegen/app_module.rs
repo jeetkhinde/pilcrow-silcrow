@@ -60,9 +60,7 @@ fn emit_ps_fragment_check(layout_chain: &[String], slot: &str) -> String {
     s.push_str("                .map(|present| { let __layouts: ::std::collections::HashSet<&str> = present.split(',').map(str::trim).collect(); __PS_LAYOUT_CHAIN.iter().all(|p| __layouts.contains(p)) })\n");
     s.push_str("                .unwrap_or(false);\n");
     s.push_str("            let html = if __is_ps_fragment {\n");
-    s.push_str(
-        "                ::pilcrow_web::extract_ps_fragment(&html, __PS_SLOT)\n",
-    );
+    s.push_str("                ::pilcrow_web::extract_ps_fragment(&html, __PS_SLOT)\n");
     s.push_str("            } else {\n");
     s.push_str("                html\n");
     s.push_str("            };\n");
@@ -382,6 +380,7 @@ pub fn render_generated_app_module(
     // build_router function
     out.push_str("#[allow(dead_code)]\n");
     out.push_str("pub fn build_router() -> ::pilcrow_web::axum::Router {\n");
+    out.push_str("    __pilcrow_register_codegen_revalidation();\n");
     out.push_str("    ::pilcrow_web::axum::Router::new()\n");
     if has_react_assets || has_solid_assets {
         out.push_str("        .route(\"/_pilcrow/client/*path\", ::pilcrow_web::axum::routing::get(__pilcrow_serve_client_asset))\n");
@@ -557,14 +556,18 @@ pub fn render_generated_app_module(
                     out.push_str("            __resp_handle.apply_to(&mut __response);\n");
                     out.push_str("            __response\n");
                 } else {
-                    out.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
+                    out.push_str(
+                        "            ::pilcrow_web::axum::response::Html(html).into_response()\n",
+                    );
                 }
             } else if needs_req {
                 out.push_str("            let mut __response = ::pilcrow_web::axum::response::Html(html).into_response();\n");
                 out.push_str("            __resp_handle.apply_to(&mut __response);\n");
                 out.push_str("            __response\n");
             } else {
-                out.push_str("            ::pilcrow_web::axum::response::Html(html).into_response()\n");
+                out.push_str(
+                    "            ::pilcrow_web::axum::response::Html(html).into_response()\n",
+                );
             }
         } else {
             out.push_str("            use ::pilcrow_web::axum::response::IntoResponse;\n");
@@ -769,7 +772,9 @@ pub fn render_generated_app_module(
                 if !live_fields.is_empty() && !has_fsr {
                     out.push_str("            let html = {\n");
                     out.push_str("                let __live_anchor = format!(\"<div data-pilcrow-live=\\\"/__pilcrow/live{}\\\" style=\\\"display:none\\\"></div>\", __live_path);\n");
-                    out.push_str("                if let Some(__pos) = html.rfind(\"</body>\") {\n");
+                    out.push_str(
+                        "                if let Some(__pos) = html.rfind(\"</body>\") {\n",
+                    );
                     out.push_str("                    let mut __s = String::with_capacity(html.len() + __live_anchor.len());\n");
                     out.push_str("                    __s.push_str(&html[..__pos]);\n");
                     out.push_str("                    __s.push_str(&__live_anchor);\n");
@@ -916,12 +921,11 @@ pub fn render_generated_app_module(
 
     out.push_str("}\n");
 
-    // ── __pilcrow_init: called before the server starts accepting connections ─
+    // ── codegen revalidation registration ────────────────────────────────────
     out.push('\n');
-    out.push_str("pub async fn __pilcrow_init() {\n");
-    if hooks.has_init {
-        out.push_str("    crate::hooks::init().await;\n");
-    }
+    out.push_str("fn __pilcrow_register_codegen_revalidation() {\n");
+    out.push_str("    static __PILCROW_REVALIDATION_REGISTERED: ::std::sync::OnceLock<()> = ::std::sync::OnceLock::new();\n");
+    out.push_str("    let _ = __PILCROW_REVALIDATION_REGISTERED.get_or_init(|| {\n");
     // Collect scheduled invalidations from per-field #[revalidate(N)] attrs.
     // Same route + same interval → one shared timer (dedup by (module, interval)).
     // Synthetic dep key: `{module}::__revalidate_{N}s`
@@ -941,15 +945,17 @@ pub fn render_generated_app_module(
         .map(|(module, secs)| (format!("{module}::__revalidate_{secs}s"), secs))
         .collect();
     if !scheduled.is_empty() {
-        out.push_str("    ::pilcrow_web::__register_codegen_scheduled_invalidations(::std::vec![\n");
+        out.push_str(
+            "        ::pilcrow_web::__register_codegen_scheduled_invalidations(::std::vec![\n",
+        );
         for (dep_key, secs) in &scheduled {
             let key_lit = rust_string(dep_key);
             let _ = writeln!(
                 out,
-                "        ::pilcrow_web::ScheduledInvalidation::new({key_lit}, ::std::time::Duration::from_secs({secs}u64)),"
+                "            ::pilcrow_web::ScheduledInvalidation::new({key_lit}, ::std::time::Duration::from_secs({secs}u64)),"
             );
         }
-        out.push_str("    ]);\n");
+        out.push_str("        ]);\n");
     }
     // Register routes that need the global/default revalidation timer.
     let mut default_routes: Vec<&str> = fsr_default_revalidate_symbols
@@ -958,12 +964,24 @@ pub fn render_generated_app_module(
         .collect();
     default_routes.sort();
     if !default_routes.is_empty() {
-        out.push_str("    ::pilcrow_web::__register_codegen_default_revalidate_routes(::std::vec![\n");
+        out.push_str(
+            "        ::pilcrow_web::__register_codegen_default_revalidate_routes(::std::vec![\n",
+        );
         for route in &default_routes {
             let route_lit = rust_string(route);
-            let _ = writeln!(out, "        {route_lit}.to_string(),");
+            let _ = writeln!(out, "            {route_lit}.to_string(),");
         }
-        out.push_str("    ]);\n");
+        out.push_str("        ]);\n");
+    }
+    out.push_str("    });\n");
+    out.push_str("}\n");
+
+    // ── __pilcrow_init: called before the server starts accepting connections ─
+    out.push('\n');
+    out.push_str("pub async fn __pilcrow_init() {\n");
+    out.push_str("    __pilcrow_register_codegen_revalidation();\n");
+    if hooks.has_init {
+        out.push_str("    crate::hooks::init().await;\n");
     }
     out.push_str("}\n");
 

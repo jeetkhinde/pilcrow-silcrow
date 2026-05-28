@@ -24,15 +24,26 @@ pub fn instrument_frontmatter(
     let mut page_options = PageOptions::default();
     let mut promote_after_err: Option<io::Error> = None;
     file.items.retain(|item| {
-        let syn::Item::Const(c) = item else { return true };
-        if !matches!(c.vis, syn::Visibility::Public(_)) { return true; }
+        let syn::Item::Const(c) = item else {
+            return true;
+        };
+        if !matches!(c.vis, syn::Visibility::Public(_)) {
+            return true;
+        }
         let value_str = c.expr.to_token_stream().to_string();
         let value = value_str.trim_matches('"').trim_matches('\'');
         let ident = c.ident.to_string();
         match ident.as_str() {
-            "TRAILING_SLASH" => { page_options.trailing_slash = TrailingSlash::from_label(value); false }
+            "TRAILING_SLASH" => {
+                page_options.trailing_slash = TrailingSlash::from_label(value);
+                false
+            }
             "LAYOUT" => {
-                page_options.layout = if value == "none" { LayoutOpt::None } else { LayoutOpt::Inherit };
+                page_options.layout = if value == "none" {
+                    LayoutOpt::None
+                } else {
+                    LayoutOpt::Inherit
+                };
                 false
             }
             "PROMOTE_AFTER" => {
@@ -53,15 +64,22 @@ pub fn instrument_frontmatter(
                 }
                 false
             }
-            "FSR_JSON" => { page_options.fsr.json = value_str.trim() == "true"; false }
+            "FSR_JSON" => {
+                page_options.fsr.json = value_str.trim() == "true";
+                false
+            }
             _ => true,
         }
     });
-    if let Some(err) = promote_after_err { return Err(err); }
+    if let Some(err) = promote_after_err {
+        return Err(err);
+    }
 
     // Validate that any `Props` struct present is public.
     if file.items.iter().any(|item| {
-        let syn::Item::Struct(s) = item else { return false };
+        let syn::Item::Struct(s) = item else {
+            return false;
+        };
         s.ident == "Props" && !matches!(s.vis, syn::Visibility::Public(_))
     }) {
         return Err(io::Error::new(
@@ -69,9 +87,14 @@ pub fn instrument_frontmatter(
             format!("frontmatter in {source_path} must declare `pub struct Props`"),
         ));
     }
-    let props_indices: Vec<usize> = file.items.iter().enumerate()
+    let props_indices: Vec<usize> = file
+        .items
+        .iter()
+        .enumerate()
         .filter_map(|(i, item)| {
-            let syn::Item::Struct(s) = item else { return None };
+            let syn::Item::Struct(s) = item else {
+                return None;
+            };
             (s.ident == "Props").then_some(i)
         })
         .collect();
@@ -240,8 +263,12 @@ pub fn instrument_frontmatter(
     }
 
     let has_manual_default = file.items.iter().any(|item| {
-        let syn::Item::Impl(impl_block) = item else { return false };
-        impl_block.trait_.as_ref()
+        let syn::Item::Impl(impl_block) = item else {
+            return false;
+        };
+        impl_block
+            .trait_
+            .as_ref()
             .and_then(|(_, path, _)| path.segments.last())
             .is_some_and(|s| s.ident == "Default")
     });
@@ -255,7 +282,9 @@ pub fn instrument_frontmatter(
 
     // If the user didn't declare `pub struct Props`, synthesize a unit struct.
     let props_index = props_indices.first().copied().unwrap_or_else(|| {
-        file.items.push(parse_quote!(pub struct Props;));
+        file.items.push(parse_quote!(
+            pub struct Props;
+        ));
         file.items.len() - 1
     });
 
@@ -291,14 +320,37 @@ pub fn instrument_frontmatter(
             let mut live_attr = LiveFieldAttr::default();
             field.attrs.retain(|a| {
                 if is_revalidate_field_attr(a) {
-                    if let Ok(n) = a.parse_args::<syn::LitInt>() {
-                        live_attr.revalidate_secs = n.base10_parse::<u64>().ok();
+                    match a
+                        .parse_args::<syn::LitInt>()
+                        .and_then(|n| n.base10_parse::<u64>())
+                    {
+                        Ok(secs) => {
+                            live_attr.revalidate_secs = Some(secs);
+                        }
+                        Err(err) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: failed to parse `#[revalidate(...)]` on field `{field_name}`: {err}"
+                                ),
+                            ));
+                        }
                     }
                     return false; // strip
                 }
                 if is_depends_on_props_attr(a) {
-                    if let Ok(s) = a.parse_args::<syn::LitStr>() {
-                        live_attr.depends_on = Some(s.value());
+                    match a.parse_args::<syn::LitStr>() {
+                        Ok(s) => {
+                            live_attr.depends_on = Some(s.value());
+                        }
+                        Err(err) => {
+                            live_field_err = Some(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!(
+                                    "`{source_path}`: failed to parse `#[depends_on(...)]` on field `{field_name}`: {err}"
+                                ),
+                            ));
+                        }
                     }
                     return false; // strip
                 }
@@ -316,7 +368,10 @@ pub fn instrument_frontmatter(
                 ));
             }
             if live_attr.revalidate_secs.is_some() || live_attr.depends_on.is_some() {
-                page_options.fsr.live_field_attrs.insert(field_name, live_attr);
+                page_options
+                    .fsr
+                    .live_field_attrs
+                    .insert(field_name, live_attr);
             }
         }
     }
@@ -325,7 +380,8 @@ pub fn instrument_frontmatter(
     }
 
     // Detect `LiveProp<T>` fields.
-    let live_fields: Vec<String> = own_syn_fields.iter()
+    let live_fields: Vec<String> = own_syn_fields
+        .iter()
         .filter_map(|f| {
             let ident = f.ident.as_ref()?;
             type_last_ident(&f.ty).filter(|id| *id == "LiveProp")?;
@@ -363,7 +419,9 @@ pub fn instrument_frontmatter(
 
     // Check whether the user's code already imports Req to avoid E0252.
     let has_req_import = file.items.iter().any(|item| {
-        let syn::Item::Use(u) = item else { return false };
+        let syn::Item::Use(u) = item else {
+            return false;
+        };
         let s = u.to_token_stream().to_string();
         // ":: Req" matches `use pilcrow_web::Req`, "{ Req" matches grouped imports.
         s.contains(":: Req") || s.contains("{ Req")
@@ -384,7 +442,9 @@ pub fn instrument_frontmatter(
     .chain((!in_ui).then_some("#[allow(unused_imports)]\nuse super::fragments;\n"))
     .collect();
 
-    let body: String = file.items.into_iter()
+    let body: String = file
+        .items
+        .into_iter()
         .map(|item| item.into_token_stream().to_string() + "\n")
         .collect();
 
@@ -404,8 +464,12 @@ pub fn instrument_frontmatter(
 /// Returns true if any typed argument in `sig` has a type whose last path segment matches `type_name`.
 fn sig_wants(sig: &syn::Signature, type_name: &str) -> bool {
     sig.inputs.iter().any(|arg| {
-        let syn::FnArg::Typed(pat) = arg else { return false };
-        type_last_ident(&pat.ty).map(|id| id == type_name).unwrap_or(false)
+        let syn::FnArg::Typed(pat) = arg else {
+            return false;
+        };
+        type_last_ident(&pat.ty)
+            .map(|id| id == type_name)
+            .unwrap_or(false)
     })
 }
 
@@ -422,16 +486,22 @@ pub fn detect_load_signature(sig: &syn::Signature) -> LoadSignature {
                 .unwrap_or(false),
         },
         wants_client: sig_wants(sig, "PilcrowClient"),
-        wants_req:    sig_wants(sig, "Req"),
-        wants_page:   sig_wants(sig, "Page"),
-        wants_live:   sig_wants(sig, "Live"),
+        wants_req: sig_wants(sig, "Req"),
+        wants_page: sig_wants(sig, "Page"),
+        wants_live: sig_wants(sig, "Live"),
     }
 }
 
 pub fn inject_props_attrs(props: &mut syn::ItemStruct, template_source: &str) {
     let all: [(&[&str], syn::Path); 2] = [
-        (&["askama::Template", "Template"], parse_quote!(askama::Template)),
-        (&["serde::Serialize", "Serialize"], parse_quote!(serde::Serialize)),
+        (
+            &["askama::Template", "Template"],
+            parse_quote!(askama::Template),
+        ),
+        (
+            &["serde::Serialize", "Serialize"],
+            parse_quote!(serde::Serialize),
+        ),
     ];
     let missing_derives: Vec<syn::Path> = all
         .into_iter()
@@ -513,8 +583,12 @@ pub fn ensure_serialize_derive(attrs: &mut Vec<syn::Attribute>) {
 }
 
 pub fn has_derive_trait(attrs: &[syn::Attribute], candidates: &[&str]) -> bool {
-    let normalized: Vec<_> = candidates.iter().map(|c| normalize_derive_path(c)).collect();
-    attrs.iter()
+    let normalized: Vec<_> = candidates
+        .iter()
+        .map(|c| normalize_derive_path(c))
+        .collect();
+    attrs
+        .iter()
         .filter(|attr| attr.path().is_ident("derive"))
         .any(|attr| {
             let tokens = normalize_derive_path(&attr.meta.to_token_stream().to_string());
@@ -531,15 +605,13 @@ pub fn normalize_derive_path(input: &str) -> String {
 
 /// Returns true if the attribute is `#[revalidate(...)]` on a `LiveProp<T>` field.
 fn is_revalidate_field_attr(attr: &syn::Attribute) -> bool {
-    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
-    segs == ["revalidate"]
+    attr.path().is_ident("revalidate")
 }
 
 /// Returns true if the attribute is `#[depends_on(...)]` on a `LiveProp<T>` Props field.
 /// (Distinct from `#[pilcrow::depends_on]` used in `live.rs` for runtime dep expressions.)
 fn is_depends_on_props_attr(attr: &syn::Attribute) -> bool {
-    let segs: Vec<_> = attr.path().segments.iter().map(|s| s.ident.to_string()).collect();
-    segs == ["depends_on"]
+    attr.path().is_ident("depends_on")
 }
 
 /// Parse a `u64` literal from a `pub const X: u64 = N;` expression.

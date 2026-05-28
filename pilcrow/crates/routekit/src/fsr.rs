@@ -8,6 +8,10 @@ use syn::{Expr, Ident, LitInt, Meta, Token};
 
 use crate::templating::page_options::LiveFieldAttr;
 
+fn rust_string(value: &str) -> String {
+    format!("{value:?}")
+}
+
 /// Field extracted from the `Live` struct in `live.rs`.
 pub struct LiveField {
     pub name: String,
@@ -133,7 +137,8 @@ pub fn process_live_rs(
                 && attr.to_token_stream().to_string().contains("Serialize")
         });
         if !has_serialize {
-            s.attrs.push(syn::parse_quote!(#[derive(::serde::Serialize)]));
+            s.attrs
+                .push(syn::parse_quote!(#[derive(::serde::Serialize)]));
         }
 
         let syn::Fields::Named(named) = &mut s.fields else {
@@ -179,7 +184,8 @@ pub fn process_live_rs(
 
     // Generate from_row() impl and append to file.
     if !live_fields.is_empty() {
-        let from_row_impl = generate_from_row_impl(&live_fields, route_promote_after, auto_attrs, module_name);
+        let from_row_impl =
+            generate_from_row_impl(&live_fields, route_promote_after, auto_attrs, module_name);
         let mut out = file.into_token_stream().to_string();
         out.push('\n');
         out.push_str(&from_row_impl);
@@ -247,8 +253,10 @@ pub fn validate_live_template_slots(
 - {}",
                 template_path.display(),
                 live_path.display(),
-                errors.join("
-- ")
+                errors.join(
+                    "
+- "
+                )
             ),
         ))
     }
@@ -477,17 +485,23 @@ fn generate_from_row_impl(
     auto_attrs: &HashMap<String, LiveFieldAttr>,
     module_name: &str,
 ) -> String {
-    let mut out = String::from("impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
-");
+    let mut out = String::from(
+        "impl ::pilcrow_runtime::fsr::PilcrowLive for Live {
+",
+    );
     out.push_str("    fn query(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::pilcrow_runtime::fsr::LiveQuery {
 ");
     out.push_str("        Live::query(_params)\n");
-    out.push_str("    }
-");
+    out.push_str(
+        "    }
+",
+    );
     out.push_str("    fn from_row(row: &::std::collections::HashMap<String, ::serde_json::Value>, _params: &::serde_json::Map<String, ::serde_json::Value>) -> Self {
 ");
-    out.push_str("        Self {
-");
+    out.push_str(
+        "        Self {
+",
+    );
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
@@ -496,44 +510,58 @@ fn generate_from_row_impl(
             // Explicit live.rs dep wins; this field is DB-driven, no revalidation timer.
             generate_depends_on(&field.depends_on)
         } else {
-            let dep_key = auto_attrs.get(name)
+            let dep_key = auto_attrs
+                .get(name)
                 .and_then(|a| {
                     if let Some(ref key) = a.depends_on {
-                        Some(key.clone())  // #[depends_on("key")] — static dep, no timer
+                        Some(key.clone()) // #[depends_on("key")] — static dep, no timer
                     } else if let Some(secs) = a.revalidate_secs {
-                        Some(format!("{module_name}::__revalidate_{secs}s"))  // shared per-interval timer
+                        Some(format!("{module_name}::__revalidate_{secs}s")) // shared per-interval timer
                     } else {
                         None
                     }
                 })
                 .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
-            format!("::std::vec![\"{dep_key}\".to_string()]")
+            let dep_key = rust_string(&dep_key);
+            format!("::std::vec![{dep_key}.to_string()]")
         };
         out.push_str(&format!(
             "            {name}: ::pilcrow_runtime::fsr::LiveProp {{
 "
         ));
-        out.push_str(&format!("                value: row.get(\"{column_name}\")\n"));
+        out.push_str(&format!(
+            "                value: row.get(\"{column_name}\")\n"
+        ));
         out.push_str(
             "                    .and_then(|v| ::serde_json::from_value(v.clone()).ok())
 ",
         );
-        out.push_str("                    .unwrap_or_default(),
-");
+        out.push_str(
+            "                    .unwrap_or_default(),
+",
+        );
         out.push_str("                depends_on: ");
         out.push_str(&effective_depends_on);
-        out.push_str(",
-");
+        out.push_str(
+            ",
+",
+        );
         out.push_str("                patch_debounce: ");
         out.push_str(&generate_option_u32(field.patch_debounce));
-        out.push_str(",
-");
-        out.push_str("            },
-");
+        out.push_str(
+            ",
+",
+        );
+        out.push_str(
+            "            },
+",
+        );
     }
-    out.push_str("        }
+    out.push_str(
+        "        }
     }
-");
+",
+    );
     // Generate live_fields() impl.
     out.push_str("    fn live_fields(_params: &::serde_json::Map<String, ::serde_json::Value>) -> ::std::vec::Vec<::pilcrow_runtime::fsr::LiveFieldRegistration> {\n");
     out.push_str("        ::std::vec![\n");
@@ -542,7 +570,8 @@ fn generate_from_row_impl(
         let effective_depends_on_vec = if field.depends_on.is_some() {
             generate_depends_on_vec(&field.depends_on)
         } else {
-            let dep_key = auto_attrs.get(name)
+            let dep_key = auto_attrs
+                .get(name)
                 .and_then(|a| {
                     if let Some(ref key) = a.depends_on {
                         Some(key.clone())
@@ -553,7 +582,8 @@ fn generate_from_row_impl(
                     }
                 })
                 .unwrap_or_else(|| format!("{module_name}::__revalidate_default"));
-            format!("::std::vec![\"{dep_key}\".to_string()]")
+            let dep_key = rust_string(&dep_key);
+            format!("::std::vec![{dep_key}.to_string()]")
         };
 
         out.push_str("            ::pilcrow_runtime::fsr::LiveFieldRegistration {\n");
@@ -740,7 +770,9 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &route_params, None, &Default::default(), "page_test")
+                .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("patch_debounce: ::std::option::Option::Some(30)"));
@@ -770,7 +802,9 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &route_params, None, &Default::default(), "page_test")
+                .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("ticket_priority: ::pilcrow_runtime::fsr::LiveProp"));
@@ -797,7 +831,9 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &route_params, None, &Default::default(), "page_test")
+                .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // 2 fields × 2 locations (from_row + live_fields) = 4 occurrences.
@@ -822,7 +858,9 @@ mod tests {
         );
 
         let route_params = vec!["id".to_string()];
-        let (source, _) = process_live_rs(&path, &route_params, None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &route_params, None, &Default::default(), "page_test")
+                .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert!(source.contains("\"ticket_priorities:id={}\""));
@@ -869,7 +907,8 @@ mod tests {
             ",
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         let audit_note = fields
@@ -893,7 +932,8 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 1);
@@ -917,7 +957,8 @@ mod tests {
             "#,
         );
 
-        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test").expect("process live.rs");
+        let (source, fields) = process_live_rs(&path, &[], None, &Default::default(), "page_test")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         assert_eq!(fields.len(), 2);
@@ -949,19 +990,33 @@ mod tests {
 
         let mut auto_attrs = HashMap::new();
         // Only status gets revalidate; priority does not.
-        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(60), depends_on: None });
+        auto_attrs.insert(
+            "status".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(60),
+                depends_on: None,
+            },
+        );
 
-        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // status → shared synthetic dep key injected in both from_row and live_fields.
-        assert_eq!(source.matches("\"page_tickets::__revalidate_60s\"").count(), 2,
-            "expected shared synthetic dep key for status in both from_row and live_fields");
+        assert_eq!(
+            source.matches("\"page_tickets::__revalidate_60s\"").count(),
+            2,
+            "expected shared synthetic dep key for status in both from_row and live_fields"
+        );
         // priority → no auto_attr, so falls back to default dep key.
-        assert!(source.contains("\"page_tickets::__revalidate_default\""),
-            "priority has no revalidate so should use default dep key");
-        assert!(!source.contains("\"page_tickets::status\""),
-            "old per-field dep key must not appear");
+        assert!(
+            source.contains("\"page_tickets::__revalidate_default\""),
+            "priority has no revalidate so should use default dep key"
+        );
+        assert!(
+            !source.contains("\"page_tickets::status\""),
+            "old per-field dep key must not appear"
+        );
     }
 
     #[test]
@@ -978,19 +1033,63 @@ mod tests {
 
         let mut auto_attrs = HashMap::new();
         // #[depends_on(\"prices:updated\")] on the Props field.
-        auto_attrs.insert("status".to_string(), LiveFieldAttr {
-            revalidate_secs: None,
-            depends_on: Some("prices:updated".to_string()),
-        });
+        auto_attrs.insert(
+            "status".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: None,
+                depends_on: Some("prices:updated".to_string()),
+            },
+        );
 
-        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // Both from_row and live_fields should use the static dep key.
-        assert_eq!(source.matches("\"prices:updated\"").count(), 2,
-            "expected static dep key in both from_row and live_fields");
-        assert!(!source.contains("\"page_tickets::status\""),
-            "auto dep key must not appear when static depends_on is set");
+        assert_eq!(
+            source.matches("\"prices:updated\"").count(),
+            2,
+            "expected static dep key in both from_row and live_fields"
+        );
+        assert!(
+            !source.contains("\"page_tickets::status\""),
+            "auto dep key must not appear when static depends_on is set"
+        );
+    }
+
+    #[test]
+    fn static_depends_on_prop_attr_escapes_rust_string_literal() {
+        let path = write_live_rs(
+            "
+            use pilcrow_web::live::*;
+
+            pub struct Live {
+                pub status: LiveProp<String>,
+            }
+            ",
+        );
+
+        let key = "prices\\feed\"quoted";
+        let mut auto_attrs = HashMap::new();
+        auto_attrs.insert(
+            "status".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: None,
+                depends_on: Some(key.to_string()),
+            },
+        );
+
+        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_tickets")
+            .expect("process live.rs");
+        let _ = fs::remove_file(path);
+
+        let escaped = format!("{key:?}");
+        let expected = format!("::std::vec![{escaped}.to_string()]");
+        assert_eq!(
+            source.matches(&expected).count(),
+            2,
+            "expected escaped static dep key in from_row and live_fields:\n{source}"
+        );
     }
 
     #[test]
@@ -1009,11 +1108,17 @@ mod tests {
 
         let auto_attrs = HashMap::new(); // no attrs at all
 
-        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_dash").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &[], None, &auto_attrs, "page_dash").expect("process live.rs");
         let _ = fs::remove_file(path);
 
-        assert_eq!(source.matches("\"page_dash::__revalidate_default\"").count(), 2,
-            "expected default dep key in both from_row and live_fields");
+        assert_eq!(
+            source
+                .matches("\"page_dash::__revalidate_default\"")
+                .count(),
+            2,
+            "expected default dep key in both from_row and live_fields"
+        );
     }
 
     #[test]
@@ -1032,18 +1137,36 @@ mod tests {
         );
 
         let mut auto_attrs = HashMap::new();
-        auto_attrs.insert("price".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
-        auto_attrs.insert("market_cap".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
+        auto_attrs.insert(
+            "price".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(10),
+                depends_on: None,
+            },
+        );
+        auto_attrs.insert(
+            "market_cap".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(10),
+                depends_on: None,
+            },
+        );
 
-        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // Both fields get the same synthetic dep key, appearing 4 times total
         // (once in from_row + once in live_fields, per field = 4).
-        assert_eq!(source.matches("\"page_market::__revalidate_10s\"").count(), 4,
-            "both fields should share one synthetic dep key");
-        assert!(!source.contains("__revalidate_default"),
-            "no default key when all fields have explicit revalidate");
+        assert_eq!(
+            source.matches("\"page_market::__revalidate_10s\"").count(),
+            4,
+            "both fields should share one synthetic dep key"
+        );
+        assert!(
+            !source.contains("__revalidate_default"),
+            "no default key when all fields have explicit revalidate"
+        );
     }
 
     #[test]
@@ -1060,18 +1183,38 @@ mod tests {
         );
 
         let mut auto_attrs = HashMap::new();
-        auto_attrs.insert("price".to_string(), LiveFieldAttr { revalidate_secs: Some(10), depends_on: None });
-        auto_attrs.insert("volume".to_string(), LiveFieldAttr { revalidate_secs: Some(30), depends_on: None });
+        auto_attrs.insert(
+            "price".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(10),
+                depends_on: None,
+            },
+        );
+        auto_attrs.insert(
+            "volume".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(30),
+                depends_on: None,
+            },
+        );
 
-        let (source, _) = process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
+        let (source, _) =
+            process_live_rs(&path, &[], None, &auto_attrs, "page_market").expect("process live.rs");
         let _ = fs::remove_file(path);
 
-        assert_eq!(source.matches("\"page_market::__revalidate_10s\"").count(), 2,
-            "price gets 10s dep key");
-        assert_eq!(source.matches("\"page_market::__revalidate_30s\"").count(), 2,
-            "volume gets 30s dep key");
+        assert_eq!(
+            source.matches("\"page_market::__revalidate_10s\"").count(),
+            2,
+            "price gets 10s dep key"
+        );
+        assert_eq!(
+            source.matches("\"page_market::__revalidate_30s\"").count(),
+            2,
+            "volume gets 30s dep key"
+        );
     }
 
+    #[test]
     fn explicit_depends_on_beats_auto_dep_key() {
         let path = write_live_rs(
             "
@@ -1086,14 +1229,26 @@ mod tests {
 
         let route_params = vec!["id".to_string()];
         let mut auto_attrs = HashMap::new();
-        auto_attrs.insert("status".to_string(), LiveFieldAttr { revalidate_secs: Some(30), depends_on: None });
+        auto_attrs.insert(
+            "status".to_string(),
+            LiveFieldAttr {
+                revalidate_secs: Some(30),
+                depends_on: None,
+            },
+        );
 
-        let (source, _) = process_live_rs(&path, &route_params, None, &auto_attrs, "page_tickets").expect("process live.rs");
+        let (source, _) = process_live_rs(&path, &route_params, None, &auto_attrs, "page_tickets")
+            .expect("process live.rs");
         let _ = fs::remove_file(path);
 
         // Explicit dep key wins — tickets:id=, NOT page_tickets::status.
-        assert!(source.contains("\"tickets:id={}\""), "explicit dep should appear");
-        assert!(!source.contains("\"page_tickets::status\""),
-            "auto dep key must not override explicit depends_on");
+        assert!(
+            source.contains("\"tickets:id={}\""),
+            "explicit dep should appear"
+        );
+        assert!(
+            !source.contains("\"page_tickets::status\""),
+            "auto dep key must not override explicit depends_on"
+        );
     }
 }
