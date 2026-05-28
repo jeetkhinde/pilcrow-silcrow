@@ -172,10 +172,15 @@ function NotifyMeForm() {
   const [state, action, pending] = usePilcrowNamedAction<NotifState>("notify");
   return (
     <form action={action}>
-      <label>
-        Email
-        <input type="email" name="email" placeholder="you@example.com" required />
-      </label>
+      <label htmlFor="notify-email">Email</label>
+      <input
+        id="notify-email"
+        type="email"
+        name="email"
+        placeholder="you@example.com"
+        autoComplete="email"
+        required
+      />
       <button type="submit" disabled={pending}>
         {pending ? "Subscribing…" : "Notify me"}
       </button>
