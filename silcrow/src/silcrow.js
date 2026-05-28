@@ -125,14 +125,15 @@ function hardenBlankTargets(node) {
 }
 
 function sanitizeTree(root, options = {}) {
-  for (const tag of FORBIDDEN_HTML_TAGS) {
-    if (tag === "style" && options.allowStyleTags) continue;
-    for (const node of root.querySelectorAll(tag)) {
-      node.remove();
-    }
-  }
-
+  const rootNode = root.getRootNode();
   for (const node of root.querySelectorAll("*")) {
+    if (node.getRootNode() !== rootNode) continue;
+    const tag = node.tagName.toLowerCase();
+    if (FORBIDDEN_HTML_TAGS.has(tag) && !(tag === "style" && options.allowStyleTags)) {
+      node.remove();
+      continue;
+    }
+
     if (node.namespaceURI !== "http://www.w3.org/1999/xhtml") {
       node.remove();
       continue;
