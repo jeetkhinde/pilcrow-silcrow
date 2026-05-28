@@ -1429,21 +1429,18 @@ function destroyAllLive() {
  * Strict protocol enforcement.
  */
 function initLiveElements() {
-  // Consolidate queries for live connection elements into a single pass
+  // WS is checked first; an element should carry only one live protocol attribute.
+  // If somehow both are present, WS wins and SSE is skipped for that element.
   document.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]").forEach(el => {
-    let url;
+    const wsUrl = el.getAttribute("s-ws") || el.getAttribute("s-wss");
+    if (wsUrl) {
+      openWsLive(el, wsUrl);
+      return;
+    }
 
-    // 1. Pilcrow-injected live prop anchor
-    if ((url = el.getAttribute("data-pilcrow-live"))) {
-      openLive(el, url);
-    }
-    // 2. Server-Sent Events (SSE)
-    if ((url = el.getAttribute("s-sse"))) {
-      openLive(el, url);
-    }
-    // 3. WebSockets (WS/WSS)
-    if ((url = el.getAttribute("s-ws") || el.getAttribute("s-wss"))) {
-      openWsLive(el, url);
+    const sseUrl = el.getAttribute("data-pilcrow-live") || el.getAttribute("s-sse");
+    if (sseUrl) {
+      openLive(el, sseUrl);
     }
   });
 }
@@ -2486,10 +2483,10 @@ function onPopState(e) {
 
 // ── Preload Handler ────────────────────────────────────────
 function startPreload(url, wantsHTML) {
-  const cacheKey = url + "|" + (collectLayoutPatterns() || "");
+  const present = collectLayoutPatterns();
+  const cacheKey = url + "|" + (present || "");
   if (responseCache.has(cacheKey) || preloadInflight.has(cacheKey)) return;
   const controller = new AbortController();
-  const present = collectLayoutPatterns();
   const fetchHeaders = {"silcrow-target": "true", "Accept": wantsHTML ? "text/html" : "application/json"};
   if (present) fetchHeaders["X-PS-Present"] = present;
   const promise = fetch(url, {
