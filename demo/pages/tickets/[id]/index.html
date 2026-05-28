@@ -118,7 +118,13 @@
       margin-left: 1rem;
       font-size: 0.85rem;
       color: #16a34a;
-      display: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+    }
+
+    #save-msg.show {
+      opacity: 1;
     }
 
     .badge {
@@ -169,7 +175,7 @@
   </style>
 </pilcrow:head>
 
-<a class="back" href="/tickets">← All Tickets</a>
+<a class="back" href="/tickets" aria-label="Back to all tickets"><span aria-hidden="true">←</span> All Tickets</a>
 
 <div class="card">
   <div class="field">
@@ -219,7 +225,7 @@
         </select>
       </div>
       <button class="btn-save" id="btn-save">Save</button>
-      <span id="save-msg" role="status" aria-live="polite">Saved!</span>
+      <span id="save-msg" role="status" aria-live="polite"></span>
     </div>
   </div>
 </div>
@@ -248,11 +254,17 @@
       msg.textContent = text;
       msg.style.color = color;
       msg.style.display = 'inline';
+      msg.classList.add('show');
     }
     if (msg._saveTimer) {
       clearTimeout(msg._saveTimer);
       msg._saveTimer = null;
     }
+    if (msg._clearTimer) {
+      clearTimeout(msg._clearTimer);
+      msg._clearTimer = null;
+    }
+    msg.classList.remove('show');
     msg.textContent = '';
     msg.style.display = 'none';
     try {
@@ -266,7 +278,12 @@
       }
       showStatus('Saved!', '#16a34a');
       msg._saveTimer = setTimeout(function () {
-        msg.style.display = 'none';
+        msg.classList.remove('show');
+        msg._clearTimer = setTimeout(function () {
+          msg.textContent = '';
+          msg.style.display = 'none';
+          msg._clearTimer = null;
+        }, 200);
         msg._saveTimer = null;
       }, 2000);
     } catch (e) {
