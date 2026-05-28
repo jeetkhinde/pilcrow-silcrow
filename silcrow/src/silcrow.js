@@ -1437,11 +1437,11 @@ function initLiveElements() {
       openLive(el, url);
     }
     // 2. Server-Sent Events (SSE)
-    else if ((url = el.getAttribute("s-sse"))) {
+    if ((url = el.getAttribute("s-sse"))) {
       openLive(el, url);
     }
     // 3. WebSockets (WS/WSS)
-    else if ((url = el.getAttribute("s-ws") || el.getAttribute("s-wss"))) {
+    if ((url = el.getAttribute("s-ws") || el.getAttribute("s-wss"))) {
       openWsLive(el, url);
     }
   });
@@ -2095,7 +2095,8 @@ function finalizeNavigation(ctx) {
       let url;
       if ((url = el.getAttribute("data-pilcrow-live"))) {
         openLive(el, url);
-      } else if ((url = el.getAttribute("s-sse"))) {
+      }
+      if ((url = el.getAttribute("s-sse"))) {
         openLive(el, url);
       }
     });
