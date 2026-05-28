@@ -1428,22 +1428,22 @@ function destroyAllLive() {
  * Strict protocol enforcement.
  */
 function initLiveElements() {
-  // 1. Pilcrow-injected live prop anchor (auto-injected by codegen)
-  document.querySelectorAll("[data-pilcrow-live]").forEach(el => {
-    const url = el.getAttribute("data-pilcrow-live");
-    if (url) openLive(el, url);
-  });
+  // Consolidate queries for live connection elements into a single pass
+  document.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]").forEach(el => {
+    let url;
 
-  // 2. Server-Sent Events (SSE)
-  document.querySelectorAll("[s-sse]").forEach(el => {
-    const url = el.getAttribute("s-sse");
-    if (url) openLive(el, url);
-  });
-
-  // 3. WebSockets (WS/WSS)
-  document.querySelectorAll("[s-ws], [s-wss]").forEach(el => {
-    const url = el.getAttribute("s-ws") || el.getAttribute("s-wss");
-    if (url) openWsLive(el, url);
+    // 1. Pilcrow-injected live prop anchor
+    if ((url = el.getAttribute("data-pilcrow-live"))) {
+      openLive(el, url);
+    }
+    // 2. Server-Sent Events (SSE)
+    if ((url = el.getAttribute("s-sse"))) {
+      openLive(el, url);
+    }
+    // 3. WebSockets (WS/WSS)
+    if ((url = el.getAttribute("s-ws") || el.getAttribute("s-wss"))) {
+      openWsLive(el, url);
+    }
   });
 }
 
@@ -2091,13 +2091,14 @@ function finalizeNavigation(ctx) {
   // Re-initialize any live connection elements that arrived in the swapped content.
   // The MutationObserver cleans up removed elements; this connects the new ones.
   if (targetEl) {
-    targetEl.querySelectorAll("[data-pilcrow-live]").forEach(function (el) {
-      const url = el.getAttribute("data-pilcrow-live");
-      if (url) openLive(el, url);
-    });
-    targetEl.querySelectorAll("[s-sse]").forEach(function (el) {
-      const url = el.getAttribute("s-sse");
-      if (url) openLive(el, url);
+    targetEl.querySelectorAll("[data-pilcrow-live], [s-sse]").forEach(function (el) {
+      let url;
+      if ((url = el.getAttribute("data-pilcrow-live"))) {
+        openLive(el, url);
+      }
+      if ((url = el.getAttribute("s-sse"))) {
+        openLive(el, url);
+      }
     });
   }
 }
@@ -2670,11 +2671,13 @@ function init() {
         unbindElementAtoms(removed);
 
         if (removed.querySelectorAll) {
-          for (const child of removed.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]")) {
-            cleanupLiveNode(child);
-          }
-          for (const child of removed.querySelectorAll("[s-bind]")) {
-            unbindElementAtoms(child);
+          for (const child of removed.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss], [s-bind]")) {
+            if (child.hasAttribute("data-pilcrow-live") || child.hasAttribute("s-sse") || child.hasAttribute("s-ws") || child.hasAttribute("s-wss")) {
+              cleanupLiveNode(child);
+            }
+            if (child.hasAttribute("s-bind")) {
+              unbindElementAtoms(child);
+            }
           }
         }
       }
