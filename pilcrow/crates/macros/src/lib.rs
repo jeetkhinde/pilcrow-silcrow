@@ -16,7 +16,7 @@ pub fn handler(attr: TokenStream, item: TokenStream) -> TokenStream {
     handler::expand(attr, item)
 }
 
-#[proc_macro_derive(PilcrowProps, attributes(promote_after, patch_debounce, column))]
+#[proc_macro_derive(PilcrowProps, attributes(patch_debounce, column))]
 pub fn derive_pilcrow_props(input: TokenStream) -> TokenStream {
     live_props_derive::expand(input)
 }

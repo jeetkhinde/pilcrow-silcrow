@@ -34,11 +34,11 @@ pub fn render_generated_templates_module(
     let mut load_map = HashMap::new();
     let mut action_map: HashMap<String, Vec<ActionFn>> = HashMap::new();
     let mut page_options_map: HashMap<String, PageOptions> = HashMap::new();
-    let mut ssg_config_map: HashMap<String, SsgOpts> = HashMap::new();
     let mut live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
     let mut has_live_fn_map: HashMap<String, bool> = HashMap::new();
     let mut fsr_live_source_map: HashMap<String, String> = HashMap::new();
     let mut fsr_live_fields_map: HashMap<String, Vec<String>> = HashMap::new();
+    let mut fsr_default_revalidate_symbols: HashSet<String> = HashSet::new();
     // fragment_url_prefix → [(leaf_name, module_name)] — built to emit `pub mod fragments`.
     let mut fragment_groups: std::collections::BTreeMap<String, Vec<(String, String)>> =
         std::collections::BTreeMap::new();
@@ -142,7 +142,8 @@ pub fn render_generated_templates_module(
             let route_params: Vec<String> =
                 entry.route_params.iter().map(|p| p.name.clone()).collect();
             let page_route_promote_after = instrumented.page_options.fsr.promote_after;
-            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after) {
+            let auto_attrs = &instrumented.page_options.fsr.live_field_attrs;
+            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after, auto_attrs, &entry.module_name) {
                 Ok((src, fields)) => {
                     crate::fsr::validate_live_template_slots(
                         &entry.template_source,
@@ -162,6 +163,19 @@ pub fn render_generated_templates_module(
                             fields.iter().map(|f| f.name.clone()).collect(),
                         );
                     }
+                    // Detect if any field needs the global/default revalidation timer:
+                    // a field needs it when it has no explicit live.rs depends_on AND no
+                    // field-level #[revalidate(N)] or #[depends_on("key")] in auto_attrs.
+                    let needs_default = fields.iter().any(|f| {
+                        f.depends_on.is_none()
+                            && !auto_attrs
+                                .get(&f.name)
+                                .map(|a| a.revalidate_secs.is_some() || a.depends_on.is_some())
+                                .unwrap_or(false)
+                    });
+                    if needs_default {
+                        fsr_default_revalidate_symbols.insert(entry.module_name.clone());
+                    }
                     fsr_live_source_map.insert(entry.module_name.clone(), src);
                 }
                 Err(e) => {
@@ -173,13 +187,6 @@ pub fn render_generated_templates_module(
             }
         }
 
-
-        if instrumented.page_options.ssg.prerender {
-            ssg_config_map.insert(
-                entry.module_name.clone(),
-                instrumented.page_options.ssg.clone(),
-            );
-        }
 
         let module_ident = syn::Ident::new(&entry.module_name, Span::call_site());
         let render_ident = syn::Ident::new(&entry.render_symbol, Span::call_site());
@@ -307,11 +314,11 @@ pub fn render_generated_templates_module(
         layout_fields_map,
         action_map,
         page_options: page_options_map,
-        ssg_config_map,
         live_fields_map,
         has_live_fn_map,
         fsr_live_source_map,
         fsr_live_fields_map,
+        fsr_default_revalidate_symbols,
     })
 }
 
@@ -391,10 +398,10 @@ pub fn write_generated_templates_module(
         layout_fields_map: generated.layout_fields_map,
         action_map: generated.action_map,
         page_options: generated.page_options,
-        ssg_config_map: generated.ssg_config_map,
         live_fields_map: generated.live_fields_map,
         has_live_fn_map: generated.has_live_fn_map,
         fsr_live_source_map: generated.fsr_live_source_map,
         fsr_live_fields_map: generated.fsr_live_fields_map,
+        fsr_default_revalidate_symbols: generated.fsr_default_revalidate_symbols,
     })
 }

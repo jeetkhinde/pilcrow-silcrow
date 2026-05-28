@@ -56,7 +56,7 @@ pub(crate) mod sw;
 pub mod validator;
 pub mod ws;
 pub use adapter::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use start::{start, start_with_adapter, start_with_prerender};
+pub use start::{start, start_with_adapter};
 // ── Core API re-exports ──────────────────────────────────────
 pub use axum::http::StatusCode;
 pub use axum::response::Response;
@@ -93,8 +93,6 @@ pub mod prebake;
 pub use prebake::trigger as prebake_next;
 #[cfg(feature = "live-props")]
 pub use live_props::{InMemoryListChunkCache, ListBroadcast, ListChunkCache, ListPatchEvent, ListRow, list_chunk_key};
-// ── ISR / SSG cache ──────────────────────────────────────────
-pub use isr::{IsrCache, IsrCacheState, IsrHandle};
 // ── Validation ───────────────────────────────────────────────
 pub use context::ReqBuilder;
 pub use validator::Validator;

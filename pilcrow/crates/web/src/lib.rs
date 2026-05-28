@@ -46,7 +46,7 @@ pub use pilcrow_client::PilcrowClient;
 pub use pilcrow_macros::handler;
 pub use runtime::island_ssr::IslandSsrWorker;
 pub use runtime::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use runtime::{start, start_with_adapter, start_with_prerender};
+pub use runtime::{start, start_with_adapter};
 
 /// FSR (Field-Selective Rendering) developer-facing surface.
 ///
@@ -56,6 +56,16 @@ pub mod live;
 
 #[cfg(feature = "live-props")]
 pub use pilcrow_macros::PilcrowListRow;
+
+// ── FSR codegen internals (used by generated app module) ─────
+#[doc(hidden)]
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::__register_codegen_scheduled_invalidations;
+#[doc(hidden)]
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::__register_codegen_default_revalidate_routes;
+#[cfg(feature = "live-props")]
+pub use runtime::fsr::ScheduledInvalidation;
 
 /// Experimental APIs that may change before stabilization.
 #[cfg(feature = "experimental-baked-pages")]
@@ -425,8 +435,6 @@ pub mod adapters {
 // ── Live props (old per-route SSE system) ────────────────────
 pub use runtime::{__live_props_response, LiveProp, LiveTarget};
 
-// ── SSG cache ────────────────────────────────────────────────
-pub use runtime::{IsrCache, IsrCacheState, IsrHandle};
 // ── i18n ─────────────────────────────────────────────────────
 pub use runtime::{FmtHelper, I18nBundles};
 
@@ -508,10 +516,7 @@ macro_rules! pilcrow_app {
                 }
             };
             __pilcrow_app::__pilcrow_init().await;
-            ::pilcrow_web::start_with_prerender(router, |cache| async move {
-                __pilcrow_app::__pilcrow_prerender_all(&cache).await
-            })
-            .await;
+            ::pilcrow_web::start(router).await;
         }
     };
 }

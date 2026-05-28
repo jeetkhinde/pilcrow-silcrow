@@ -51,7 +51,7 @@ pub fn generate_sw_source(config: &ServiceWorkerConfig) -> String {
     out.push_str("});\n");
     out.push_str("self.addEventListener('activate',function(e){");
     out.push_str("e.waitUntil(caches.keys().then(function(ks){");
-    out.push_str("return Promise.all(ks.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));");
+    out.push_str("return Promise.all(ks.filter(function(k){return k.indexOf('pilcrow-')===0&&k!==CACHE;}).map(function(k){return caches.delete(k);}));");
     out.push_str("}).then(function(){return self.clients.claim();}));");
     out.push_str("});\n");
     out.push_str("function skip(u){");
@@ -77,9 +77,10 @@ fn fetch_handler_js(strategy: &SwStrategy, offline_fallback: Option<&str>) -> St
 
     match strategy {
         SwStrategy::NetworkFirst => format!(
-            "function handle(req){{\
+            "function cacheable(r){{var cc=r.headers.get('cache-control')||'';return r.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1;}}\
+            function handle(req){{\
               return fetch(req).then(function(r){{\
-                if(r.ok)caches.open(CACHE).then(function(c){{c.put(req,r.clone());}});\
+                if(cacheable(r))caches.open(CACHE).then(function(c){{c.put(req,r.clone());}});\
                 return r;\
               }}).catch(function(){{\
                 return caches.match(req).then(function(c){{return c||{fallback};}});\
@@ -87,22 +88,24 @@ fn fetch_handler_js(strategy: &SwStrategy, offline_fallback: Option<&str>) -> St
             }}"
         ),
         SwStrategy::CacheFirst => format!(
-            "function handle(req){{\
+            "function cacheable(r){{var cc=r.headers.get('cache-control')||'';return r.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1;}}\
+            function handle(req){{\
               return caches.match(req).then(function(c){{\
                 if(c)return c;\
                 return fetch(req).then(function(r){{\
-                  if(r.ok)caches.open(CACHE).then(function(ca){{ca.put(req,r.clone());}});\
+                  if(cacheable(r))caches.open(CACHE).then(function(ca){{ca.put(req,r.clone());}});\
                   return r;\
                 }}).catch(function(){{return {fallback};}});\
               }});\
             }}"
         ),
         SwStrategy::StaleWhileRevalidate => format!(
-            "function handle(req){{\
+            "function cacheable(r){{var cc=r.headers.get('cache-control')||'';return r.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1;}}\
+            function handle(req){{\
               return caches.open(CACHE).then(function(cache){{\
                 return cache.match(req).then(function(cached){{\
                   var fresh=fetch(req).then(function(r){{\
-                    if(r.ok)cache.put(req,r.clone());\
+                    if(cacheable(r))cache.put(req,r.clone());\
                     return r;\
                   }}).catch(function(){{return {fallback};}});\
                   return cached||fresh;\
@@ -154,8 +157,9 @@ pub async fn sw_inject_layer(
         return response;
     }
 
+    const SW_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
     let (mut parts, body) = response.into_parts();
-    let bytes = match axum::body::to_bytes(body, usize::MAX).await {
+    let bytes = match axum::body::to_bytes(body, SW_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
         Err(_) => return axum::response::Response::from_parts(parts, axum::body::Body::empty()),
     };

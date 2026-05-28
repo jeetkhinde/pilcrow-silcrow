@@ -17,7 +17,7 @@ pub use self::util::*;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::io;
@@ -31,7 +31,7 @@ use crate::routing::constraint::ParameterConstraint;
 use crate::routing::discovery::{
     build_api_routes, build_fragment_routes, build_page_routes_with_fragment_dirs,
 };
-use crate::templating::page_options::{LayoutOpt, PageOptions, SsgOpts, TrailingSlash};
+use crate::templating::page_options::{LayoutOpt, PageOptions, TrailingSlash};
 
 /// One generated page route entry for build-time manifests.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,11 +85,12 @@ pub struct WrittenTemplatesOutput {
     pub layout_fields_map: HashMap<String, LayoutFieldsInfo>,
     pub action_map: HashMap<String, Vec<ActionFn>>,
     pub page_options: HashMap<String, PageOptions>,
-    pub ssg_config_map: HashMap<String, SsgOpts>,
     pub live_fields_map: HashMap<String, Vec<String>>,
     pub has_live_fn_map: HashMap<String, bool>,
     /// Map from page module_name to processed live.rs source (with from_row() injected).
     pub fsr_live_source_map: HashMap<String, String>,
     /// Map from page module_name to LiveProp field names from live.rs.
     pub fsr_live_fields_map: HashMap<String, Vec<String>>,
+    /// Set of FSR module names that have fields needing the global/default revalidation timer.
+    pub fsr_default_revalidate_symbols: HashSet<String>,
 }

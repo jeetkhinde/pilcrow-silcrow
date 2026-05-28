@@ -451,20 +451,17 @@ name = "FSR (Field-Selective Rendering)"
 domain = "pilcrow"
 status = "stable"
 summary = "Field-Selective Rendering — live.rs convention, LiveProp<T>, watcher, s-live slots, SSE hub. Developer-facing surface via `use pilcrow::live::*;`."
-spec = "FSR enables per-field SSE-driven live updates. A route's live.rs exports a Live struct with LiveProp<T> fields. Routekit validates the sibling page.html template against live.rs at build time: every s-live=\"field\" slot must match a LiveProp field, every LiveProp field must have a matching s-live slot unless the field is marked #[pilcrow::allow_unused], and duplicate s-live slot names are rejected with a clear error. Struct-level #[pilcrow::live(...)] and #[pilcrow::depends_on_route(table, param)] defaults apply to every LiveProp field, and field-level attributes override those defaults. depends_on_route(tickets, id) expands conceptually to dep!(tickets, id, params.id) and is valid only when the route has an id param; explicit #[pilcrow::depends_on(dep!(...))] remains the escape hatch. LiveProp<T> fields are individually addressable over a shared SSE connection. The FSR watcher polls a LiveQuery and pushes SlotPatch events when values change. Routes opt in with `use pilcrow::live::*;` and the `live-props` Cargo feature. Redis (live-props-redis feature) adds a three-layer serve architecture: Redis is the hot path (pilcrow:html:<route>, pilcrow:slot:<route> HASH, pilcrow:json:<route>), Postgres is the truth layer (pilcrow_fsr table), and disk is async recovery. The watcher becomes pub/sub-driven: it subscribes to pilcrow:invalidate, re-executes stored queries, patches Redis, then publishes pilcrow:patch which is forwarded to connected SSE clients. Without Redis, the watcher falls back to 500ms polling. redis_url in [fsr] of pilcrow.toml is required when using live-props-redis."
+spec = "FSR enables per-field SSE-driven live updates. A route's live.rs exports a Live struct with LiveProp<T> fields. Routekit validates the sibling page.html template against live.rs at build time: every s-live=\"field\" slot must match a LiveProp field, every LiveProp field must have a matching s-live slot unless the field is marked #[pilcrow::allow_unused], and duplicate s-live slot names are rejected with a clear error. Struct-level #[debounce(N)] and #[pilcrow::depends_on_route(table, param)] defaults apply to every LiveProp field, and field-level attributes override those defaults. #[debounce(N)] sets a debounce window in seconds; put it on the Live struct for a default or on a LiveProp field for an override. Debounce means coalescing repeated invalidations so one latest-value patch is sent after the quiet window; in the current implementation this value is parsed by routekit and persisted as pilcrow_fsr.debounce_secs, but the embedded watcher still patches stale slots immediately and does not enforce the delay yet. depends_on_route(tickets, id) expands conceptually to dep!(tickets, id, params.id) and is valid only when the route has an id param; explicit #[pilcrow::depends_on(dep!(...))] remains the escape hatch. LiveProp<T> fields are individually addressable over a shared SSE connection. The FSR watcher polls a LiveQuery and pushes SlotPatch events when values change. Routes opt in with `use pilcrow::live::*;` and the `live-props` Cargo feature. Redis (live-props-redis feature) adds a three-layer serve architecture: Redis is the hot path (pilcrow:html:<route>, pilcrow:slot:<route> HASH, pilcrow:json:<route>), Postgres is the truth layer (pilcrow_fsr table), and disk is async recovery. The watcher becomes pub/sub-driven: it subscribes to pilcrow:invalidate, re-executes stored queries, patches Redis, then publishes pilcrow:patch which is forwarded to connected SSE clients. Without Redis, the watcher falls back to 500ms polling. redis_url in [fsr] of pilcrow.toml is required when using live-props-redis. Per-field scheduled revalidation cascade: #[revalidate(N)] on a Props LiveProp<T> field wins over any global config; it generates synthetic dep key \"{module}::__revalidate_{N}s\" (shared across all fields on the same route with the same interval — one timer per route+interval pair). Alternatively, #[depends_on(\"key\")] wires the field to an existing static dep key; mutually exclusive with #[revalidate(N)]. Fields with an explicit depends_on in live.rs (DB-driven) are excluded from all revalidation timers. Fields with none of the above receive a default timer using the global revalidation interval: `[fsr] revalidate_seconds` in Pilcrow.toml, or 86400 (24 h) when not configured. Synthetic dep keys (__revalidate_Ns, __revalidate_default) are internal framework details invisible to developers. Codegen calls __register_codegen_scheduled_invalidations() (per-interval deduped timers) and __register_codegen_default_revalidate_routes() (routes needing default timer); start() merges both into WatcherConfig::scheduled_invalidations at startup. Cache persistence and eviction: artifact_ttl_secs (default 86400) sets an EX TTL on pilcrow:html:*, pilcrow:json:*, and pilcrow:slot:* Redis keys so orphaned entries expire automatically. idle_evict_secs (default 1800) controls how often the idle-eviction background task runs; idle_threshold_secs (default 86400) is how long a route must be cold before it is un-promoted (promoted=FALSE, hit_count=0) and its Redis keys and baked disk artifacts are deleted. Un-promoted routes re-enter the normal promotion cycle on the next request. Set idle_evict_secs=0 to disable eviction. All three fields are configurable in the [fsr] section of Pilcrow.toml."
 
 canonical_usage = """
 # live.rs
 use pilcrow::live::*;
 
-#[pilcrow::live(
-    promote_after = 50,
-    patch_debounce = 30
-)]
+#[debounce(30)]
 #[pilcrow::depends_on_route(tickets, id)]
 pub struct Live {
     pub ticket_status: LiveProp<String>,
-    #[pilcrow::patch_debounce(5)]
+    #[debounce(5)]
     pub ticket_priority: LiveProp<String>,
 }
 
@@ -477,9 +474,18 @@ impl Live {
     }
 }
 
-# page.rs
-pub struct Props { pub live: Live }
-pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live }) }
+# page.rs — with per-field scheduled revalidation (no manual depends_on needed)
+pub struct Props {
+    pub live: Live,
+    #[revalidate(60)]   // re-bake every 60 s; synthetic dep key "page_tickets::__revalidate_60s"
+    pub price: LiveProp<f64>,
+    #[revalidate(60)]   // same route + same interval = one shared timer
+    pub market_cap: LiveProp<f64>,
+    #[revalidate(30)]   // different interval = separate timer; dep key "page_tickets::__revalidate_30s"
+    pub volume: LiveProp<u64>,
+    pub summary: LiveProp<String>,  // no #[revalidate] → uses [fsr] revalidate_seconds or 24h default
+}
+pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live, price: LiveProp::initial(0.0), market_cap: LiveProp::initial(0.0), volume: LiveProp::initial(0), summary: LiveProp::initial(String::new()) }) }
 
 # page.html
 <span s-live="ticket_status">{{ live.ticket_status.value }}</span>
@@ -487,9 +493,8 @@ pub async fn load(live: Live) -> AppResult<Props> { Ok(Props { live }) }
 constraints = [
   "Incompatible with STREAMING = true",
   "FSR_JSON = true incompatible with STREAMING = true",
-  "live.rs + PRERENDER treated as promote_after = 0",
-  "promote_after absent = SSG (bake at startup)",
-  "Struct-level #[pilcrow::live(...)] defaults apply to all LiveProp<T> fields.",
+  "Route bake threshold is set via pub const PROMOTE_AFTER: u32 = N in page.rs; 0 means bake on first hit.",
+  "Struct-level #[debounce(N)] sets a per-field debounce default in seconds; field-level #[debounce(N)] overrides it.",
   "Struct-level #[pilcrow::depends_on_route(table, param)] defaults apply to all LiveProp<T> fields.",
   "Field-level #[pilcrow::*] attributes override struct-level live defaults for that field.",
   "Each s-live slot in page.html must match a LiveProp field in sibling live.rs.",
@@ -498,6 +503,10 @@ constraints = [
   "depends_on_route(table, param) requires `param` to exist in the route params.",
   "dep! macro args mean table, column, runtime value.",
   "Requires the `live-props` Cargo feature on pilcrow-web",
+  "#[revalidate(N)] is only valid on LiveProp<T> fields in Props — not in live.rs.",
+  "#[depends_on(\"key\")] wires a Props LiveProp<T> field to a static dep key; mutually exclusive with #[revalidate(N)].",
+  "#[debounce(N)] is valid on live.rs Live structs/fields, not on Props #[pilcrow::live(...)] attrs.",
+  "Current runtime caveat: #[debounce(N)] is stored as debounce_secs metadata, but watcher_tick and watcher_tick_redis do not yet delay or coalesce stale-slot patches.",
 ]
 invalid_examples = [
   "Using LiveProp<T> outside of a struct that implements PilcrowLive",
@@ -527,6 +536,7 @@ validation_rules = [
   "FSR requires live-props Cargo feature.",
   "LiveProp<T> fields must be in a struct implementing PilcrowLive.",
   "Field-level FSR attributes override struct-level #[pilcrow::live(...)] defaults.",
+  "#[debounce(N)] means coalescing repeated invalidations before patching; currently it is parsed and persisted as debounce_secs but not enforced by the embedded watcher.",
   "Routekit validates page.html s-live slots against sibling live.rs LiveProp fields at build time.",
   "A LiveProp field can opt out of template-slot matching with #[pilcrow::allow_unused].",
   "Duplicate s-live slot names are rejected.",
@@ -537,11 +547,18 @@ validation_rules = [
   "req.fsr.tombstone(path).await marks a promoted route as deleted; next request returns 404.",
   "tombstone() clears Redis keys (pilcrow:html, pilcrow:slot, pilcrow:json) and removes baked files from disk.",
   "tombstone() is a no-op when FSR is not configured or the route has no route-level row.",
-  "pub const PROMOTE_AFTER: u32 = N in page.rs sets a route-level promotion threshold that overrides per-field #[pilcrow::promote_after] for ensure_route_row.",
-  "pub const PRERENDER: bool = true in a FSR page (with live.rs) sets PROMOTE_AFTER = 0 automatically — route is promoted on its first hit.",
-  "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER or PRERENDER = true is set.",
+  "pub const PROMOTE_AFTER: u32 = N in page.rs is the sole surface for setting a route's promotion threshold.",
+  "PilcrowLive::route_promote_after() returns None by default; codegen emits Some(N) when PROMOTE_AFTER is set.",
   "ScheduledInvalidation::new(dep_key, interval) in WatcherConfig::scheduled_invalidations replaces REVALIDATE TTL for FSR routes — calls invalidate_dep_key on a timer.",
   "Each ScheduledInvalidation spawns a dedicated background task inside spawn_embedded_watcher / spawn_embedded_watcher_redis.",
+  "#[revalidate(N)] on a Props LiveProp<T> field generates synthetic dep key \"{module}::__revalidate_{N}s\" — shared across all fields on the same route with the same interval (one timer per route+interval pair).",
+  "Fields on the same route with the same #[revalidate(N)] interval share one timer; different intervals get separate timers.",
+  "Fields with no #[revalidate(N)] and no explicit depends_on (live.rs or #[depends_on]) receive a default timer using [fsr] revalidate_seconds from Pilcrow.toml, falling back to 86400 (24 h) when not configured.",
+  "Revalidation precedence: field-level #[revalidate(N)] > [fsr] revalidate_seconds > 24h hardcoded default.",
+  "Fields with an explicit depends_on in live.rs (DB-driven invalidation) are excluded from all revalidation timers.",
+  "#[depends_on(\"key\")] on a Props LiveProp<T> field wires to a static dep key; no ScheduledInvalidation is registered.",
+  "Synthetic dep keys (__revalidate_Ns, __revalidate_default) are internal framework details — never visible to developers.",
+  "#[revalidate] and #[depends_on] on Props LiveProp<T> fields are stripped at codegen — never emitted into generated source.",
 ]
 scaffold_templates = []
 
@@ -656,7 +673,7 @@ summary = "Page code-behind constants configure route-specific generation behavi
 spec = "Routekit parses supported page option constants from code-behind and strips them from generated modules. Supported: TRAILING_SLASH (always|never|ignore) and LAYOUT (none)."
 canonical_usage = "pub const TRAILING_SLASH: &str = \"always\"; — adds a redirect from /path to /path/ for GET. pub const LAYOUT: &str = \"none\"; — opts out of all layout wrapping for this page."
 constraints = [
-  "TRAILING_SLASH and LAYOUT are configured here. ISR constants (REVALIDATE, etc.) and PRERENDER are separate features.",
+  "TRAILING_SLASH and LAYOUT are configured here. PROMOTE_AFTER is the FSR threshold constant.",
   "TRAILING_SLASH values: \"always\" (redirect to /path/), \"ignore\" (redirect to /path), \"never\" (default).",
   "LAYOUT values: only \"none\" is supported.",
   "Constants are stripped from the emitted module — they never reach the template.",
@@ -1101,44 +1118,33 @@ scaffold_templates = ["react-island"]
 
 [[features]]
 id = "ssg"
-name = "Static Site Generation (SSG)"
+name = "Bake on first hit (PROMOTE_AFTER = 0)"
 domain = "pilcrow"
 status = "stable"
-summary = "Startup-prerender SSG: pages with pub const PRERENDER: bool = true are rendered once at server startup and served from cache on all subsequent requests."
+summary = "FSR with PROMOTE_AFTER = 0: route is baked on its very first request and served from Redis on all subsequent requests. There is no separate SSG code path — this is FSR with a threshold of zero."
 spec = """
-SSG is implemented as of 2026-04-24 (startup-prerender model).
-
-When PRERENDER = true is declared in a code-behind file that also has load(), routekit generates:
-1. A handler that checks the ISR cache first (keyed by req.path). Cache hit → return immediately.
-   Cache miss (startup race) → run load chain, render, store with u64::MAX TTL, return response.
-2. A __pilcrow_prerender_all(cache) function called at server startup (before accepting connections)
-   that pre-warms the cache for every PRERENDER page.
+Setting pub const PROMOTE_AFTER: u32 = 0 in page.rs is the canonical way to request
+bake-on-first-hit behaviour. The route goes through the standard FSR handler; on the first
+hit the HTML + JSON are written to Redis (pilcrow:html:<route>, pilcrow:json:<route>) and
+all subsequent requests skip load() entirely.
 
 For dynamic routes (patterns with :param segments), an entries() function is required:
   pub async fn entries() -> Vec<HashMap<String, String>>
   Returns the list of path-param combinations to pre-render at startup.
 
-User API:
-  pub const PRERENDER: bool = true;                           — opt in
-  pub async fn entries() -> Vec<HashMap<String, String>> { } — required for dynamic routes
-
-Use pilcrow_start(pilcrow_router()).await instead of pilcrow_web::start(pilcrow_router()).await
-to trigger the startup prerender. pilcrow_start is generated by pilcrow_app!().
-
-PRERENDER is a no-op for pages without load() (already static via Props::default()).
-
-All PRERENDER constants are stripped from the emitted module — never appear in generated Rust.
+PROMOTE_AFTER: u32 = 0 is stripped from the emitted module — never appears in generated Rust.
+PRERENDER: bool is removed — using it is a build error.
 """
 canonical_usage = """
-// Static route — pages/about.rs
-pub const PRERENDER: bool = true;
+// pages/about.rs — bake on first hit
+pub const PROMOTE_AFTER: u32 = 0;
 pub struct Props { pub title: String }
 pub async fn load(_req: Req) -> AppResult<Props> {
     Ok(Props { title: "About Us".to_string() })
 }
 
-// Dynamic route — pages/products/[id].rs
-pub const PRERENDER: bool = true;
+// pages/products/[id].rs — dynamic route, bake on first hit per param combo
+pub const PROMOTE_AFTER: u32 = 0;
 pub struct Props { pub product: Product }
 pub async fn entries() -> Vec<HashMap<String, String>> {
     db::all_product_ids().await.into_iter()
@@ -1149,36 +1155,27 @@ pub async fn load(req: Req) -> AppResult<Props> {
     let id = req.params.get("id").unwrap();
     Ok(Props { product: db::find(id).await? })
 }
-
-// main.rs — use pilcrow_start instead of start
-pilcrow_app!();
-#[tokio::main]
-async fn main() {
-    pilcrow_start(pilcrow_router()).await
-}
 """
 constraints = [
-  "PRERENDER requires a load() fn to do anything — pages without load() are already static.",
-  "Dynamic routes (pattern contains :param) with PRERENDER require an entries() function — invalid config is reported as a structured build error.",
-  "Use pilcrow_start(pilcrow_router()).await (not pilcrow_web::start) to trigger startup prerendering.",
+  "Dynamic routes with PROMOTE_AFTER = 0 require an entries() function — build error otherwise.",
+  "PRERENDER: bool is removed — using it is a build error.",
+  "This is FSR with threshold 0, not a separate code path.",
 ]
 invalid_examples = [
-  "PRERENDER on a dynamic route without entries() fn — build error",
+  "pub const PRERENDER: bool = true — build error, use PROMOTE_AFTER = 0 instead",
+  "PROMOTE_AFTER = 0 on a dynamic route without entries() fn — build error",
 ]
 source_refs = [
-  "crates/routekit/src/templating/page_options.rs — SsgOpts struct",
-  "crates/routekit/src/templating/codegen/instrument.rs — PRERENDER and entries() detection",
-  "crates/routekit/src/templating/codegen/app_module.rs — emit_ssg_handler / emit_prerender_all",
-  "crates/runtime/src/start.rs — start_with_prerender",
-  "crates/web/src/lib.rs — pilcrow_app! macro (pilcrow_start fn generation)",
+  "crates/routekit/src/templating/page_options.rs — FsrOpts.promote_after",
+  "crates/routekit/src/templating/codegen/instrument.rs — PROMOTE_AFTER parsing",
+  "crates/runtime/src/fsr/store.rs — ensure_route_row, promote check",
 ]
 test_refs = [
-  "crates/routekit/src/templating/codegen/tests.rs — ssg_prerender_constant_is_stripped_and_recorded_in_ssg_map",
   "crates/routekit/src/templating/codegen/tests.rs — entries_fn_is_detected_in_ssg_opts",
 ]
 validation_rules = [
-  "PRERENDER on a dynamic route without entries() is a build error.",
-  "Layouts cannot use PRERENDER — it only applies to pages.",
+  "Dynamic routes with PROMOTE_AFTER = 0 require an entries() function.",
+  "PRERENDER: bool = true is a build error.",
 ]
 scaffold_templates = []
 
@@ -1258,6 +1255,42 @@ constraints = [
 invalid_examples = []
 source_refs = [
   "crates/runtime/src/start.rs — REQUEST_TIMEOUT_SECS, request_timeout_middleware",
+]
+test_refs = []
+validation_rules = []
+scaffold_templates = []
+
+[[features]]
+id = "request-body-limit"
+name = "Request Body Limit"
+domain = "pilcrow"
+status = "stable"
+summary = "All requests are capped at a configurable body size (default 2 MiB). Requests exceeding the limit are rejected with 413 before reaching any handler."
+spec = """
+axum::extract::DefaultBodyLimit::max(n) is applied at router construction in start().
+The limit is read from config.web.request_body_limit_bytes, which defaults to 2 MiB
+(2 * 1024 * 1024 bytes). Override it in Pilcrow.toml under [web]:
+
+  [web]
+  request_body_limit_bytes = 10485760  # 10 MiB
+
+The limit applies to all request bodies including form posts, JSON APIs, and file uploads.
+Individual extractors (Form, Json, Bytes) may enforce their own tighter limits — the
+framework limit is the outer ceiling.
+"""
+canonical_usage = """
+# Pilcrow.toml — increase body limit for upload-heavy routes
+[web]
+request_body_limit_bytes = 10485760  # 10 MiB (default is 2 MiB)
+"""
+constraints = [
+  "The limit applies globally — there is no per-route override in v0.1.",
+  "SSR placeholder injection (island_ssr_middleware) uses a separate SSR_BODY_LIMIT_BYTES constant (10 MiB) for the response body buffer — this is unrelated to the request body limit.",
+]
+invalid_examples = []
+source_refs = [
+  "crates/core/src/config/config.rs — WebConfig.request_body_limit_bytes, default_request_body_limit()",
+  "crates/runtime/src/start.rs — DefaultBodyLimit::max(request_body_limit_bytes)",
 ]
 test_refs = []
 validation_rules = []

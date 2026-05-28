@@ -162,7 +162,6 @@ mod tests {
             field_name: "status".to_string(),
             json_value: json!("Open"),
             depends_on: vec![DependencyKey::new(dep_key)],
-            promote_after: Some(10),
             patch_debounce: None,
         }
     }

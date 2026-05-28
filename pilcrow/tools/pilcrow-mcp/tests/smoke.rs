@@ -497,8 +497,8 @@ fn smoke_validate_island_directive_returns_error_finding() {
 }
 
 #[test]
-fn smoke_validate_prerender_const_is_accepted() {
-    // PRERENDER is now a stable SSG feature — pub const PRERENDER: bool = true is valid.
+fn smoke_validate_prerender_const_is_rejected() {
+    // PRERENDER: bool is removed — using it should produce an error-level finding.
     let mut client = McpClient::spawn();
     let resp = client.call_tool(
         "validate_implementation",
@@ -509,10 +509,9 @@ fn smoke_validate_prerender_const_is_accepted() {
     );
     assert!(resp["error"].is_null(), "validate_implementation errored");
     let text = serde_json::to_string(&resp["result"]).unwrap_or_default();
-    // Valid SSG declaration should produce no error-level findings.
     assert!(
-        text.contains("\"valid\":true") || text.contains("findings\":[]"),
-        "PRERENDER = true should be accepted as valid SSG syntax; got: {text}"
+        text.contains("pilcrow-prerender-removed") || text.contains("PROMOTE_AFTER"),
+        "PRERENDER = true should be rejected with pilcrow-prerender-removed; got: {text}"
     );
 }
 

@@ -178,6 +178,7 @@ impl<T: Clone + Serialize + Send + Sync + 'static> LiveProp<T> {
                 }))
             }
             LiveProducer::Poll { interval, factory } => {
+                let interval = interval.max(Duration::from_millis(1));
                 let start = tokio::time::Instant::now() + interval;
                 let ticker = tokio::time::interval_at(start, interval);
                 Box::pin(futures_util::stream::unfold(

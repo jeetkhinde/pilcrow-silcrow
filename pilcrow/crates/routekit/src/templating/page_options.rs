@@ -1,12 +1,28 @@
+use std::collections::HashMap;
+
+/// Per-field options parsed from `#[revalidate(N)]` and `#[depends_on("key")]` on
+/// `LiveProp<T>` fields in `Props`. Mutually exclusive: set one or the other, not both.
+///
+/// Stripped from emitted source — never reaches runtime code directly.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct LiveFieldAttr {
+    /// `#[revalidate(N)]` — auto-wires a `ScheduledInvalidation` for this field: every N seconds
+    /// the dep key `"{module_name}::{field_name}"` is invalidated, triggering a re-bake.
+    /// Also auto-injects that dep key into the field's `depends_on` in the generated
+    /// `from_row()` impl when no explicit `depends_on` is set in `live.rs`.
+    pub revalidate_secs: Option<u64>,
+    /// `#[depends_on("some:key")]` — wires the field to a static dep key managed elsewhere.
+    /// Mutually exclusive with `revalidate_secs`.
+    pub depends_on: Option<String>,
+}
+
 /// SSG options parsed from `pub const` declarations in code-behind files.
 ///
 /// All constants are stripped from the emitted module — they never reach runtime code.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SsgOpts {
-    /// Whether to pre-render this route at server startup (`PRERENDER`).
-    pub prerender: bool,
     /// Whether the code-behind declares `pub async fn entries()`.
-    /// Required for dynamic routes (patterns with `:param` segments).
+    /// Required for dynamic routes (patterns with `:param` segments) when `PROMOTE_AFTER = 0`.
     pub has_entries_fn: bool,
 }
 
@@ -22,9 +38,12 @@ pub struct FsrOpts {
     /// Route-level promotion threshold (`pub const PROMOTE_AFTER: u32 = N`).
     ///
     /// Overrides the per-field `#[pilcrow::promote_after]` attribute for the entire route.
-    /// `Some(0)` means "promote on the very first hit" — equivalent to `PRERENDER = true`
-    /// for FSR routes. `None` means defer to the per-field or WatcherConfig default.
+    /// `Some(0)` means "promote on the very first hit". `None` defers to per-field or
+    /// WatcherConfig default.
     pub promote_after: Option<u32>,
+    /// Per-field options parsed from `#[revalidate(N)]` / `#[depends_on("key")]` on Props fields.
+    /// Keyed by field name.
+    pub live_field_attrs: HashMap<String, LiveFieldAttr>,
 }
 
 impl FsrOpts {
@@ -39,9 +58,8 @@ impl FsrOpts {
 /// ```rust,ignore
 /// pub const TRAILING_SLASH: &str = "always"; // "always" | "never" | "ignore"
 /// pub const LAYOUT: &str = "none";           // opt out of all layout wrapping
-/// pub const PRERENDER: bool = true;          // SSG: pre-render at server startup (FSR: sets promote_after = 0)
 /// pub const FSR_JSON: bool = true;           // FSR: opt in to baked JSON alongside baked HTML
-/// pub const PROMOTE_AFTER: u32 = 100;        // FSR: override per-field promote_after for the whole route
+/// pub const PROMOTE_AFTER: u32 = 100;        // FSR: threshold; 0 = bake on first hit
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct PageOptions {

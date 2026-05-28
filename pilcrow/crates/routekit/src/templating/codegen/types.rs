@@ -111,8 +111,6 @@ pub struct GeneratedTemplatesModule {
     pub action_map: HashMap<String, Vec<ActionFn>>,
     /// Map from page module_name to its per-page options (`TRAILING_SLASH`, etc.).
     pub page_options: HashMap<String, PageOptions>,
-    /// Map from page module_name to its SSG configuration (only for pages with `PRERENDER = true`).
-    pub ssg_config_map: HashMap<String, SsgOpts>,
     /// Map from page module_name to its `LiveProp<T>` field names.
     pub live_fields_map: HashMap<String, Vec<String>>,
     /// Map from page module_name to whether a `live()` fn and/or `LiveProp` struct are present.
@@ -121,6 +119,10 @@ pub struct GeneratedTemplatesModule {
     pub fsr_live_source_map: HashMap<String, String>,
     /// Map from page module_name to LiveProp field names from live.rs.
     pub fsr_live_fields_map: HashMap<String, Vec<String>>,
+    /// Set of FSR module names that have at least one LiveProp field without a field-level
+    /// `#[revalidate(N)]` or explicit `#[depends_on]`/live.rs `depends_on`.
+    /// These routes receive the global/24h default revalidation timer.
+    pub fsr_default_revalidate_symbols: HashSet<String>,
 }
 
 /// Which server hook functions are present in `src/hooks.rs`.
