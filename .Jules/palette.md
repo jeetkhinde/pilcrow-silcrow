@@ -8,3 +8,7 @@
 ## 2026-05-20 - Global Layout Accessibility (Skip Links & Landmarks)
 **Learning:** Found that the global application layout lacked a proper `<main>` landmark and a "Skip to content" link. In applications using client-side routing (like Silcrow), this is crucial because screen reader focus isn't naturally reset to the top of the new document on navigation.
 **Action:** Always include a visually hidden "Skip to main content" link at the very top of `<body>` that becomes visible on focus, and ensure the primary content area is wrapped in a `<main>` tag with an `id` that the skip link targets. Also ensure main navigation elements have clear `:focus-visible` indicators.
+
+## 2024-05-23 - Accessible Async Form Submission Feedback
+**Learning:** When making async calls (like fetch PUT requests), visual status indicators (e.g. "Saved!") are often missed by screen readers if they are not explicitly marked. Furthermore, providing only "happy path" feedback leaves users in the dark when an error occurs, making the application feel unreliable and confusing for both sighted and non-sighted users.
+**Action:** Always include `role="status"` and `aria-live="polite"` on status message containers. Ensure that `try/catch` blocks for fetch requests provide explicit error messages in the UI (e.g., changing color to red and updating the text) rather than silently failing or only logging to the console.

@@ -1,5 +1,6 @@
 use super::baking::inject_fsr_slots;
-use super::store::{FsrStore, StaleSlot};
+use super::store::{EvictedRoute, FsrStore, StaleSlot};
+use futures_util::StreamExt as _;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time;
@@ -55,6 +56,11 @@ pub struct WatcherConfig {
     /// specified interval, marking all dependent slots stale for re-baking. This replaces
     /// the old `REVALIDATE` TTL pattern for FSR routes.
     pub scheduled_invalidations: Vec<ScheduledInvalidation>,
+    /// How often the idle-eviction task runs, in seconds. `0` disables idle eviction.
+    pub idle_evict_secs: u64,
+    /// Routes with no traffic for longer than this (in seconds) are un-promoted and
+    /// their Redis keys evicted. Only meaningful when `idle_evict_secs > 0`.
+    pub idle_threshold_secs: u64,
 }
 
 impl WatcherConfig {
@@ -65,6 +71,8 @@ impl WatcherConfig {
             patch_debounce_secs: 30,
             purge_after_seconds: 2_592_000,
             scheduled_invalidations: Vec::new(),
+            idle_evict_secs: 1_800,
+            idle_threshold_secs: 86_400,
         }
     }
 }
@@ -99,18 +107,17 @@ pub async fn watcher_tick(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    // Phase 1: run DB queries with bounded concurrency (8 at a time) to avoid pool exhaustion.
-    let mut results = Vec::with_capacity(stale.len());
-    for chunk in stale.chunks(8) {
-        let chunk_results = futures_util::future::join_all(
-            chunk.iter().map(|slot_row| re_execute_query(store, slot_row)),
-        )
+    // Phase 1: run DB queries with bounded concurrency.
+    // buffer_unordered keeps the pipeline full (max 8 in-flight); each future
+    // carries its slot_row so Phase 2 can iterate directly without a zip.
+    let results: Vec<_> = futures_util::stream::iter(stale.iter())
+        .map(|slot_row| async move { (slot_row, re_execute_query(store, slot_row).await) })
+        .buffer_unordered(8)
+        .collect()
         .await;
-        results.extend(chunk_results);
-    }
 
     // Phase 2: patch files and broadcast sequentially to avoid same-route write races.
-    for (slot_row, result) in stale.iter().zip(results) {
+    for (slot_row, result) in results {
         let value = match result {
             Ok(v) => v,
             Err(e) => {
@@ -167,18 +174,17 @@ pub async fn watcher_tick_redis(
 ) -> Result<(), sqlx::Error> {
     let stale = store.fetch_stale_slots().await?;
 
-    // Phase 1: run DB queries with bounded concurrency (8 at a time) to avoid pool exhaustion.
-    let mut results = Vec::with_capacity(stale.len());
-    for chunk in stale.chunks(8) {
-        let chunk_results = futures_util::future::join_all(
-            chunk.iter().map(|slot_row| re_execute_query(store, slot_row)),
-        )
+    // Phase 1: run DB queries with bounded concurrency.
+    // buffer_unordered keeps the pipeline full (max 8 in-flight); each future
+    // carries its slot_row so Phase 2 can iterate directly without a zip.
+    let results: Vec<_> = futures_util::stream::iter(stale.iter())
+        .map(|slot_row| async move { (slot_row, re_execute_query(store, slot_row).await) })
+        .buffer_unordered(8)
+        .collect()
         .await;
-        results.extend(chunk_results);
-    }
 
     // Phase 2: patch files, Redis, and SSE sequentially to avoid same-route write races.
-    for (slot_row, result) in stale.iter().zip(results) {
+    for (slot_row, result) in results {
         let value = match result {
             Ok(v) => v,
             Err(e) => {
@@ -419,6 +425,50 @@ async fn patch_json_file(json_path: &str, slot: &str, value: &serde_json::Value)
     }
 }
 
+/// Un-promote idle routes and remove their baked disk artifacts.
+///
+/// Routes with no traffic for longer than `threshold_secs` have `promoted` reset to
+/// `FALSE` and `hit_count` reset to `0`. They re-enter the normal promotion cycle on
+/// the next request, so Redis misses fall through safely to `load()`.
+async fn idle_evict_tick(store: &FsrStore, threshold_secs: u64) {
+    match store.evict_idle_routes(threshold_secs).await {
+        Ok(evicted) => {
+            for r in evicted {
+                tracing::info!(route = %r.route, "FSR: idle eviction");
+                schedule_artifact_cleanup(r.html_path, r.json_path);
+            }
+        }
+        Err(e) => tracing::error!(error = %e, "FSR: idle eviction query failed"),
+    }
+}
+
+/// Un-promote idle routes, delete their Redis keys, and remove baked disk artifacts.
+#[cfg(feature = "live-props-redis")]
+async fn idle_evict_tick_redis(store: &FsrStore, threshold_secs: u64, redis: &RedisCache) {
+    match store.evict_idle_routes(threshold_secs).await {
+        Ok(evicted) => {
+            for r in evicted {
+                tracing::info!(route = %r.route, "FSR: idle eviction");
+                redis.delete_route_keys(&r.route).await.ok();
+                schedule_artifact_cleanup(r.html_path, r.json_path);
+            }
+        }
+        Err(e) => tracing::error!(error = %e, "FSR: idle eviction query failed"),
+    }
+}
+
+/// Fire-and-forget removal of baked disk artifacts; errors are non-fatal.
+fn schedule_artifact_cleanup(html_path: Option<String>, json_path: Option<String>) {
+    tokio::spawn(async move {
+        if let Some(p) = html_path {
+            tokio::fs::remove_file(&p).await.ok();
+        }
+        if let Some(p) = json_path {
+            tokio::fs::remove_file(&p).await.ok();
+        }
+    });
+}
+
 /// Serialise a JSON value to a compact string suitable for Redis HSET storage.
 #[cfg(feature = "live-props-redis")]
 fn value_to_string(v: &serde_json::Value) -> String {
@@ -429,51 +479,134 @@ fn value_to_string(v: &serde_json::Value) -> String {
     }
 }
 
+/// Spawn a supervised background timer that calls `invalidate_dep_key` on a fixed interval.
+///
+/// If the task panics it logs an error and restarts after a 1-second backoff, so a bad
+/// invalidation cycle cannot silently kill the timer.
+fn spawn_supervised_invalidation(store: Arc<FsrStore>, scheduled: ScheduledInvalidation) {
+    tokio::spawn(async move {
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
+
+        loop {
+            let store_inner = Arc::clone(&store);
+            let dep_key = scheduled.dep_key.clone();
+            let interval = scheduled.interval.max(Duration::from_millis(1));
+
+            let child = tokio::spawn(async move {
+                let mut ticker = time::interval(interval);
+                ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+                ticker.tick().await; // skip the immediate first tick at t=0
+                loop {
+                    ticker.tick().await;
+                    if let Err(e) = store_inner.invalidate_dep_key(&dep_key).await {
+                        tracing::error!(
+                            dep_key = %dep_key,
+                            error = %e,
+                            "FSR: scheduled invalidation failed"
+                        );
+                    }
+                }
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
+
+            match result {
+                Ok(()) => break,
+                Err(e) if e.is_panic() => {
+                    tracing::error!(
+                        dep_key = %scheduled.dep_key,
+                        error = ?e,
+                        "FSR: scheduled invalidation task panicked, restarting in 1s"
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+                Err(_) => break, // task was cancelled — don't restart
+            }
+        }
+    });
+}
+
 /// Start the embedded watcher in polling mode (no Redis).
 ///
 /// Also spawns one background timer task per `config.scheduled_invalidations` entry.
 /// These tasks call `invalidate_dep_key` at the configured interval, replacing the
 /// old `REVALIDATE` TTL pattern for FSR routes.
+///
+/// All spawned tasks are supervised: a panic logs an error and the task restarts after
+/// a 1-second backoff instead of silently dying. When `config.idle_evict_secs > 0`,
+/// also spawns an idle-eviction task that un-promotes routes cold for longer than
+/// `config.idle_threshold_secs`.
 pub fn spawn_embedded_watcher(
     store: Arc<FsrStore>,
     config: WatcherConfig,
     event_tx: Option<WatcherEventTx>,
 ) -> tokio::task::JoinHandle<()> {
-    // Spawn one timer task per scheduled invalidation before starting the main loop.
     for scheduled in config.scheduled_invalidations.iter().cloned() {
-        let store_clone = Arc::clone(&store);
+        spawn_supervised_invalidation(Arc::clone(&store), scheduled);
+    }
+
+    // Idle eviction: un-promote cold routes and remove their baked artifacts.
+    if config.idle_evict_secs > 0 {
+        let store_evict = Arc::clone(&store);
+        let threshold = config.idle_threshold_secs;
+        let evict_interval = config.idle_evict_secs;
         tokio::spawn(async move {
-            // Guard against zero-duration (tokio::time::interval panics on zero).
-            let interval = scheduled.interval.max(Duration::from_millis(1));
-            let mut ticker = time::interval(interval);
+            let mut ticker = time::interval(Duration::from_secs(evict_interval));
             ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-            ticker.tick().await; // skip the immediate first tick at t=0
+            ticker.tick().await; // skip the immediate tick at startup
             loop {
                 ticker.tick().await;
-                if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
-                    tracing::error!(
-                        dep_key = %scheduled.dep_key,
-                        error = %e,
-                        "FSR: scheduled invalidation failed"
-                    );
-                }
+                idle_evict_tick(&store_evict, threshold).await;
             }
         });
     }
 
     tokio::spawn(async move {
-        let poll_interval = if config.poll_interval_ms > 0 {
-            Duration::from_millis(config.poll_interval_ms)
-        } else {
-            Duration::from_millis(500)
-        };
-        let mut ticker = time::interval(poll_interval);
-        ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
 
         loop {
-            ticker.tick().await;
-            if let Err(e) = watcher_tick(&store, event_tx.as_ref()).await {
-                tracing::error!(error = %e, "FSR watcher tick failed");
+            let store_inner = Arc::clone(&store);
+            let event_tx_inner = event_tx.clone();
+            let poll_interval = if config.poll_interval_ms > 0 {
+                Duration::from_millis(config.poll_interval_ms)
+            } else {
+                Duration::from_millis(500)
+            };
+
+            let child = tokio::spawn(async move {
+                let mut ticker = time::interval(poll_interval);
+                ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+
+                loop {
+                    ticker.tick().await;
+                    if let Err(e) = watcher_tick(&store_inner, event_tx_inner.as_ref()).await {
+                        tracing::error!(error = %e, "FSR watcher tick failed");
+                    }
+                }
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
+
+            match result {
+                Ok(()) => break,
+                Err(e) if e.is_panic() => {
+                    tracing::error!(
+                        error = ?e,
+                        "FSR watcher panicked, restarting in 1s"
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+                Err(_) => break,
             }
         }
     })
@@ -488,7 +621,9 @@ pub fn spawn_embedded_watcher(
 /// connection drops, and re-subscribes automatically once Redis is reachable.
 ///
 /// Also spawns one background timer task per `config.scheduled_invalidations` entry
-/// (same as the non-Redis variant).
+/// (same as the non-Redis variant). All spawned tasks are supervised — panics restart
+/// after a 1-second backoff instead of silently dying. When `config.idle_evict_secs > 0`,
+/// also spawns an idle-eviction task that deletes Redis keys for cold routes.
 #[cfg(feature = "live-props-redis")]
 pub fn spawn_embedded_watcher_redis(
     store: Arc<FsrStore>,
@@ -496,94 +631,135 @@ pub fn spawn_embedded_watcher_redis(
     event_tx: Option<WatcherEventTx>,
     redis: Arc<RedisCache>,
 ) -> tokio::task::JoinHandle<()> {
-    use futures_util::StreamExt as _;
-
-    // Spawn scheduled invalidation timer tasks.
     for scheduled in config.scheduled_invalidations.iter().cloned() {
-        let store_clone = Arc::clone(&store);
+        spawn_supervised_invalidation(Arc::clone(&store), scheduled);
+    }
+
+    // Idle eviction: un-promote cold routes, evict Redis keys, and remove baked artifacts.
+    if config.idle_evict_secs > 0 {
+        let store_evict = Arc::clone(&store);
+        let redis_evict = Arc::clone(&redis);
+        let threshold = config.idle_threshold_secs;
+        let evict_interval = config.idle_evict_secs;
         tokio::spawn(async move {
-            // Guard against zero-duration (tokio::time::interval panics on zero).
-            let interval = scheduled.interval.max(Duration::from_millis(1));
-            let mut ticker = time::interval(interval);
+            let mut ticker = time::interval(Duration::from_secs(evict_interval));
             ticker.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-            ticker.tick().await; // skip the immediate first tick at t=0
+            ticker.tick().await; // skip the immediate tick at startup
             loop {
                 ticker.tick().await;
-                if let Err(e) = store_clone.invalidate_dep_key(&scheduled.dep_key).await {
-                    tracing::error!(
-                        dep_key = %scheduled.dep_key,
-                        error = %e,
-                        "FSR: scheduled invalidation failed"
-                    );
-                }
+                idle_evict_tick_redis(&store_evict, threshold, &redis_evict).await;
             }
         });
     }
 
     tokio::spawn(async move {
-        let fallback_interval = Duration::from_millis(config.poll_interval_ms).max(Duration::from_millis(100));
+        struct AbortGuard(tokio::task::AbortHandle);
+        impl Drop for AbortGuard {
+            fn drop(&mut self) {
+                self.0.abort();
+            }
+        }
 
         loop {
-            match redis.client().get_async_pubsub().await {
-                Ok(mut pubsub) => {
-                    if let Err(e) = pubsub.subscribe("pilcrow:invalidate").await {
-                        tracing::warn!(error = %e, "FSR watcher: subscribe failed");
-                        tokio::time::sleep(fallback_interval).await;
-                        continue;
-                    }
-                    tracing::info!("FSR watcher: subscribed to pilcrow:invalidate");
-                    let msg_stream = pubsub.on_message();
-                    tokio::pin!(msg_stream);
+            let store_inner = Arc::clone(&store);
+            let event_tx_inner = event_tx.clone();
+            let redis_inner = Arc::clone(&redis);
+            let fallback_interval =
+                Duration::from_millis(config.poll_interval_ms).max(Duration::from_millis(100));
 
-                    loop {
-                        match tokio::time::timeout(Duration::from_secs(60), msg_stream.next()).await
-                        {
-                            // Invalidation message received — tick immediately.
-                            Ok(Some(_)) => {
-                                if let Err(e) =
-                                    watcher_tick_redis(&store, event_tx.as_ref(), &redis).await
-                                {
-                                    tracing::error!(
-                                        error = %e,
-                                        "FSR watcher: tick failed after invalidation event"
-                                    );
-                                }
+            let child = tokio::spawn(async move {
+                loop {
+                    match redis_inner.client().get_async_pubsub().await {
+                        Ok(mut pubsub) => {
+                            if let Err(e) = pubsub.subscribe("pilcrow:invalidate").await {
+                                tracing::warn!(error = %e, "FSR watcher: subscribe failed");
+                                tokio::time::sleep(fallback_interval).await;
+                                continue;
                             }
-                            // Stream ended — connection dropped.
-                            Ok(None) => {
-                                tracing::warn!(
-                                    "FSR watcher: pub/sub connection closed, switching to poll fallback"
-                                );
-                                break;
-                            }
-                            // 60 s without a message — reconciliation tick.
-                            Err(_timeout) => {
-                                if let Err(e) =
-                                    watcher_tick_redis(&store, event_tx.as_ref(), &redis).await
+                            tracing::info!("FSR watcher: subscribed to pilcrow:invalidate");
+                            let msg_stream = pubsub.on_message();
+                            tokio::pin!(msg_stream);
+
+                            loop {
+                                match tokio::time::timeout(
+                                    Duration::from_secs(60),
+                                    msg_stream.next(),
+                                )
+                                .await
                                 {
-                                    tracing::error!(
-                                        error = %e,
-                                        "FSR watcher: reconciliation tick failed"
-                                    );
+                                    // Invalidation message received — tick immediately.
+                                    Ok(Some(_)) => {
+                                        if let Err(e) = watcher_tick_redis(
+                                            &store_inner,
+                                            event_tx_inner.as_ref(),
+                                            &redis_inner,
+                                        )
+                                        .await
+                                        {
+                                            tracing::error!(
+                                                error = %e,
+                                                "FSR watcher: tick failed after invalidation event"
+                                            );
+                                        }
+                                    }
+                                    // Stream ended — connection dropped.
+                                    Ok(None) => {
+                                        tracing::warn!(
+                                            "FSR watcher: pub/sub connection closed, switching to poll fallback"
+                                        );
+                                        break;
+                                    }
+                                    // 60 s without a message — reconciliation tick.
+                                    Err(_timeout) => {
+                                        if let Err(e) = watcher_tick_redis(
+                                            &store_inner,
+                                            event_tx_inner.as_ref(),
+                                            &redis_inner,
+                                        )
+                                        .await
+                                        {
+                                            tracing::error!(
+                                                error = %e,
+                                                "FSR watcher: reconciliation tick failed"
+                                            );
+                                        }
+                                    }
                                 }
                             }
                         }
+                        Err(e) => {
+                            tracing::warn!(
+                                error = %e,
+                                "FSR watcher: failed to open Redis connection, falling back to polling"
+                            );
+                        }
                     }
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        error = %e,
-                        "FSR watcher: failed to open Redis connection, falling back to polling"
-                    );
-                }
-            }
 
-            // Polling fallback — drain stale rows accumulated while disconnected,
-            // then wait before retrying pub/sub.
-            if let Err(e) = watcher_tick_redis(&store, event_tx.as_ref(), &redis).await {
-                tracing::error!(error = %e, "FSR watcher: fallback tick failed");
+                    // Polling fallback — drain stale rows accumulated while disconnected,
+                    // then wait before retrying pub/sub.
+                    if let Err(e) =
+                        watcher_tick_redis(&store_inner, event_tx_inner.as_ref(), &redis_inner)
+                            .await
+                    {
+                        tracing::error!(error = %e, "FSR watcher: fallback tick failed");
+                    }
+                    tokio::time::sleep(fallback_interval).await;
+                }
+            });
+            let _guard = AbortGuard(child.abort_handle());
+            let result = child.await;
+
+            match result {
+                Ok(()) => break,
+                Err(e) if e.is_panic() => {
+                    tracing::error!(
+                        error = ?e,
+                        "FSR watcher (Redis) panicked, restarting in 1s"
+                    );
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+                Err(_) => break,
             }
-            tokio::time::sleep(fallback_interval).await;
         }
     })
 }

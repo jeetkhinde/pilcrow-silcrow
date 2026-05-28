@@ -72,23 +72,54 @@ pub async fn load(req: Req) -> AppResult<Props> {
 
 ### Scheduled invalidation (replaces REVALIDATE TTL)
 
-**Preferred — field-level `revalidate = N` on Props (zero manual wiring):**
+**Revalidation precedence for every `LiveProp` field:**
+
+```
+field-level #[revalidate(N)]  >  [fsr] revalidate_seconds in Pilcrow.toml  >  24h hardcoded default
+```
+
+**Field-level `#[revalidate(N)]` on Props (always wins):**
 
 ```rust
 // page.rs
 pub struct Props {
-    #[pilcrow::live(revalidate = 60)]   // re-bake every 60 s automatically
-    pub status: LiveProp<String>,
-
-    #[pilcrow::live(revalidate = 300)]
+    // Same route + same interval = one shared timer (framework-internal dedup).
+    #[revalidate(10)]
     pub price: LiveProp<f64>,
+
+    #[revalidate(10)]
+    pub market_cap: LiveProp<f64>,
+
+    // Different interval = separate timer.
+    #[revalidate(30)]
+    pub volume: LiveProp<u64>,
+
+    // No #[revalidate] → uses [fsr] revalidate_seconds or 24h default.
+    pub summary: LiveProp<String>,
+
+    // Wire to a static dep key (no timer scheduled for this field).
+    #[depends_on("exchange_rates")]
+    pub rate: LiveProp<f64>,
 }
 ```
 
-Codegen auto-derives dep key `"{module_name}::{field_name}"` (e.g. `"page_tickets::status"`),
-injects it as `depends_on` in `live.rs`'s `from_row()` when no explicit `depends_on` is set,
-and registers a `ScheduledInvalidation` in `__pilcrow_init()`. No `WatcherConfig`, no
-`hooks.rs`, no manual dep keys needed.
+The framework resolves the effective interval for each field:
+1. If the field has `#[revalidate(N)]`: use N seconds (field-level always wins).
+2. Else if `Pilcrow.toml [fsr] revalidate_seconds` is set: use that value.
+3. Else: fall back to 86400 (24 hours).
+
+Fields with the same route + same effective interval share **one** internal timer. Synthetic dep keys and timer grouping are framework-internal — developers never see or configure them.
+
+**Global config in `Pilcrow.toml` (applies to all fields without field-level `#[revalidate]`):**
+
+```toml
+[fsr]
+revalidate_seconds = 3600   # 1 hour default for all LiveProp fields without explicit revalidate
+```
+
+**Fields excluded from revalidation timers:**
+- Fields with `#[depends_on("key")]` on Props — they use a static dep key, no timer.
+- Fields with an explicit `depends_on` in `live.rs` (DB-driven invalidation via `dep!()`) — they are DB-driven, no timer.
 
 **Manual — explicit `WatcherConfig` in `hooks.rs` (shared dep keys across routes):**
 
@@ -117,16 +148,21 @@ pilcrow:json:<route>     → baked JSON data
 
 - `PROMOTE_AFTER = 0` means bake on first hit; all subsequent requests skip `load()`
 - Dynamic routes with `PROMOTE_AFTER = 0` must provide `entries()` for startup prebaking
-- `#[pilcrow::live(revalidate = N)]` on a Props `LiveProp<T>` field auto-wires a timer and dep key — no manual `depends_on` in `live.rs` needed unless you want to share the dep key
-- `revalidate = N` and an explicit `depends_on` in `live.rs` coexist: explicit wins for `depends_on`; the timer fires regardless
+- `#[revalidate(N)]` on a Props `LiveProp<T>` field always wins over global config and the 24h default
+- Fields on the same route with the same `#[revalidate(N)]` value share one internal timer
+- `#[depends_on("key")]` wires a Props `LiveProp<T>` field to a static dep key; mutually exclusive with `#[revalidate(N)]`; no revalidation timer
+- Fields with an explicit `depends_on` in `live.rs` are DB-driven and excluded from all revalidation timers
+- `[fsr] revalidate_seconds` in `Pilcrow.toml` is the global fallback for fields with no field-level `#[revalidate(N)]`
 - `REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`, `STREAMING`, `PRERENDER` are **build errors**
 
 **Key files**
 - `pilcrow/crates/runtime/src/fsr/` — `store.rs`, `handle.rs`, `extractor.rs`, `watcher.rs`, `cache.rs`
-- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER` and `#[pilcrow::live(...)]` Props field attrs
+- `pilcrow/crates/routekit/src/templating/codegen/instrument.rs` — parses `PROMOTE_AFTER`, `#[revalidate(N)]`, `#[depends_on("key")]` Props field attrs
 - `pilcrow/crates/routekit/src/templating/page_options.rs` — `FsrOpts`, `LiveFieldAttr`
-- `pilcrow/crates/routekit/src/fsr.rs` — `process_live_rs`, auto dep key injection
-- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — emits `__register_codegen_scheduled_invalidations` in `__pilcrow_init()`
+- `pilcrow/crates/routekit/src/fsr.rs` — `process_live_rs`, dep key injection
+- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — emits `__register_codegen_scheduled_invalidations` and `__register_codegen_default_revalidate_routes` in `__pilcrow_init()`
+- `pilcrow/crates/core/src/config/config.rs` — `FsrConfig::revalidate_seconds`
+- `pilcrow/crates/runtime/src/start.rs` — merges field-level and default timers into `WatcherConfig`
 
 ---
 

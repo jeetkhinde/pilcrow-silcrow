@@ -1041,7 +1041,8 @@ impl ServerHandler for PilcrowServer {
                     1. Convention compliance (load signature, action return types, Props struct)\n\
                     2. Planned feature usage (Islands, SSG, ISR — must be rejected)\n\
                     3. Silcrow boundary correctness (directives in HTML only; delegate client-runtime to silcrow-mcp)\n\
-                    4. Production readiness (error handling, deferred loading, missing skeletons)\n\n\
+                    4. Production readiness (error handling, deferred loading, missing skeletons)\n\
+                    5. FSR live debounce correctness: #[debounce(N)] on a live.rs Live struct or LiveProp field is metadata that routekit persists as debounce_secs; do not claim the current watcher enforces delayed/coalesced patches unless that implementation exists.\n\n\
                     Use validate_implementation, get_feature_spec, and diagnose_route as needed.\n\n\
                     Code:\n```\n{code}\n```"
                 ))]

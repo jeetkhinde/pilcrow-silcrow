@@ -465,6 +465,7 @@ pub fn compile_to_out_dir_with_config(
             has_live_fn_map: &templates_output.has_live_fn_map,
             fsr_live_source_map: &templates_output.fsr_live_source_map,
             fsr_live_fields_map: &templates_output.fsr_live_fields_map,
+            fsr_default_revalidate_symbols: &templates_output.fsr_default_revalidate_symbols,
             layout_chain_ids_map: &layout_chain_ids_map,
             page_slot_map: &page_slot_map,
         },
