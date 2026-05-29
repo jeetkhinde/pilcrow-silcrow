@@ -14,8 +14,13 @@ _Created 2026-05-29. Executable task spec for roadmap item **E1** (+ parts of **
 - `isr.rs` (`IsrCache`/`IsrHandle`/`IsrCacheState`) is **dead** — `pub mod isr;` in `runtime/src/lib.rs`, zero other references.
 - `baked_pages/` is used **only** by `crates/web/examples/baked_*.rs` and the feature-gated `experimental-baked-pages` block in `web/src/lib.rs`. FSR baking (`fsr/store.rs`) is self-contained. `baked_pages` consumes `deferred::{PatchDelay, BakedProp, BakedField}`.
 - `deferred.rs` (399 lines) contains: `__live_props_response`, `LiveTarget`, `LiveProp<T>` (legacy push-based — `watch`/`poll`/`stream`/`initial`) **[KEEP until S8]**, plus `PatchDelay`/`BakedProp`/`BakedField` **[remove in S5]**.
-- **Two `LiveProp` types collide:** `pilcrow_web::LiveProp` (legacy, from `runtime/src/lib.rs` `pub use deferred::{…, LiveProp, …}`) vs `pilcrow_web::live::LiveProp` (FSR, from `web/src/live.rs` `pub use runtime::fsr::{…, LiveProp, …}`). Legacy is used by demo pages: `demo/pages/live/index.rs`, `demo/pages/demo/async-live/index.rs`, `demo/pages/demo/async-live/islands/activity.rs`, `demo/pages/demo/combined/simple/index.rs`, `demo/pages/demo/combined/complex/index.rs`, `demo/pages/demo/fsr/index.rs`.
-- **Two live SSE topologies:** FSR = one hub (`fsr_hub_handler`, `/__pilcrow/fsr`). Legacy = per-route `/__pilcrow/live{pattern}` (emitted in `app_module.rs` via `__live_props_response`, discovered by `data-pilcrow-live` anchors + `initLiveElements` in `silcrow.js`). `silcrow.js` opens exactly **one** `EventSource` today.
+- **THREE `LiveProp` definitions exist; the FSR one is the only survivor (user decision 2026-05-29).**
+  1. `runtime::fsr::LiveProp` (`web/src/live.rs` → `pilcrow_web::live::LiveProp`) — **KEEP.** Query-backed (`live_query!`, `PilcrowLive::query`), watcher, `s-live`, `pilcrow_fsr` rows, `PROMOTE_AFTER`.
+  2. `runtime::deferred::LiveProp` (`runtime/src/lib.rs` `pub use deferred::{…, LiveProp, …}` → crate-root `pilcrow_web::LiveProp`) — legacy push (`watch`/`poll`/`stream`/`initial`). **DELETE.** Used by 6 demos (below).
+  3. `runtime::live_props::model::LiveProp` (+ `LiveFieldData`, `LivePropExtract` derive, used by the `#[handler]` macro + `live_props_derive.rs`) — legacy. **DELETE.**
+- **The `Vec<T>` list system is SEPARATE and KEPT** (user: "we will improve it later"): `live_props::{ListBroadcast, ListPatchEvent, ListRow, ListChunkCache, InMemoryListChunkCache, list_chunk_key}` in `live_props/list_broadcast.rs`, `list_row.rs`, `list_chunk.rs`. **Verified independent** of the legacy `LiveProp`/`LiveBroadcast`/`LivePageStore` glue — they can stay while the legacy parts of `live_props/` (`model.rs`, `broadcast.rs`, `store.rs`, `baking.rs`) are removed.
+- **Legacy demos have NO database** — `demo/pages/live/index.rs`, `demo/pages/demo/fsr/index.rs`, `demo/pages/demo/async-live/index.rs` (+ `islands/activity.rs`), `demo/pages/demo/combined/simple/index.rs`, `combined/complex/index.rs` are in-memory `tokio::watch` counters incremented by a spawned task. FSR is query-backed, so these **cannot migrate 1:1** — each must be re-backed by a DB query or removed (see S7).
+- **Two live SSE topologies:** FSR = one hub (`fsr_hub_handler`, `/__pilcrow/fsr`). Legacy = per-route `/__pilcrow/live{pattern}` (emitted in `app_module.rs` via `__live_props_response`, discovered by `data-pilcrow-live` anchors + `initLiveElements` in `silcrow.js`). `silcrow.js` opens exactly **one** `EventSource` today. Deleting the legacy system (S8) leaves the FSR hub as the sole connection — invariant #1 satisfied by construction.
 
 ---
 
@@ -46,9 +51,9 @@ S0 (baseline)
  ├─ S1 → S2 → S3        (removed page consts)
  ├─ S4                  (delete isr.rs)            — independent
  ├─ S5 → S6             (remove baked_pages + doc scrub) — independent
- └─ S7 → S8 → S9        (live consolidation; S8 needs the Fold/Rename decision)
+ └─ S7 → S8 → S9        (migrate demos to FSR, then delete legacy live infra)
 ```
-S1–S6 are safe and can ship first. S7+ is the large consolidation.
+S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decided — keep only FSR `LiveProp<T>`; delete the legacy push `LiveProp` entirely.**
 
 ---
 
@@ -144,27 +149,45 @@ S1–S6 are safe and can ship first. S7+ is the large consolidation.
 
 ---
 
-## S7 — Transport: converge legacy live SSE onto the single hub (invariant #1; LARGE)
+## S7 — Migrate the legacy-`LiveProp` demos onto FSR (then they no longer need the legacy system)
 
-**Goal:** legacy live pages stop opening per-route `/__pilcrow/live{pattern}` connections and ride the one multiplexed hub. One `EventSource` per client.
-**Files (locate by symbol):**
-- `pilcrow/crates/runtime/src/fsr/hub.rs` — `fsr_hub_handler` (`/__pilcrow/fsr`); the target hub. Understand its subscribe/route+slots protocol first.
-- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — the `data-pilcrow-live` anchor injection (search `data-pilcrow-live`) and `__live_props_response` emission (search `__live_props_response`). Replace per-route live wiring with hub subscription.
-- `pilcrow/crates/runtime/assets/silcrow.js` — `initLiveElements` + `data-pilcrow-live` discovery; route through the single existing `EventSource`/`connectSseHub`. After editing, run `node silcrow/build.js`.
-- `pilcrow/crates/runtime/src/start.rs` — the `/__pilcrow/live` route registration + `LiveBroadcast`/`LivePageStore` (search those symbols); retire the per-route endpoint once the hub serves legacy slots.
-**Success:** `cargo build` (pilcrow + demo + address-book) green; `grep -rn "/__pilcrow/live{" pilcrow/crates` and `data-pilcrow-live` per-route wiring removed; **one** `EventSource` in `silcrow.js`. **Out-of-band (human, needs PG+Redis):** load a legacy live demo page, confirm exactly one live connection in devtools and that updates still patch.
-**Boundary:** **DO NOT** remove `createSseHub`/`connectSseHub`/WS hub or reduce multiplexing. Keep the `silcrow:navigate` close / `silcrow:load` reopen reconnect lifecycle.
+**Decision (2026-05-29):** keep **only** the FSR `LiveProp<T>`. FSR is query-backed, but these demos are DB-less `tokio::watch` counters, so each must be **re-backed by a DB query** or **removed**. Do this BEFORE S8 so deleting the legacy system breaks nothing.
+
+**Per-demo plan (confirm fate with the user where noted):**
+- `demo/pages/demo/fsr/index.rs` (+ `.html`) — **rewrite as genuine FSR** (it is mislabeled today). Add `demo/pages/demo/fsr/live.rs` with a `Live` struct (`pub live_count: LiveProp<i64>`) and `Live::query` against a real counter table; a background job / action does the DB write + `invalidate!`. Template uses `s-live="live_count"`. This becomes the canonical FSR counter demo.
+- `demo/pages/live/index.rs`, `demo/pages/demo/async-live/index.rs` (+ `islands/activity.rs`), `demo/pages/demo/combined/simple/index.rs`, `combined/complex/index.rs` — these only exist to showcase the **removed** push primitive. **Recommended:** convert `live/index.rs` to a DB-backed FSR counter (mirrors the `fsr/index.rs` pattern) as the single "live counter" showcase, and **remove** the now-redundant `async-live`/`combined` push demos (their FSR equivalents are already covered by `tickets/` + the rewritten `fsr/index`). **Confirm with the user before deleting any page.**
+- For any page kept: drop `use`/imports of `pilcrow_web::LiveProp` (legacy) and `LiveProp::watch/initial`; switch to `use pilcrow_web::live::*` + the FSR `Live`/`live.rs` convention.
+
+**Files:** the 6 demo `.rs` + `.html` listed above; new `live.rs` files; a small migration (counter table) if the executor chooses DB-backed counters; update the Demo App tutorial (`docs/Pilcrow-Silcrow Docs/Tutorials/Demo App/`) for any page that changes or is removed.
+**Success:** `grep -rn "pilcrow_web::LiveProp\b\|LiveProp::watch\|LiveProp::initial\|LiveProp::poll\|LiveProp::stream" demo address-book` returns nothing (no source uses the legacy prop); `cargo build --manifest-path demo/Cargo.toml` green; kept demos render via FSR `s-live`.
+**Boundary:** do not touch the `Vec<T>` list system or the FSR hub. Do not delete a demo page without user confirmation.
 
 ---
 
-## S8 — Type unification: one `LiveProp` (DECISION REQUIRED — Fold vs Rename)
+## S8 — Delete the legacy live infrastructure (one `LiveProp`, one hub)
 
-**Goal:** end the `pilcrow_web::LiveProp` vs `pilcrow_web::live::LiveProp` collision. **Blocked on the user's choice:**
-- **Option F (Fold):** one `LiveProp<T>` with both producers — `::watch(rx)` (push) and the FSR DB-query path — all flowing through the S7 hub. Migrate the 6 demo pages, delete `deferred.rs`'s `LiveProp`/`LiveTarget`.
-- **Option R (Rename):** keep both capabilities; rename the legacy type (e.g. `PushProp`/`StreamProp`) so names stop colliding; both ride the S7 hub.
-**Files (either option):** `pilcrow/crates/runtime/src/lib.rs` (the `pub use deferred::{… LiveProp …}`), `pilcrow/crates/web/src/lib.rs` (`pub use runtime::{… LiveProp …}` re-export) and `web/src/live.rs`; `#[handler]` macro (`pilcrow/crates/macros/src/handler.rs`), `pilcrow/crates/macros/src/live_props_derive.rs`, `invalidate_macro.rs`; the 6 demo pages listed in Ground truth; `pilcrow/registry.toml` (`live-props` ↔ `fsr`).
-**Success:** exactly one `LiveProp` path resolvable; `cargo build` + `cargo test` (routekit, runtime, mcp) green; demo pages compile against the unified surface; `node silcrow/build.js` if JS touched.
-**Boundary:** preserve the push capability (broadcast-channel updates) regardless of option; keep one hub.
+**Goal:** with S7 done (no source uses the legacy `LiveProp`), remove the entire legacy live-props machinery. The FSR `LiveProp` + FSR hub are the only survivors → invariant #1 satisfied by construction. **KEEP the `Vec<T>` list system.**
+
+**Delete:**
+- `pilcrow/crates/runtime/src/deferred.rs` — remove `LiveProp<T>`, `LiveTarget`, `__live_props_response` (after S5 this file has nothing else; if empty, delete the file and its `pub mod deferred;` in `runtime/src/lib.rs`).
+- `pilcrow/crates/runtime/src/live_props/` — delete the **legacy** files `model.rs` (legacy `LiveProp`/`LiveFieldData`/`LivePropExtract`), `broadcast.rs` (`LiveBroadcast`/`InvalidationEvent`), `store.rs` (`LivePageStore`), and `baking.rs` (`inject_live_slots`) **only if** a grep confirms FSR does not use them (FSR has its own baking). **KEEP** `list_broadcast.rs`, `list_row.rs`, `list_chunk.rs`. Update `live_props/mod.rs` to drop the deleted re-exports and keep the `List*` ones. Verify `dep.rs` ownership (FSR has its own `DependencyKey` in `fsr/`; the `live_props/dep.rs` one is legacy → delete if unused).
+- `pilcrow/crates/runtime/src/lib.rs` — remove `pub use deferred::{__live_props_response, LiveProp, LiveTarget};` and any `live_props::{LiveProp, LiveFieldData, LivePropExtract, LiveBroadcast, LivePageStore, InvalidationEvent}` re-exports. **Keep** the `live_props::{ListBroadcast, ListChunkCache, InMemoryListChunkCache, ListPatchEvent, ListRow, list_chunk_key}` re-export line.
+- `pilcrow/crates/web/src/lib.rs` — remove `pub use runtime::{__live_props_response, LiveProp, LiveTarget};` so the only `LiveProp` is `pilcrow_web::live::LiveProp` (FSR).
+- `pilcrow/crates/macros/src/live_props_derive.rs` — delete the derive macro; remove its registration in `macros/src/lib.rs`.
+- `pilcrow/crates/macros/src/handler.rs` — remove the `LivePropExtract`/`LivePageStore`/`LiveBroadcast` injection (search `live_props`); leave the rest of `#[handler]` intact.
+- `pilcrow/crates/macros/src/invalidate_macro.rs` — if it targets `live_props::InvalidationEvent` (legacy), retarget it to FSR invalidation or delete if FSR's `invalidate!` supersedes it (FSR has its own `dep!`/`invalidate!`). Verify against `web/src/live.rs` re-exports.
+- `pilcrow/crates/routekit/src/templating/codegen/app_module.rs` — remove the `__live_props_response` emission and the `data-pilcrow-live` anchor injection (search both); the `/__pilcrow/live{pattern}` route generation goes with it.
+- `pilcrow/crates/runtime/src/start.rs` — remove the `/__pilcrow/live` route registration + `LiveBroadcast`/`LivePageStore` wiring (search those symbols). **Keep** the FSR hub registration (`/__pilcrow/fsr`).
+- `pilcrow/crates/runtime/assets/silcrow.js` — remove `initLiveElements` + `data-pilcrow-live` discovery (legacy per-route SSE). **KEEP** the single FSR hub `EventSource`, `createSseHub`/`connectSseHub`, the WS hub, and the `silcrow:navigate`/`silcrow:load` reconnect lifecycle. Run `node silcrow/build.js` after.
+- `pilcrow/registry.toml` — remove the `live-props` feature entry (superseded by `fsr`); scrub any remaining `deferred.rs`/`live_props` legacy `source_refs`.
+
+**Boundary (critical):** **DO NOT** delete or weaken: the `Vec<T>` list system (`list_broadcast.rs`/`list_row.rs`/`list_chunk.rs`), the FSR hub (`fsr_hub_handler`), the WS hub, or SSE/WS multiplexing. One `EventSource` per client must remain.
+**Success:**
+- `grep -rn "deferred::LiveProp\|live_props::model\|LivePropExtract\|LiveBroadcast\|LivePageStore\|__live_props_response\|data-pilcrow-live\|/__pilcrow/live\b" pilcrow/crates` returns nothing.
+- Exactly one `LiveProp` resolvable: `pilcrow_web::live::LiveProp` (FSR). `grep -rn "pub use .*LiveProp" pilcrow/crates` shows only the `runtime::fsr` path.
+- `cargo build --manifest-path pilcrow/Cargo.toml` + `demo` + `address-book` green; `cargo test -p pilcrow-routekit -p pilcrow-runtime` + `cargo test -p pilcrow-mcp` green; `node silcrow/build.js` succeeds.
+- `live_props::ListRow`/`ListBroadcast` still compile and are still re-exported.
+- **Out-of-band (human, needs PG+Redis):** load demo + address-book; confirm exactly one live connection per client and FSR `s-live` updates still patch.
 
 ---
 
@@ -175,6 +198,7 @@ S1–S6 are safe and can ship first. S7+ is the large consolidation.
 
 ---
 
-## Open decision before S8
+## Decisions
 
-**Fold vs Rename** the legacy push-based `LiveProp`. Everything through **S7** is unblocked and preserves the one-connection-per-client guarantee regardless of the choice.
+- **RESOLVED (2026-05-29):** keep **only** the FSR `LiveProp<T>`. The legacy push-based `LiveProp` and its per-route SSE are deleted entirely (S8); demos migrate to query-backed FSR (S7). The `Vec<T>` list system is kept and improved later.
+- **Remaining sub-decision (S7):** the fate of the pure push-showcase demos (`live/`, `async-live/`, `combined/*`) — convert each to a DB-backed FSR counter, or remove the redundant ones. Recommendation in S7: rewrite `demo/fsr/index.rs` as real FSR, convert `live/index.rs` to a DB-backed FSR counter, remove the rest. **Confirm before deleting any demo page.**
