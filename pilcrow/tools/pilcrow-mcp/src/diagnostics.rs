@@ -141,7 +141,7 @@ pub fn diagnose_project(
                     Severity::Warning,
                     "pilcrow-deferred-no-loading-skeleton",
                     &format!(
-                        "Route {} uses AsyncValue<T> but has no _loading.html in its hierarchy. Users may see a blank page during streaming.",
+                        "Route {} uses a legacy Deferred field but has no _loading.html in its hierarchy. Users may see a blank page during streaming.",
                         node.url_pattern
                     ),
                     Some(&format!("pages/{}", node.file_path)),
@@ -338,13 +338,13 @@ pub fn diagnose_route(
                 ));
             }
             if cb.has_load && cb.has_props {
-                // Check Props fields for AsyncValue/AsyncHtml without loading skeleton
+                // Check legacy Deferred Props fields without loading skeleton
                 if cb.has_deferred {
                     findings.push(make_finding(
                         &mut counter,
                         Severity::Info,
                         "pilcrow-deferred-check-loading",
-                        "This route uses AsyncValue<T> or AsyncHtml. Verify a _loading.html skeleton exists for this route's hierarchy.",
+                        "This route uses a legacy Deferred field. Verify a _loading.html skeleton exists for this route's hierarchy.",
                         Some(&html_abs.to_string_lossy()),
                         None,
                         "Add _loading.html in this directory or a parent directory.",

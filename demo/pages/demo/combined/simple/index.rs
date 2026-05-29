@@ -1,9 +1,9 @@
-use pilcrow_web::{AsyncValue, LiveProp};
+use pilcrow_web::LiveProp;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tokio::spawn;
 use tokio::sync::watch;
-use tokio::time::{interval, sleep};
+use tokio::time::interval;
 
 // ── Regular struct — fine to nest in Props. No special types inside. ──────────
 pub struct ProductMeta {
@@ -12,18 +12,9 @@ pub struct ProductMeta {
     pub sku: String,
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-// AsyncValue, AsyncHtml, and LiveProp MUST be flat top-level fields.
-// Codegen scans only the direct fields of Props — types buried inside a
-// nested struct are invisible to it and will not get async/live behaviour.
 pub struct Props {
-    // Normal nested struct — rendered synchronously in the shell. ✓
     pub meta: ProductMeta,
-
-    // AsyncValue: renders empty in shell, scalar value streams in once. ✓
-    pub review_count: AsyncValue<i64>,
-
-    // LiveProp: initial value baked into shell, SSE keeps it updated. ✓
+    pub review_count: i64,
     pub stock: LiveProp<u32>,
 }
 
@@ -52,20 +43,12 @@ fn stock_tx() -> &'static watch::Sender<u32> {
 // ── load ──────────────────────────────────────────────────────────────────────
 pub async fn load(_req: Req) -> AppResult<Props> {
     Ok(Props {
-        // Regular struct: assembled inline, rendered in shell immediately.
         meta: ProductMeta {
             name: "Wireless Headphones".into(),
             category: "Electronics".into(),
             sku: "SKU-WH-2024".into(),
         },
-
-        // AsyncValue: spawn the expensive query; shell shows "" until it resolves.
-        review_count: AsyncValue::spawn(async {
-            sleep(Duration::from_secs(2)).await; // simulate slow DB
-            847_i64
-        }),
-
-        // LiveProp: initial value from watch channel, SSE keeps patching.
+        review_count: 847_i64,
         stock: LiveProp::watch(stock_tx().subscribe()),
     })
 }

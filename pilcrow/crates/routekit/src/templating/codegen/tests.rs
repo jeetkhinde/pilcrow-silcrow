@@ -181,26 +181,32 @@ mod tests {
     }
 
     #[test]
-    fn render_generated_templates_module_validates_fsr_live_slots_against_live_rs() {
+    fn render_generated_templates_module_validates_inline_fsr_live_slots() {
         let root = mk_temp_root("fsr_live_validation");
         let page_path = root.join("src/pages/tickets/index.html");
-        let live_path = root.join("src/pages/tickets/live.rs");
-        write_file(
-            &live_path,
-            r#"
-use pilcrow_web::live::*;
-
-pub struct Live {
-    pub status: LiveProp<String>,
-}
-"#,
-        );
 
         let err = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_tickets".to_string(),
             render_symbol: "render_page_tickets".to_string(),
             source_path: page_path.display().to_string(),
-            rust_frontmatter: "pub struct Props { pub status: String }".to_string(),
+            rust_frontmatter: r#"
+use pilcrow_web::live::*;
+
+pub struct Props {
+    pub live: Live,
+}
+
+pub struct Live {
+    pub status: LiveProp<String>,
+}
+
+impl Live {
+    pub fn query(_params: &serde_json::Map<String, serde_json::Value>) -> LiveQuery {
+        live_query!("SELECT status FROM tickets")
+    }
+}
+"#
+            .to_string(),
             template_source: r#"<span s-live="ticket_status">{{ status }}</span>"#.to_string(),
             layout_chain: vec![],
             fragment_url_prefix: None,
@@ -213,7 +219,7 @@ pub struct Live {
         cleanup(&root);
 
         let message = err.to_string();
-        assert!(message.contains("failed to validate"));
+        assert!(message.contains("failed to validate inline FSR Live"));
         assert!(message.contains("s-live=\"ticket_status\" exists"));
         assert!(message.contains("no matching Live field exists"));
         assert!(message.contains("Live field `status` exists"));

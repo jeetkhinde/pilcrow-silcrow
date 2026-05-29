@@ -1,9 +1,9 @@
-use pilcrow_web::{AsyncHtml, AsyncValue, LiveProp};
+use pilcrow_web::LiveProp;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tokio::spawn;
 use tokio::sync::watch;
-use tokio::time::{interval, sleep};
+use tokio::time::interval;
 
 // ── Regular nested structs (no special types — safe to nest) ──────────────────
 
@@ -24,14 +24,8 @@ pub struct Props {
     pub header: ReportHeader,
     pub sales: SalesBreakdown,
 
-    // AsyncHtml: expensive HTML fragment, streams in after load() returns.
-    pub report_body: AsyncHtml,
-
-    // AsyncValue: expensive scalar, streams in after load() returns.
-    pub total_orders: AsyncValue<i64>,
-
-    // LiveProp placeholders — live() fn overrides these for SSE connections
-    // so load()'s expensive work is not re-run on every reconnect.
+    pub report_body: String,
+    pub total_orders: i64,
     pub viewers: LiveProp<u32>,
     pub health: LiveProp<String>,
 }
@@ -103,20 +97,8 @@ pub async fn load(_req: Req) -> AppResult<Props> {
         header,
         sales,
 
-        // AsyncHtml: expensive HTML rendered off the critical path.
-        report_body: AsyncHtml::spawn(async {
-            sleep(Duration::from_millis(1800)).await;
-            render_report_html()
-        })
-        .with_loading("<p class='loading-hint'>⏳ Loading report…</p>"),
-
-        // AsyncValue: expensive scalar query off the critical path.
-        total_orders: AsyncValue::spawn(async {
-            sleep(Duration::from_millis(1200)).await;
-            14_392_i64
-        }),
-
-        // Pattern B: LiveProp::initial() here — live() overrides for SSE.
+        report_body: render_report_html(),
+        total_orders: 14_392_i64,
         viewers: LiveProp::initial(0),
         health: LiveProp::initial("Healthy".to_string()),
     })

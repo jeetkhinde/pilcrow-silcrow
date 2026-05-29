@@ -115,6 +115,57 @@ pub fn inject_live_text_spans(template: &str, live_fields: &[String]) -> String 
     out
 }
 
+/// Rewrites text-node uses of `{{ live.field.value }}` into an FSR slot:
+/// `<span s-live="field">{{ live.field.value }}</span>`.
+///
+/// The rewrite is intentionally limited to text context. Interpolations inside
+/// HTML tags/attributes, such as `class="{{ live.priority.value.class }}"`, are
+/// left unchanged.
+pub fn inject_fsr_live_slots(template: &str, live_fields: &[String]) -> String {
+    if live_fields.is_empty() {
+        return template.to_string();
+    }
+
+    let mut out = String::with_capacity(template.len());
+    let mut offset = 0;
+    while let Some(start_rel) = template[offset..].find("{{") {
+        let start = offset + start_rel;
+        let Some(end_rel) = template[start + 2..].find("}}") else {
+            break;
+        };
+        let end = start + 2 + end_rel + 2;
+        let inner = template[start + 2..end - 2].trim();
+
+        out.push_str(&template[offset..start]);
+
+        let field = live_fields
+            .iter()
+            .find(|field| inner == format!("live.{field}.value"));
+
+        if let Some(field) = field {
+            let in_tag = template[..start].rfind('<') > template[..start].rfind('>');
+            let already_in_live_tag = template[..start]
+                .rfind('<')
+                .and_then(|lt| template[lt..start].find('>').map(|gt| (lt, lt + gt)))
+                .is_some_and(|(lt, gt)| template[lt..gt].contains("s-live"));
+
+            if !in_tag && !already_in_live_tag {
+                out.push_str(&format!(
+                    "<span s-live=\"{field}\">{}</span>",
+                    &template[start..end]
+                ));
+            } else {
+                out.push_str(&template[start..end]);
+            }
+        } else {
+            out.push_str(&template[start..end]);
+        }
+
+        offset = end;
+    }
+    out.push_str(&template[offset..]);
+    out
+}
 
 // ── HTTP Verb Attributes ──────────────────────────────────────
 
@@ -1302,6 +1353,35 @@ pub struct Props {
     fn split_html_module_rejects_empty_template() {
         let err = split_html_module("---\nlet x = 1;\n---\n\n").expect_err("expected an error");
         assert_eq!(err, HtmlModuleParseError::EmptyTemplate);
+    }
+
+    #[test]
+    fn inject_fsr_live_slots_wraps_text_node_live_value() {
+        let fields = vec!["status".to_string()];
+        let output = inject_fsr_live_slots(r#"<strong>{{ live.status.value }}</strong>"#, &fields);
+        assert_eq!(
+            output,
+            r#"<strong><span s-live="status">{{ live.status.value }}</span></strong>"#
+        );
+    }
+
+    #[test]
+    fn inject_fsr_live_slots_skips_attribute_context() {
+        let fields = vec!["status".to_string()];
+        let input = r#"<span class="badge-{{ live.status.value }}">{{ live.status.value }}</span>"#;
+        let output = inject_fsr_live_slots(input, &fields);
+        assert_eq!(
+            output,
+            r#"<span class="badge-{{ live.status.value }}"><span s-live="status">{{ live.status.value }}</span></span>"#
+        );
+    }
+
+    #[test]
+    fn inject_fsr_live_slots_does_not_wrap_existing_s_live_element() {
+        let fields = vec!["status".to_string()];
+        let input = r#"<span s-live="status">{{ live.status.value }}</span>"#;
+        let output = inject_fsr_live_slots(input, &fields);
+        assert_eq!(output, input);
     }
 
     #[test]

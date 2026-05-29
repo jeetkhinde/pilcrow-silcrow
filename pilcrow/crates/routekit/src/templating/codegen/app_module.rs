@@ -404,7 +404,7 @@ pub fn render_generated_app_module(
             .map(Vec::as_slice)
             .unwrap_or(&[]);
         let _has_live_fn_for_page = *has_live_fn_map.get(&entry.symbol).unwrap_or(&false);
-        // True when this route has a live.rs (FSR) — use FSR client script instead of old live SSE.
+        // True when this route has inline Live (FSR) — use FSR client script instead of old live SSE.
         let has_fsr = fsr_live_source_map.contains_key(&entry.symbol);
 
         // Layout-aware navigation: layout chain IDs and page slot pattern.
@@ -599,8 +599,11 @@ pub fn render_generated_app_module(
                 .iter()
                 .filter(|(_, _, _, s)| s.consumes_req())
                 .count();
+            let ps_req_consumers =
+                usize::from(!ps_layout_chain.is_empty() && ps_page_slot.is_some());
             let mut req_clones_left = if needs_req {
-                let total = layout_req_consumers + if page_wants_req { 1 } else { 0 };
+                let total =
+                    layout_req_consumers + if page_wants_req { 1 } else { 0 } + ps_req_consumers;
                 total.saturating_sub(1)
             } else {
                 0
@@ -995,7 +998,7 @@ pub fn render_generated_app_module(
         if live_fields.is_empty() {
             continue;
         }
-        // FSR routes have a live.rs — skip old per-route SSE handler.
+        // FSR routes have inline Live — skip old per-route SSE handler.
         if fsr_live_source_map.contains_key(&entry.symbol) {
             continue;
         }

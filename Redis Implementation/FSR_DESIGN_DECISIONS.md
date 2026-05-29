@@ -352,7 +352,7 @@ SSG              ★★★★★  Pilcrow matches — promoted routes are static
 ISR (Next.js)    ★★★★☆  Pilcrow is better — dep-based not time-based, field-level not page-level
 SSR              ★★★☆☆  Pilcrow matches for unpromoted routes, better cache story
 CSR              ★★☆☆☆  Pilcrow better — 95% baked, only watched fields are shells
-Streaming SSR    ★★★★☆  Pilcrow has this too (AsyncValue, AsyncHTML, STREAMING=true)
+Streaming SSR    ★★★☆☆  Pilcrow prefers FSR LiveProp fields and islands/fragments for slow UI
 ```
 
 Pilcrow's unique advantages over all:

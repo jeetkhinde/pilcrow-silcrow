@@ -168,18 +168,18 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
                     path,
                     Some(lnum),
                     Some("registry.toml: feature SSR Streaming"),
-                    Some("Use AsyncValue<T> for streaming individual fields on an ISR page."),
+                    Some("Use FSR LiveProp fields for surgical live updates, or split slow UI into an island/fragment instead of enabling STREAMING on ISR."),
                 ));
             }
             if code.contains("LiveProp<") {
                 findings.push(finding_with_line(
                     Severity::Error,
                     "pilcrow-streaming-fsr-conflict",
-                    "STREAMING = true is incompatible with FSR (live.rs / LiveProp) — routekit reports this as a structured build error.".to_string(),
+                    "STREAMING = true is incompatible with FSR (inline Live / LiveProp) — routekit reports this as a structured build error.".to_string(),
                     path,
                     Some(lnum),
                     Some("registry.toml: feature fsr"),
-                    Some("FSR routes serve pre-baked HTML with surgical slot patches. Remove STREAMING = true, or remove the live.rs file and LiveProp fields."),
+                    Some("FSR routes serve pre-baked HTML with surgical slot patches. Remove STREAMING = true, or remove the inline Live/LiveProp fields."),
                 ));
             }
             if code.contains("FSR_JSON") {

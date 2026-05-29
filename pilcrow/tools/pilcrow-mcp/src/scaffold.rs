@@ -51,7 +51,9 @@ pub fn orchestrate_feature(
         "route" | "page" | "loaded-page" => scaffold_loaded_page(&resolved.app_root, request)?,
         "static-page" => scaffold_static_page(&resolved.app_root, request)?,
         "action-page" => scaffold_action_page(&resolved.app_root, request)?,
-        "deferred-page" => scaffold_deferred_page(&resolved.app_root, request)?,
+        "deferred-page" | "live-page" | "fsr-page" => {
+            scaffold_live_page(&resolved.app_root, request)?
+        }
         "component" => scaffold_component(&resolved.app_root, request)?,
         "fragment" => scaffold_fragment(&resolved.app_root, request)?,
         "silcrow-form" | "silcrow" => scaffold_silcrow_form(&resolved.app_root, request)?,
@@ -63,7 +65,7 @@ pub fn orchestrate_feature(
         "middleware" => scaffold_middleware(&resolved.app_root, request)?,
         "env-config" => scaffold_env_config(&resolved.app_root, request)?,
         "typed-param" => scaffold_typed_param(&resolved.app_root, request)?,
-        other => bail!("unsupported scaffold kind: {other}. Supported: route, static-page, loaded-page, action-page, deferred-page, component, fragment, silcrow-form, nested-layout, loading-page, error-page, not-found-page, api-route, middleware, env-config, typed-param"),
+        other => bail!("unsupported scaffold kind: {other}. Supported: route, static-page, loaded-page, action-page, live-page, fsr-page, deferred-page, component, fragment, silcrow-form, nested-layout, loading-page, error-page, not-found-page, api-route, middleware, env-config, typed-param"),
     };
 
     for file in &mut files {
@@ -191,8 +193,8 @@ fn scaffold_action_page(
     ))
 }
 
-// --- deferred page: with AsyncValue<T> field ---
-fn scaffold_deferred_page(
+// --- live page: FSR with inline Live props ---
+fn scaffold_live_page(
     app_root: &Path,
     request: ScaffoldRequest<'_>,
 ) -> Result<(Vec<ScaffoldFile>, Vec<String>)> {
@@ -207,21 +209,21 @@ fn scaffold_deferred_page(
                 path: display_path(&html_path),
                 action: ScaffoldAction::Create,
                 content: format!(
-                    "<Fragment slot=\"title\"><title>{title}</title></Fragment>\n\n<h1>{title}</h1>\n<p>Count: <span :text=\"count\">Loading...</span></p>\n"
+                    "<Fragment slot=\"title\"><title>{{{{ title }}}}</title></Fragment>\n\n<h1>{{{{ title }}}}</h1>\n<p>Live count: {{{{ live.count.value }}}}</p>\n"
                 ),
             },
             ScaffoldFile {
                 path: display_path(&rs_path),
                 action: ScaffoldAction::Create,
                 content: format!(
-                    "use pilcrow_web::AsyncValue;\n\npub struct Props {{\n    pub title: &'static str,\n    pub count: AsyncValue<i32>,\n}}\n\npub async fn load(_req: Req) -> AppResult<Props> {{\n    Ok(Props {{\n        title: \"{title}\",\n        count: AsyncValue::spawn(async {{\n            // Replace with your expensive async computation\n            42\n        }}),\n    }})\n}}\n"
+                    "use std::time::Duration;\n\nuse pilcrow_web::LiveProp;\n\npub struct Props {{\n    pub title: &'static str,\n}}\n\npub struct Live {{\n    pub count: LiveProp<i32>,\n}}\n\npub async fn load(_req: Req) -> AppResult<Props> {{\n    Ok(Props {{ title: \"{title}\" }})\n}}\n\npub async fn live(_req: Req) -> AppResult<Live> {{\n    Ok(Live {{\n        count: LiveProp::poll(0, Duration::from_secs(5), || async {{\n            // Replace with your database query or cheap refresh computation.\n            42\n        }}),\n    }})\n}}\n"
                 ),
             },
         ],
         vec![
-            "AsyncValue page: the shell renders immediately; 'count' is streamed after it resolves.".to_string(),
-            "Add a _loading.html template in this route's directory for a loading skeleton.".to_string(),
-            "AsyncValue<T> requires T: Display for the initial empty render.".to_string(),
+            "Live page: inline Live fields stream through FSR and patch matching template uses.".to_string(),
+            "Template uses like `{{ live.count.value }}` are auto-wrapped with s-live by routekit.".to_string(),
+            "`live()` should return cheap producers such as poll/watch/stream; keep primary page data in load().".to_string(),
         ],
     ))
 }

@@ -12,7 +12,7 @@ fn rust_string(value: &str) -> String {
     format!("{value:?}")
 }
 
-/// Field extracted from the `Live` struct in `live.rs`.
+/// Field extracted from an inline `Live` struct.
 pub struct LiveField {
     pub name: String,
     pub column_name: Option<String>,
@@ -87,31 +87,31 @@ impl Parse for DependsOnRouteInput {
     }
 }
 
-/// Process a `live.rs` file: strip `#[pilcrow::*]` attrs, extract LiveProp fields,
+/// Process an FSR Live source block: strip `#[pilcrow::*]` attrs, extract LiveProp fields,
 /// and generate a `from_row()` impl.
 ///
 /// `route_promote_after` — from the page-level `PROMOTE_AFTER` constant. When `Some`,
 /// emits `route_promote_after()` so the runtime uses this threshold to promote the route.
 ///
 /// `auto_attrs` — per-field options from `#[pilcrow::live(...)]` on Props `LiveProp<T>` fields.
-/// For each field: if no explicit `depends_on` is set in `live.rs` and `revalidate_secs` is set,
+/// For each field: if no explicit `depends_on` is set in inline `Live` and `revalidate_secs` is set,
 /// auto-injects dep key `"{module_name}::{field_name}"` as `depends_on`.
 ///
 /// `module_name` — the page module symbol (e.g. `"page_tickets"`), used to derive dep keys.
 ///
 /// Returns (processed_source, live_fields).
-pub fn process_live_rs(
-    path: &Path,
+pub fn process_live_source(
+    source: &str,
+    source_label: &str,
     route_params: &[String],
     route_promote_after: Option<u32>,
     auto_attrs: &HashMap<String, LiveFieldAttr>,
     module_name: &str,
 ) -> io::Result<(String, Vec<LiveField>)> {
-    let source = std::fs::read_to_string(path)?;
     let mut file: syn::File = syn::parse_str(&source).map_err(|e| {
         io::Error::new(
             io::ErrorKind::InvalidData,
-            format!("failed to parse live.rs: {e}"),
+            format!("failed to parse FSR Live source in {source_label}: {e}"),
         )
     })?;
 
@@ -195,7 +195,26 @@ pub fn process_live_rs(
     Ok((file.into_token_stream().to_string(), live_fields))
 }
 
-/// Validate a page template's `s-live` slots against its sibling `live.rs` fields.
+/// Backward-compatible helper for callers/tests still passing a path.
+pub fn process_live_rs(
+    path: &Path,
+    route_params: &[String],
+    route_promote_after: Option<u32>,
+    auto_attrs: &HashMap<String, LiveFieldAttr>,
+    module_name: &str,
+) -> io::Result<(String, Vec<LiveField>)> {
+    let source = std::fs::read_to_string(path)?;
+    process_live_source(
+        &source,
+        &path.display().to_string(),
+        route_params,
+        route_promote_after,
+        auto_attrs,
+        module_name,
+    )
+}
+
+/// Validate a page template's `s-live` slots against inline `Live` fields.
 pub fn validate_live_template_slots(
     template_source: &str,
     live_fields: &[LiveField],
@@ -291,6 +310,46 @@ fn collect_s_live_slots(html: &str) -> BTreeMap<String, LiveSlotUse> {
         offset = next_offset;
     }
     slots
+}
+
+/// Collect FSR LiveProp field names from an already-parsed page frontmatter file.
+///
+/// This is intentionally lighter than `process_live_source`: it does not validate
+/// attributes or generate `PilcrowLive`; it only gives the template compiler enough
+/// information to auto-insert `s-live` wrappers before Askama derives are emitted.
+pub fn collect_live_field_names(file: &syn::File) -> Vec<String> {
+    file.items
+        .iter()
+        .find_map(|item| {
+            let syn::Item::Struct(s) = item else {
+                return None;
+            };
+            if s.ident != "Live" {
+                return None;
+            }
+            let syn::Fields::Named(named) = &s.fields else {
+                return Some(Vec::new());
+            };
+            Some(
+                named
+                    .named
+                    .iter()
+                    .filter_map(|field| {
+                        let ident = field.ident.as_ref()?;
+                        let is_live_prop = if let syn::Type::Path(tp) = &field.ty {
+                            tp.path
+                                .segments
+                                .last()
+                                .is_some_and(|seg| seg.ident == "LiveProp")
+                        } else {
+                            false
+                        };
+                        is_live_prop.then(|| ident.to_string())
+                    })
+                    .collect(),
+            )
+        })
+        .unwrap_or_default()
 }
 
 fn parse_s_live_value(html: &str, mut offset: usize) -> Option<(String, usize)> {
@@ -429,7 +488,7 @@ fn parse_depends_on_route_attr(
         io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "invalid #[pilcrow::depends_on_route(table, column)] attribute in live.rs: {e}"
+                "invalid #[pilcrow::depends_on_route(table, column)] attribute in inline Live: {e}"
             ),
         )
     })?;
@@ -438,7 +497,7 @@ fn parse_depends_on_route_attr(
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "invalid #[pilcrow::depends_on_route({}, {})] in live.rs: route param `{}` is missing. Use a route like [id] or use #[pilcrow::depends_on(dep!(...))] for an explicit runtime value.",
+                "invalid #[pilcrow::depends_on_route({}, {})] in inline Live: route param `{}` is missing. Use a route like [id] or use #[pilcrow::depends_on(dep!(...))] for an explicit runtime value.",
                 input.table, input.column, param
             ),
         ));
@@ -519,9 +578,9 @@ fn generate_from_row_impl(
     for field in fields {
         let name = &field.name;
         let column_name = field.column_name.as_ref().unwrap_or(name);
-        // Resolve depends_on priority: explicit live.rs > #[depends_on("key")] > #[revalidate(N)] deduped timer > default timer
+        // Resolve depends_on priority: explicit inline Live > #[depends_on("key")] > #[revalidate(N)] deduped timer > default timer
         let effective_depends_on = if field.depends_on.is_some() {
-            // Explicit live.rs dep wins; this field is DB-driven, no revalidation timer.
+            // Explicit inline Live dep wins; this field is DB-driven, no revalidation timer.
             generate_depends_on(&field.depends_on)
         } else {
             let dep_key = auto_attrs

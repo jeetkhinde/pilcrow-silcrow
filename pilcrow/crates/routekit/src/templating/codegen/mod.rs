@@ -87,9 +87,9 @@ pub struct WrittenTemplatesOutput {
     pub page_options: HashMap<String, PageOptions>,
     pub live_fields_map: HashMap<String, Vec<String>>,
     pub has_live_fn_map: HashMap<String, bool>,
-    /// Map from page module_name to processed live.rs source (with from_row() injected).
+    /// Map from page module_name to processed inline Live source (with from_row() injected).
     pub fsr_live_source_map: HashMap<String, String>,
-    /// Map from page module_name to LiveProp field names from live.rs.
+    /// Map from page module_name to LiveProp field names from inline Live.
     pub fsr_live_fields_map: HashMap<String, Vec<String>>,
     /// Set of FSR module names that have fields needing the global/default revalidation timer.
     pub fsr_default_revalidate_symbols: HashSet<String>,

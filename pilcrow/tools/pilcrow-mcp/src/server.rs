@@ -2,7 +2,7 @@ use crate::{
     codegen, diagnostics,
     docs::{self, KnowledgeBase},
     inspect,
-    registry::{Feature,FeatureDomain, FeatureStatus, Registry},
+    registry::{Feature, FeatureDomain, FeatureStatus, Registry},
     scaffold::{orchestrate_feature, ScaffoldRequest},
     validation::validate_implementation,
     workspace::scan_project,
@@ -428,7 +428,7 @@ impl PilcrowServer {
     }
 
     #[tool(
-        description = "Scaffold a Pilcrow route, component, fragment, layout, middleware, API route, param matcher, or env config. Supported kinds: route, static-page, loaded-page, action-page, deferred-page, component, fragment, silcrow-form, nested-layout, loading-page, error-page, not-found-page, api-route, middleware, env-config, typed-param. Defaults to dry-run."
+        description = "Scaffold a Pilcrow route, component, fragment, layout, middleware, API route, param matcher, or env config. Supported kinds: route, static-page, loaded-page, action-page, live-page, fsr-page, component, fragment, silcrow-form, nested-layout, loading-page, error-page, not-found-page, api-route, middleware, env-config, typed-param. Defaults to dry-run."
     )]
     async fn orchestrate_feature(
         &self,
@@ -552,7 +552,7 @@ impl PilcrowServer {
     }
 
     #[tool(
-        description = "Parse a Pilcrow code-behind .rs file with syn: extract Props fields, load() signature, named action names, AsyncValue/AsyncHtml fields, and page option constants."
+        description = "Parse a Pilcrow code-behind .rs file with syn: extract Props fields, load() signature, named action names, legacy Deferred fields, and page option constants."
     )]
     async fn inspect_code_behind(
         &self,
@@ -650,7 +650,7 @@ impl PilcrowServer {
     }
 
     #[tool(
-        description = "Diagnose a specific Pilcrow route: checks HTML template, code-behind signatures, AsyncValue/AsyncHtml fields, action definitions, and validation findings."
+        description = "Diagnose a specific Pilcrow route: checks HTML template, code-behind signatures, legacy Deferred fields, action definitions, and validation findings."
     )]
     async fn diagnose_route(
         &self,
@@ -990,7 +990,7 @@ impl ServerHandler for PilcrowServer {
                     "pilcrow-scaffold",
                     Some("Scaffold a new Pilcrow pattern (route, API, middleware, etc.) with dry-run preview and validation."),
                     Some(vec![
-                        PromptArgument::new("kind").with_description("Scaffold kind: route, static-page, loaded-page, action-page, deferred-page, api-route, middleware, etc.").with_required(true),
+                        PromptArgument::new("kind").with_description("Scaffold kind: route, static-page, loaded-page, action-page, live-page, fsr-page, api-route, middleware, etc.").with_required(true),
                         PromptArgument::new("name").with_description("Name for the scaffolded item").with_required(true),
                     ]),
                 ),
@@ -1042,7 +1042,7 @@ impl ServerHandler for PilcrowServer {
                     2. Planned feature usage (Islands, SSG, ISR — must be rejected)\n\
                     3. Silcrow boundary correctness (directives in HTML only; delegate client-runtime to silcrow-mcp)\n\
                     4. Production readiness (error handling, deferred loading, missing skeletons)\n\
-                    5. FSR live debounce correctness: #[debounce(N)] on a live.rs Live struct or LiveProp field is metadata that routekit persists as debounce_secs; do not claim the current watcher enforces delayed/coalesced patches unless that implementation exists.\n\n\
+                    5. FSR live debounce correctness: #[debounce(N)] on an inline Live struct or LiveProp field is metadata that routekit persists as debounce_secs; do not claim the current watcher enforces delayed/coalesced patches unless that implementation exists.\n\n\
                     Use validate_implementation, get_feature_spec, and diagnose_route as needed.\n\n\
                     Code:\n```\n{code}\n```"
                 ))]
@@ -1313,10 +1313,10 @@ fn suggest_from_context(
             rule_id: "pilcrow-deferred-needs-skeleton",
             severity: "warning",
             message: format!(
-                "{} route(s) use AsyncValue<T> or AsyncHtml but have no _loading.html skeleton.",
+                "{} route(s) use legacy Deferred fields but have no _loading.html skeleton.",
                 deferred_routes.len()
             ),
-            suggested_fix: "Add _loading.html templates near deferred routes for better UX."
+            suggested_fix: "Add _loading.html templates near legacy Deferred routes for better UX."
                 .to_string(),
         });
     }
@@ -1392,8 +1392,8 @@ fn build_code_skeleton(desc: &str, matched: &[(&str, &str)]) -> Value {
         })
     } else if has("deferred-streams") {
         json!({
-            "rs": "// pages/dashboard.rs\nuse pilcrow_web::AsyncValue;\n\npub struct Props {\n    pub title: String,\n    pub count: AsyncValue<i64>,\n}\n\npub async fn load(_req: Req) -> AppResult<Props> {\n    Ok(Props {\n        title: \"Dashboard\".into(),\n        count: AsyncValue::spawn(async { expensive_db_count().await }),\n    })\n}",
-            "html": "<!-- pages/dashboard.html -->\n<h1>{{ title }}</h1>\n<span :text=\"count\">…</span>",
+            "rs": "// pages/dashboard.rs\nuse std::time::Duration;\nuse pilcrow_web::LiveProp;\n\npub struct Props { pub title: String }\n\npub struct Live { pub count: LiveProp<i64> }\n\npub async fn load(_req: Req) -> AppResult<Props> {\n    Ok(Props { title: \"Dashboard\".into() })\n}\n\npub async fn live(_req: Req) -> AppResult<Live> {\n    Ok(Live { count: LiveProp::poll(0, Duration::from_secs(5), || async { expensive_db_count().await }) })\n}",
+            "html": "<!-- pages/dashboard.html -->\n<h1>{{ title }}</h1>\n<span>{{ live.count.value }}</span>",
         })
     } else if has("api-routes") {
         json!({
@@ -1451,25 +1451,25 @@ fn compare_patterns_for(goal: &str, _options: Option<&Value>) -> PatternComparis
     {
         vec![
             Pattern {
-                name: "AsyncValue<T>".to_string(),
-                description: "Stream a single typed value after the shell renders. Use for data that is slow to fetch but simple to display.".to_string(),
+                name: "FSR LiveProp<T>".to_string(),
+                description: "Patch a typed value after the shell renders and keep it updated through a route-local live() producer.".to_string(),
                 tradeoffs: vec![
                     "Pro: shell renders immediately".to_string(),
-                    "Pro: silcrow.js patches the value in-place".to_string(),
-                    "Con: T must implement Display for the initial empty render".to_string(),
+                    "Pro: routekit auto-inserts s-live for template uses like {{ live.count.value }}".to_string(),
+                    "Con: best for focused fields, not large HTML fragments".to_string(),
                 ],
-                scaffold_kind: Some("deferred-page".to_string()),
+                scaffold_kind: Some("live-page".to_string()),
                 status: "stable".to_string(),
             },
             Pattern {
-                name: "AsyncHtml".to_string(),
-                description: "Stream a complete HTML fragment into a named slot. Use for complex widgets or lists that render as HTML.".to_string(),
+                name: "Fragment or island".to_string(),
+                description: "Split complex or slow UI into a smaller route fragment or client island with its own data boundary.".to_string(),
                 tradeoffs: vec![
-                    "Pro: can stream arbitrary HTML markup".to_string(),
-                    "Pro: loading HTML shown in slot until resolved".to_string(),
-                    "Con: more verbose setup than AsyncValue<T>".to_string(),
+                    "Pro: keeps big pages modular".to_string(),
+                    "Pro: complex HTML stays in a normal template/component".to_string(),
+                    "Con: more files than a single LiveProp field".to_string(),
                 ],
-                scaffold_kind: None,
+                scaffold_kind: Some("fragment".to_string()),
                 status: "stable".to_string(),
             },
         ]
@@ -1593,7 +1593,7 @@ fn analyse_build_error(error_log: &str) -> Value {
     }
     if error_log.contains("invalid Pilcrow route configuration") {
         categories.push("Invalid route configuration");
-        suggestions.push("Read the route/module and suggested fix in the build error. Common causes include STREAMING combined with REVALIDATE, STREAMING combined with PRERENDER, STREAMING with AsyncValue/AsyncHtml fields, or dynamic PRERENDER without entries().");
+        suggestions.push("Read the route/module and suggested fix in the build error. Common causes include STREAMING combined with REVALIDATE, STREAMING combined with PRERENDER, STREAMING with FSR LiveProp fields, or dynamic PRERENDER without entries().");
     }
 
     if categories.is_empty() {

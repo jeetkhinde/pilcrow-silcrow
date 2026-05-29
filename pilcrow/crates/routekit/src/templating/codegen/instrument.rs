@@ -288,6 +288,15 @@ pub fn instrument_frontmatter(
         file.items.len() - 1
     });
 
+    let fsr_live_fields = crate::fsr::collect_live_field_names(&file);
+    let fsr_template = (!fsr_live_fields.is_empty())
+        .then(|| {
+            crate::templating::compiler::inject_fsr_live_slots(template_source, &fsr_live_fields)
+        })
+        .map(std::borrow::Cow::Owned)
+        .unwrap_or(std::borrow::Cow::Borrowed(template_source));
+    let template_source = fsr_template.as_ref();
+
     // Detect a `live()` fn or `LiveProp` struct — must be done before the mutable borrow.
     let has_live_fn = file.items.iter().any(|item| match item {
         syn::Item::Fn(f) => f.sig.ident == "live",
@@ -466,7 +475,7 @@ pub fn instrument_frontmatter(
         live_fields,
         has_live_fn,
         fsr_live_source: None, // Set by templates.rs after calling process_live_rs
-        fsr_live_fields: vec![], // Set by templates.rs
+        fsr_live_fields,
     })
 }
 
@@ -618,7 +627,7 @@ fn is_revalidate_field_attr(attr: &syn::Attribute) -> bool {
 }
 
 /// Returns true if the attribute is `#[depends_on(...)]` on a `LiveProp<T>` Props field.
-/// (Distinct from `#[pilcrow::depends_on]` used in `live.rs` for runtime dep expressions.)
+/// (Distinct from `#[pilcrow::depends_on]` used in inline `Live` for runtime dep expressions.)
 fn is_depends_on_props_attr(attr: &syn::Attribute) -> bool {
     attr.path().is_ident("depends_on")
 }

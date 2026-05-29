@@ -20,10 +20,6 @@
   <div class="row"><span class="label">Category</span><span class="val">{{ meta.category }}</span></div>
   <div class="row"><span class="label">SKU</span><span class="val">{{ meta.sku }}</span></div>
 
-  <!--
-    AsyncValue<i64>: codegen rewrites this into a data-pilcrow-async-value span.
-    Shell renders empty; value streams in ~2s later.
-  -->
   <div class="row"><span class="label">Reviews</span><span class="val">{{ review_count }}</span></div>
 
   <!--
@@ -35,8 +31,6 @@
 
 <div class="note">
   <code>meta</code> — regular nested struct, no restrictions, rendered in shell.<br>
-  <code>review_count</code> — <code>AsyncValue&lt;i64&gt;</code>: flat top-level field, streams in once.<br>
+  <code>review_count</code> — regular SSR scalar rendered in shell.<br>
   <code>stock</code> — <code>LiveProp&lt;u32&gt;</code>: flat top-level field, live via SSE.<br>
-  Special types (<code>AsyncValue</code>, <code>AsyncHtml</code>, <code>LiveProp</code>) must always
-  be direct fields of <code>Props</code> — codegen cannot see inside nested structs.
 </div>

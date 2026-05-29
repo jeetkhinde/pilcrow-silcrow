@@ -10,7 +10,7 @@ Merge `sandbox/` and `pilcrow-demos/` into a single `demo/` app. The old renderi
 
 ## Motivation
 
-- FSR renders like SSG when no `LiveProp` is given, like ISR when a field has a revalidation interval, and like streaming/deferred for `AsyncValue` fields. Separate demo pages for each mode duplicate the concept without adding clarity.
+- FSR renders like SSG when no `LiveProp` is given and like ISR when a field has a revalidation interval. Separate demo pages for each mode duplicate the concept without adding clarity.
 - Two apps mean double the nav, double the config, double the DX surface to maintain. Fewer things = more focus.
 - Framework cleanup (removing ISR/SSG/deferred internals) is a follow-on task, informed by what the demo app actually exercises.
 
@@ -60,14 +60,14 @@ Demonstrates that FSR composes rendering mode **per field**, not per page.
 |---|---|---|
 | Static | Plain Rust value | Build-time value, never updates |
 | Live | `LiveProp` | Polls and updates without full reload |
-| Async | `AsyncValue` | Streamed in after initial HTML |
+| Reactive | `LiveProp` | Patched after initial HTML |
 
 Each panel has:
 - A **badge** labeling the field type
 - A **timestamp or counter** making the update behavior immediately observable
 - A one-line caption explaining what's happening
 
-The Rust handler (`pages/demo/fsr/index.rs`) uses a plain value, a `LiveProp`, and an `AsyncValue` on the same struct to make field-level composition concrete.
+The Rust handler (`pages/demo/fsr/index.rs`) uses plain values plus inline `Live` / `LiveProp` fields to make field-level composition concrete.
 
 ## `/demo/react-island` Page Design
 

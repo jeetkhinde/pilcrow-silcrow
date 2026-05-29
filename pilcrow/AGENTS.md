@@ -59,7 +59,7 @@ Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:300
 |---|---|
 | `crates/core` | `AppError`, `AppResult`, `PilcrowConfig`, `Meta` — shared primitives with no framework deps |
 | `crates/routekit` | Build-time pipeline: discovers `.html`/`.rs` sources, transpiles templates, emits generated Rust |
-| `crates/runtime` | Runtime: `Req`, `Res`, SSE, WebSocket, ISR, adapters, island SSR, `AsyncValue`, `AsyncHtml`, `LiveProp` |
+| `crates/runtime` | Runtime: `Req`, `Res`, SSE, WebSocket, ISR, adapters, island SSR, `LiveProp` |
 | `crates/macros` | `#[handler]` proc-macro, `sse!` macro |
 | `crates/client` | `PilcrowClient` — typed HTTP client wrapping `reqwest` |
 | `crates/web` | Thin facade; re-exports everything a `web` app needs under `pilcrow_web::*` |
@@ -165,13 +165,7 @@ The framework injects `use pilcrow_web::Req;`, `use pilcrow_web::ActionResult;`,
 **`Res`** — response modifier via `req.res`: `.with_status()`, `.with_header()`, `.with_cookie()`, `.no_cache()`, `.with_toast()`, `.trigger_event()`, `.retarget()`, `.push_history()`, `.patch_target()`, `.invalidate_target()`, `.client_navigate()`, `.sse()`, `.ws()`.
 - `trigger_event`, `patch_target`, `invalidate_target` accumulate; others overwrite.
 
-**`AsyncValue<T>`** — wraps a future streamed to client after shell renders. Use `AsyncValue::spawn(async { ... })` or `AsyncValue::ready(value)`.
-
-**`AsyncHtml`** — streams complete HTML fragment into a named slot. `AsyncHtml::spawn("name", loading_html, async { html_string })`.
-
 **`LiveProp`** — re-evaluated on interval or explicit trigger for real-time UI updates.
-
-`AsyncValue`, `AsyncHtml`, and `LiveProp` patches stream concurrently — faster-resolving fields arrive first.
 
 ## Response Builders
 

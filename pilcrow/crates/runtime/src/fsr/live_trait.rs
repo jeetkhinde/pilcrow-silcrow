@@ -14,7 +14,7 @@ pub struct LiveFieldRegistration {
     pub patch_debounce: Option<u32>,
 }
 
-/// Implemented on the `Live` struct in a route's `live.rs` file.
+/// Implemented on the inline `Live` struct in a route's code-behind file.
 ///
 /// Routekit codegen generates the `from_row()`, `live_fields()`, and optionally
 /// `route_promote_after()` impls automatically. Developers only implement `query()`.

@@ -133,28 +133,39 @@ pub fn render_generated_templates_module(
             has_live_fn_map.insert(entry.module_name.clone(), true);
         }
 
-        // Detect live.rs alongside this page (FSR companion file).
-        let live_rs_path = Path::new(&entry.source_path)
-            .parent()
-            .map(|p| p.join("live.rs"))
-            .filter(|p| p.exists());
-        if let Some(ref live_path) = live_rs_path {
+        // Detect inline FSR `Live` contract in this page module.
+        if !instrumented.fsr_live_fields.is_empty() {
             let route_params: Vec<String> =
                 entry.route_params.iter().map(|p| p.name.clone()).collect();
             let page_route_promote_after = instrumented.page_options.fsr.promote_after;
             let auto_attrs = &instrumented.page_options.fsr.live_field_attrs;
-            match crate::fsr::process_live_rs(live_path, &route_params, page_route_promote_after, auto_attrs, &entry.module_name) {
+            match crate::fsr::process_live_source(
+                &instrumented.source,
+                &entry.source_path,
+                &route_params,
+                page_route_promote_after,
+                auto_attrs,
+                &entry.module_name,
+            ) {
                 Ok((src, fields)) => {
-                    crate::fsr::validate_live_template_slots(
+                    let field_names: Vec<String> = fields.iter().map(|f| f.name.clone()).collect();
+                    let fsr_template_source = crate::templating::compiler::inject_fsr_live_slots(
                         &entry.template_source,
+                        &field_names,
+                    );
+                    crate::fsr::validate_live_template_slots(
+                        &fsr_template_source,
                         &fields,
                         Path::new(&entry.source_path),
-                        live_path,
+                        Path::new(&entry.source_path),
                     )
                     .map_err(|e| {
                         io::Error::new(
                             io::ErrorKind::InvalidData,
-                            format!("failed to validate {}: {e}", live_path.display()),
+                            format!(
+                                "failed to validate inline FSR Live in {}: {e}",
+                                entry.source_path
+                            ),
                         )
                     })?;
                     if !fields.is_empty() {
@@ -164,7 +175,7 @@ pub fn render_generated_templates_module(
                         );
                     }
                     // Detect if any field needs the global/default revalidation timer:
-                    // a field needs it when it has no explicit live.rs depends_on AND no
+                    // a field needs it when it has no explicit inline Live depends_on AND no
                     // field-level #[revalidate(N)] or #[depends_on("key")] in auto_attrs.
                     let needs_default = fields.iter().any(|f| {
                         f.depends_on.is_none()
@@ -181,12 +192,14 @@ pub fn render_generated_templates_module(
                 Err(e) => {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
-                        format!("failed to process {}: {e}", live_path.display()),
+                        format!(
+                            "failed to process inline FSR Live in {}: {e}",
+                            entry.source_path
+                        ),
                     ));
                 }
             }
         }
-
 
         let module_ident = syn::Ident::new(&entry.module_name, Span::call_site());
         let render_ident = syn::Ident::new(&entry.render_symbol, Span::call_site());
@@ -203,19 +216,17 @@ pub fn render_generated_templates_module(
         if !entry.route_params.is_empty() {
             out.push_str(&emit_page_params(&entry.route_params));
         }
-        for line in instrumented.source.lines() {
+        let module_source = fsr_live_source_map
+            .get(&entry.module_name)
+            .map(String::as_str)
+            .unwrap_or(&instrumented.source);
+        for line in module_source.lines() {
             out.push_str("    ");
             out.push_str(line);
             out.push('\n');
         }
-        // Emit processed live.rs source (FSR companion), if present.
-        if let Some(live_src) = fsr_live_source_map.get(&entry.module_name) {
-            out.push_str("    // FSR: live.rs companion\n");
-            for line in live_src.lines() {
-                out.push_str("    ");
-                out.push_str(line);
-                out.push('\n');
-            }
+        // Emit FromRequestParts impl for inline FSR Live, if present.
+        if fsr_live_source_map.contains_key(&entry.module_name) {
             // Emit FromRequestParts impl for Live.
             out.push_str("    #[::pilcrow_web::axum::async_trait]\n");
             out.push_str("    impl<__S: ::std::marker::Send + ::std::marker::Sync>\n");

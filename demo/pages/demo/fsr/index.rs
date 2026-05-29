@@ -21,7 +21,6 @@ fn tick_tx() -> &'static watch::Sender<u64> {
 pub struct Props {
     pub server_time: String,
     pub live_count: pilcrow_web::LiveProp<u64>,
-    pub async_time: pilcrow_web::AsyncValue<String>,
 }
 
 pub async fn load(_req: Req) -> AppResult<Props> {
@@ -29,10 +28,6 @@ pub async fn load(_req: Req) -> AppResult<Props> {
     Ok(Props {
         server_time: now_utc(),
         live_count: pilcrow_web::LiveProp::watch(rx),
-        async_time: pilcrow_web::AsyncValue::spawn(async {
-            tokio::time::sleep(std::time::Duration::from_millis(10000)).await;
-            now_utc()
-        }),
     })
 }
 

@@ -21,13 +21,11 @@
     .health-ok  { color: #16a34a !important; }
     .health-bad { color: #dc2626 !important; }
 
-    /* async zones */
-    .async-row { display: grid; grid-template-columns: auto 1fr; gap: 1rem; margin-bottom: 1.5rem; align-items: start; }
-    .async-scalar { background: #fefce8; border: 1px solid #fde68a; border-radius: 6px; padding: 0.6rem 0.9rem; white-space: nowrap; }
-    .async-scalar .lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: #92400e; margin-bottom: 0.2rem; }
-    .async-scalar .val { font-size: 1rem; font-weight: 700; color: #78350f; }
+    .report-row { display: grid; grid-template-columns: auto 1fr; gap: 1rem; margin-bottom: 1.5rem; align-items: start; }
+    .scalar { background: #fefce8; border: 1px solid #fde68a; border-radius: 6px; padding: 0.6rem 0.9rem; white-space: nowrap; }
+    .scalar .lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: #92400e; margin-bottom: 0.2rem; }
+    .scalar .val { font-size: 1rem; font-weight: 700; color: #78350f; }
     .report-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem 1.25rem; flex: 1; min-height: 60px; }
-    .loading-hint { color: #94a3b8; font-style: italic; margin: 0; }
     .report-body p { margin: 0 0 0.4rem; }
     .report-body ul { margin: 0; padding-left: 1.25rem; }
     .up   { color: #16a34a; font-weight: 600; }
@@ -72,30 +70,22 @@
     </div>
   </div>
 
-  <div class="async-row">
-    <!--
-      AsyncValue<i64> — codegen rewrites to data-pilcrow-async-value span.
-      Shell shows empty; scalar patches in ~1.2s.
-    -->
-    <div class="async-scalar">
+  <div class="report-row">
+    <div class="scalar">
       <div class="lbl">Total orders</div>
       <div class="val">{{ total_orders }}</div>
     </div>
 
-    <!--
-      AsyncHtml — codegen rewrites to data-pilcrow-async-html slot.
-      with_loading skeleton shown until the HTML streams in ~1.8s.
-    -->
     <div class="report-card">
-      {{ report_body }}
+      {{ report_body|safe }}
     </div>
   </div>
 
   <div class="note">
     <strong>Props layout:</strong><br>
     <code>header</code>, <code>sales</code> — regular nested structs, SSR shell.<br>
-    <code>total_orders: AsyncValue&lt;i64&gt;</code> — flat, streams in once (~1.2s).<br>
-    <code>report_body: AsyncHtml</code> — flat, HTML streams in once (~1.8s).<br>
+    <code>total_orders</code> — regular SSR scalar.<br>
+    <code>report_body</code> — regular SSR HTML string rendered with <code>|safe</code>.<br>
     <code>viewers: LiveProp&lt;u32&gt;</code>, <code>health: LiveProp&lt;String&gt;</code> — flat, live via SSE.<br><br>
     <strong>Pattern B:</strong> <code>load()</code> sets <code>LiveProp::initial()</code> placeholders so the expensive
     DB work never runs on SSE reconnects. <code>live()</code> provides the real watch receivers — only

@@ -10,34 +10,47 @@
           {
             "id": "c59c0759610245b5",
             "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Debounce.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Debounce"
-            }
-          }
-        ]
-      },
-      {
-        "id": "2b09c0115d2b37a7",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "63070754196c3475",
-            "type": "leaf",
+            "pinned": true,
             "state": {
               "type": "graph",
               "state": {},
+              "pinned": true,
               "icon": "lucide-git-fork",
               "title": "Graph view"
             }
+          },
+          {
+            "id": "b6aeb7040ea0b52f",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "00 Start Here/Learning Path.md",
+                "mode": "source",
+                "source": false
+              },
+              "pinned": true,
+              "icon": "lucide-file",
+              "title": "Learning Path"
+            }
+          },
+          {
+            "id": "7e2c4c07aef0668b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "03 Rendering/Lists and Live Patching.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Lists and Live Patching"
+            }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -199,12 +212,40 @@
       "bases:Create new base": false
     }
   },
-  "active": "c59c0759610245b5",
+  "active": "7e2c4c07aef0668b",
   "lastOpenFiles": [
-    "Welcome.md",
-    "FSR Rendering/Revalidation mechanism.md",
+    "03 Rendering/Live Props and FSR.md",
+    "03 Rendering/Build an FSR Page.md",
+    "03 Rendering/Lists and Live Patching.md",
+    "03 Rendering/React Islands.md",
+    "03 Rendering/Islands.md",
+    "01 Pilcrow/Build Your First Page.md",
+    "00 Start Here/Learning Path.md",
+    "02 Silcrow/Atoms and Optimistic UI.md",
+    "00 Start Here/Feature Status.md",
+    "00 Start Here/Documentation Map.md",
     "Debounce.md",
-    "FSR Rendering",
-    "Untitled.md"
+    "FSR Rendering/Revalidation mechanism.md",
+    "05 Reference/Removed and Legacy Features.md",
+    "05 Reference/Experimental Baked Pages.md",
+    "05 Reference/Documentation Workflow.md",
+    "04 Runtime/Security and Limits.md",
+    "04 Runtime/Middleware Hooks and Request Lifecycle.md",
+    "04 Runtime/Assets Dev Server and Deployment.md",
+    "03 Rendering/Rendering Models.md",
+    "01 Pilcrow/Typed Routes and Params.md",
+    "01 Pilcrow/Routing.md",
+    "01 Pilcrow/Pages and Layouts.md",
+    "01 Pilcrow/Mental Model.md",
+    "01 Pilcrow/Config Env I18n Images and Head.md",
+    "01 Pilcrow/API Routes and Fragments.md",
+    "01 Pilcrow/Actions and Forms.md",
+    "05 Reference",
+    "04 Runtime",
+    "03 Rendering",
+    "02 Silcrow",
+    "01 Pilcrow",
+    "00 Start Here",
+    "FSR Rendering"
   ]
 }

@@ -115,12 +115,12 @@ pub struct GeneratedTemplatesModule {
     pub live_fields_map: HashMap<String, Vec<String>>,
     /// Map from page module_name to whether a `live()` fn and/or `LiveProp` struct are present.
     pub has_live_fn_map: HashMap<String, bool>,
-    /// Map from page module_name to processed live.rs source (with from_row() injected).
+    /// Map from page module_name to processed inline Live source (with from_row() injected).
     pub fsr_live_source_map: HashMap<String, String>,
-    /// Map from page module_name to LiveProp field names from live.rs.
+    /// Map from page module_name to LiveProp field names from inline Live.
     pub fsr_live_fields_map: HashMap<String, Vec<String>>,
     /// Set of FSR module names that have at least one LiveProp field without a field-level
-    /// `#[revalidate(N)]` or explicit `#[depends_on]`/live.rs `depends_on`.
+    /// `#[revalidate(N)]` or explicit `#[depends_on]`/inline Live `depends_on`.
     /// These routes receive the global/24h default revalidation timer.
     pub fsr_default_revalidate_symbols: HashSet<String>,
 }
@@ -153,8 +153,8 @@ pub struct InstrumentedFrontmatter {
     pub live_fields: Vec<String>,
     /// True when a `live()` fn or `LiveProp` struct is present in the frontmatter.
     pub has_live_fn: bool,
-    /// Processed source from a sibling `live.rs` file (stripped + from_row injected), if any.
+    /// Processed inline Live source (stripped + from_row injected), if any.
     pub fsr_live_source: Option<String>,
-    /// Names of `LiveProp<T>` fields in `Live` struct from `live.rs`.
+    /// Names of `LiveProp<T>` fields in inline `Live` struct.
     pub fsr_live_fields: Vec<String>,
 }

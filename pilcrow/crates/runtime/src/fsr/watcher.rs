@@ -1,5 +1,5 @@
 use super::baking::inject_fsr_slots;
-use super::store::{EvictedRoute, FsrStore, StaleSlot};
+use super::store::{FsrStore, StaleSlot};
 use futures_util::StreamExt as _;
 use std::sync::Arc;
 use std::time::Duration;
@@ -24,7 +24,7 @@ use super::cache::{PatchPayload, RedisCache};
 /// ```
 #[derive(Debug, Clone)]
 pub struct ScheduledInvalidation {
-    /// The dependency key to invalidate (must match `depends_on` in affected live.rs fields).
+    /// The dependency key to invalidate (must match `depends_on` in affected Live fields).
     pub dep_key: String,
     /// How often to fire the invalidation.
     pub interval: Duration,
@@ -110,8 +110,11 @@ pub async fn watcher_tick(
     // Phase 1: run DB queries with bounded concurrency.
     // buffer_unordered keeps the pipeline full (max 8 in-flight); each future
     // carries its slot_row so Phase 2 can iterate directly without a zip.
-    let results: Vec<_> = futures_util::stream::iter(stale.iter())
-        .map(|slot_row| async move { (slot_row, re_execute_query(store, slot_row).await) })
+    let results: Vec<_> = futures_util::stream::iter(stale.into_iter())
+        .map(|slot_row| async move {
+            let result = re_execute_query(store, &slot_row).await;
+            (slot_row, result)
+        })
         .buffer_unordered(8)
         .collect()
         .await;

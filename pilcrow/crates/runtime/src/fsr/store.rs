@@ -57,7 +57,7 @@ impl FsrStore {
         &self.pool
     }
 
-    /// Upsert the route-level row (slot = '') for a page that has live.rs.
+    /// Upsert the route-level row (slot = '') for a page that has inline Live.
     pub async fn ensure_route_row(
         &self,
         route: &str,
@@ -373,10 +373,7 @@ impl FsrStore {
     /// Sets `promoted = FALSE` and resets `hit_count = 0` on the route-level row so the
     /// route re-enters the normal promotion cycle on the next request. Returns the route
     /// path and baked-artifact paths so the caller can evict Redis keys and remove disk files.
-    pub async fn evict_idle_routes(
-        &self,
-        threshold_secs: u64,
-    ) -> sqlx::Result<Vec<EvictedRoute>> {
+    pub async fn evict_idle_routes(&self, threshold_secs: u64) -> sqlx::Result<Vec<EvictedRoute>> {
         sqlx::query_as(
             r#"
             UPDATE pilcrow_fsr

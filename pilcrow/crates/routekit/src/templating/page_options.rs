@@ -9,7 +9,7 @@ pub struct LiveFieldAttr {
     /// `#[revalidate(N)]` — auto-wires a `ScheduledInvalidation` for this field: every N seconds
     /// the dep key `"{module_name}::{field_name}"` is invalidated, triggering a re-bake.
     /// Also auto-injects that dep key into the field's `depends_on` in the generated
-    /// `from_row()` impl when no explicit `depends_on` is set in `live.rs`.
+    /// `from_row()` impl when no explicit `depends_on` is set in inline `Live`.
     pub revalidate_secs: Option<u64>,
     /// `#[depends_on("some:key")]` — wires the field to a static dep key managed elsewhere.
     /// Mutually exclusive with `revalidate_secs`.
@@ -31,7 +31,7 @@ pub struct SsgOpts {
 /// All constants are stripped from the emitted module — they never reach runtime code.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FsrOpts {
-    /// `live.rs` was found alongside this page's `page.rs`.
+    /// Inline `Live` was found in this page's code-behind.
     pub has_live_file: bool,
     /// `pub const FSR_JSON: bool = true` was declared in `page.rs`.
     pub json: bool,
@@ -47,7 +47,7 @@ pub struct FsrOpts {
 }
 
 impl FsrOpts {
-    /// `true` when this page participates in FSR (has a `live.rs` companion).
+    /// `true` when this page participates in FSR (has inline `Live`).
     pub fn is_active(&self) -> bool {
         self.has_live_file
     }
@@ -66,7 +66,7 @@ pub struct PageOptions {
     pub trailing_slash: TrailingSlash,
     pub layout: LayoutOpt,
     pub ssg: SsgOpts,
-    /// FSR options — populated when a `live.rs` companion file is present.
+    /// FSR options populated when inline `Live` is present.
     pub fsr: FsrOpts,
 }
 

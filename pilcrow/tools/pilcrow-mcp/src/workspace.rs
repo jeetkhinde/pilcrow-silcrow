@@ -447,9 +447,7 @@ pub fn parse_code_behind(path: &Path) -> Option<CodeBehindInfo> {
                     for field in &named.named {
                         if let Some(ident) = &field.ident {
                             let type_name = type_to_string(&field.ty);
-                            let is_deferred = type_name.starts_with("AsyncValue")
-                                || type_name.starts_with("AsyncHtml")
-                                || type_name.starts_with("Deferred")
+                            let is_deferred = type_name.starts_with("Deferred")
                                 || type_name.starts_with("DeferredHtml");
                             prop_fields.push(PropField {
                                 name: ident.to_string(),
@@ -827,9 +825,7 @@ mod tests {
             .parent()
             .unwrap()
             .to_path_buf();
-        let workspace_root = pilcrow_root
-            .parent()
-            .unwrap_or_else(|| Path::new("."));
+        let workspace_root = pilcrow_root.parent().unwrap_or_else(|| Path::new("."));
         let demo = workspace_root.join("demo");
         if demo.join("Cargo.toml").exists() {
             demo
@@ -842,7 +838,10 @@ mod tests {
     fn default_scan_finds_sandbox_routes_and_versions() {
         let root = sandbox_workspace_root();
         let context = scan_project(&root, None, None).unwrap();
-        assert!(!context.crate_versions.is_empty(), "expected at least one crate version");
+        assert!(
+            !context.crate_versions.is_empty(),
+            "expected at least one crate version"
+        );
         assert!(context
             .routes
             .iter()

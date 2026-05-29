@@ -4,9 +4,9 @@
 
 **Goal:** Rename `sandbox/` → `demo/`, update its package name, add `/demo/fsr` and `/demo/react-island` showcase pages, update nav, and delete `pilcrow-demos/`.
 
-**Architecture:** The sandbox app becomes the demo app in-place via `git mv`. New showcase pages follow the same file-based routing pattern (sibling `.rs` + `.html` files under `pages/demo/`). The FSR demo uses a `OnceLock<watch::Sender>` for the live field and `AsyncValue::spawn` for the async field — patterns already established in `pages/live/index.rs` and `pilcrow-demos/pages/deferred/index.rs`.
+**Architecture:** The sandbox app becomes the demo app in-place via `git mv`. New showcase pages follow the same file-based routing pattern (sibling `.rs` + `.html` files under `pages/demo/`). The FSR demo uses inline `Live` / `LiveProp` fields for surgical reactive updates.
 
-**Tech Stack:** Rust / Pilcrow file-based routing, `pilcrow_web::{LiveProp, AsyncValue}`, Tokio, React (TSX), Askama templates.
+**Tech Stack:** Rust / Pilcrow file-based routing, `pilcrow_web::LiveProp`, Tokio, React (TSX), Askama templates.
 
 ---
 
@@ -164,7 +164,6 @@ fn tick_tx() -> &'static watch::Sender<u64> {
 pub struct Props {
     pub server_time: String,
     pub live_count: pilcrow_web::LiveProp<u64>,
-    pub async_time: pilcrow_web::AsyncValue<String>,
 }
 
 pub async fn load(_req: Req) -> AppResult<Props> {
@@ -172,10 +171,6 @@ pub async fn load(_req: Req) -> AppResult<Props> {
     Ok(Props {
         server_time: now_utc(),
         live_count: pilcrow_web::LiveProp::watch(rx),
-        async_time: pilcrow_web::AsyncValue::spawn(async {
-            tokio::time::sleep(std::time::Duration::from_millis(700)).await;
-            now_utc()
-        }),
     })
 }
 
@@ -242,7 +237,7 @@ Create `demo/pages/demo/fsr/index.html`:
 
     <div style="border:1px solid #e5e7eb;border-radius:10px;padding:1.25rem">
         <span style="display:inline-block;padding:0.2rem 0.65rem;border-radius:999px;background:#d1fae5;color:#065f46;font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.75rem">Async</span>
-        <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem">Streamed in after the initial HTML. Backed by an <code>AsyncValue&lt;String&gt;</code>.</p>
+        <p style="font-size:0.85rem;color:#6b7280;margin:0 0 0.75rem">Patched after the initial HTML. Backed by a <code>LiveProp&lt;String&gt;</code>.</p>
         <code style="font-size:1.1rem;font-weight:700;color:#111">{{ async_time }}</code>
     </div>
 
@@ -251,7 +246,7 @@ Create `demo/pages/demo/fsr/index.html`:
 <p style="margin-top:2rem;font-size:0.85rem;color:#9ca3af">
     The <strong>Static</strong> field is a plain <code>String</code> — set at request time, never touched again.
     The <strong>Live</strong> field is a <code>LiveProp&lt;u64&gt;</code> backed by a Tokio watch channel that ticks every second.
-    The <strong>Async</strong> field is an <code>AsyncValue&lt;String&gt;</code> resolved 700 ms after the HTML is sent.
+    Reactive fields use <code>LiveProp</code> and are patched after the initial HTML is sent.
 </p>
 ```
 

@@ -12,7 +12,6 @@
 
     /* summary area */
     .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; min-height: 90px; }
-    .summary-loading { color: #94a3b8; font-style: italic; margin: 0; }
     .summary-body p { margin: 0 0 0.5rem; }
     .summary-body ul { margin: 0; padding-left: 1.25rem; }
     .up { color: #16a34a; font-weight: 600; }
@@ -32,22 +31,12 @@
 <div class="page">
   <h1>{{ title }}</h1>
 
-  <!--
-    status is a LiveProp<String>.
-    Shell bakes in "Generating..." at request time.
-    The moment DeferredHtml resolves server-side, it sends "Ready" to the
-    watch channel → SSE patches this span's textContent automatically.
-  -->
   <div class="status-row">
     Summary status: <span class="badge-status">{{ status }}</span>
   </div>
 
-  <!--
-    summary is a DeferredHtml.
-    Shell renders with_loading skeleton; resolved HTML streams in ~2s later.
-  -->
   <div class="summary-card">
-    {{ summary }}
+    {{ summary|safe }}
   </div>
 
   <!--
@@ -62,11 +51,8 @@
 
   <div class="note">
     <strong>What's happening:</strong><br>
-    <code>summary</code> — <code>DeferredHtml</code>: shell renders immediately with a skeleton;
-    the expensive HTML streams in ~2s later via a one-shot inline script patch.<br><br>
-    <code>status</code> — <code>LiveProp&lt;String&gt;</code>: initial value <em>"Generating…"</em>
-    baked into the shell. When the <code>DeferredHtml</code> future completes it sends
-    <em>"Ready"</em> to the watch channel → SSE pushes it to this span with no full re-render.<br><br>
+    <code>summary</code> — regular SSR HTML rendered during <code>load()</code>.<br><br>
+    <code>status</code> — <code>LiveProp&lt;String&gt;</code>: initial value baked into the shell and ready for live updates.<br><br>
     <code>&lt;island&gt;</code> — independent fragment fetched at idle time. Its own
     <code>LiveProp&lt;u32&gt;</code> opens a separate SSE connection scoped to the island URL.
   </div>

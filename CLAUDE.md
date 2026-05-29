@@ -106,11 +106,11 @@ For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 **FSR revalidation cascade (precedence: field-level > global > 24h default):**
 - `#[revalidate(N)]` on a Props `LiveProp<T>` field always wins — generates synthetic dep key `"{module}::__revalidate_{N}s"`, shared across all fields on the same route with the same interval (one timer per route+interval pair).
 - `#[depends_on("key")]` wires the field to a static dep key — no timer; mutually exclusive with `#[revalidate(N)]`.
-- Fields with an explicit `depends_on` in `live.rs` (DB-driven via `dep!()`) are excluded from all revalidation timers.
+- Fields with an explicit `depends_on` in inline `Live` (DB-driven via `dep!()`) are excluded from all revalidation timers.
 - Fields with none of the above receive a default timer using `[fsr] revalidate_seconds` from `Pilcrow.toml`; if that is unset, 86400 (24 h) is the hardcoded fallback.
 - Synthetic dep keys (`__revalidate_Ns`, `__revalidate_default`) are framework-internal — invisible to developers.
 
-**FSR promotion threshold:** `pub const PROMOTE_AFTER: u32 = N` in `page.rs` is the **only** surface. `0` = bake on first hit. `#[pilcrow::promote_after(N)]` on `live.rs` fields no longer exists — it was removed because it controlled the whole route via an arbitrary `fields.first()` fallback, not any field-level concept.
+**FSR promotion threshold:** `pub const PROMOTE_AFTER: u32 = N` in page code-behind is the **only** surface. `0` = bake on first hit. `#[pilcrow::promote_after(N)]` on live fields no longer exists — it was removed because it controlled the whole route via an arbitrary `fields.first()` fallback, not any field-level concept.
 
 Do NOT open `pilcrow/crates/runtime/src/isr.rs` (stripped to in-memory SSG cache only), `codegen/app_module.rs`, or `deferred.rs` unless actively debugging a mismatch between the docs and real behavior.
 

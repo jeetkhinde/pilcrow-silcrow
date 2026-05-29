@@ -119,7 +119,7 @@ revalidate_seconds = 3600   # 1 hour default for all LiveProp fields without exp
 
 **Fields excluded from revalidation timers:**
 - Fields with `#[depends_on("key")]` on Props — they use a static dep key, no timer.
-- Fields with an explicit `depends_on` in `live.rs` (DB-driven invalidation via `dep!()`) — they are DB-driven, no timer.
+- Fields with an explicit `depends_on` in inline `Live` (DB-driven invalidation via `dep!()`) — they are DB-driven, no timer.
 
 **Manual — explicit `WatcherConfig` in `hooks.rs` (shared dep keys across routes):**
 
@@ -151,7 +151,7 @@ pilcrow:json:<route>     → baked JSON data
 - `#[revalidate(N)]` on a Props `LiveProp<T>` field always wins over global config and the 24h default
 - Fields on the same route with the same `#[revalidate(N)]` value share one internal timer
 - `#[depends_on("key")]` wires a Props `LiveProp<T>` field to a static dep key; mutually exclusive with `#[revalidate(N)]`; no revalidation timer
-- Fields with an explicit `depends_on` in `live.rs` are DB-driven and excluded from all revalidation timers
+- Fields with an explicit `depends_on` in inline `Live` are DB-driven and excluded from all revalidation timers
 - `[fsr] revalidate_seconds` in `Pilcrow.toml` is the global fallback for fields with no field-level `#[revalidate(N)]`
 - `REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`, `STREAMING`, `PRERENDER` are **build errors**
 
