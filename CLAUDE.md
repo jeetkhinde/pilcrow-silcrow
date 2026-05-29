@@ -183,7 +183,7 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-None. All work from this session is complete and shipped (commit range `f7ce74d..62a7eee`):
+None. All work from this session is complete and shipped (commit range `f7ce74d..d0bb7e3`):
 
 **address-book FSR fix** — removed manual `bake.rs`, added `s-live` to all three routes, fixed SSE reconnect split (`silcrow:navigate` closes / `silcrow:load` reopens with updated DOM slots), fixed `watcher_tick_redis` lifetime error.
 
@@ -193,11 +193,12 @@ None. All work from this session is complete and shipped (commit range `f7ce74d.
 
 **Docs** — `docs/Pilcrow-Silcrow Docs/` updated:
 - `Tutorials/Address Book/` — 14-step tutorial (01 Setup → 14 Live Timestamps)
+- `Tutorials/Demo App/` — 6-step tutorial (01 Setup → 06 React Islands)
 - `05 Reference/FSR Ownership and Invalidation.md` — new reference page
 - `03 Rendering/FSR SSE Hub.md` — scalar/object rule + class trap + SSE reconnect lifecycle
 - `03 Rendering/Build an FSR Page.md` — FSR ownership boundary + PROMOTE_AFTER scope
 - `03 Rendering/Rendering Models.md` — FSR ownership + dynamic-route PROMOTE_AFTER warning
-- Learning path and documentation map updated
+- Learning path (9 steps), documentation map — both tutorials indexed
 
 ## Known issues — do not work around without fixing root cause
 
