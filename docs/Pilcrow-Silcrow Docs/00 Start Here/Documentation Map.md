@@ -44,6 +44,10 @@
 - [[../05 Reference/Experimental Baked Pages]]
 - [[../05 Reference/Documentation Workflow]]
 
+## Tutorials
+
+- [[../Tutorials/Address Book/00 Introduction]] — build a full contact manager step by step: setup, layouts, loaders, actions, search, FSR live fields, client-side navigation
+
 ## Maintenance Rule
 
 Every public behavior should have four matching layers:
