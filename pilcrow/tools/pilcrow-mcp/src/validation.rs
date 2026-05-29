@@ -145,6 +145,22 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
             }
         }
 
+        // PROMOTE_AFTER on a dynamic route: warn that it is incoherent for open ID-spaces.
+        if line.contains("PROMOTE_AFTER") && line.contains("const") {
+            let has_path_param = code.contains("Path(") || code.contains("req.params");
+            if has_path_param {
+                findings.push(finding_with_line(
+                    Severity::Warning,
+                    "pilcrow-fsr-promote-after-dynamic-route",
+                    "PROMOTE_AFTER on a dynamic route (route with path params) is typically incoherent. Every distinct URL gets its own pilcrow_fsr row; with an open ID-space (e.g. /contacts/[id]) each URL is immediately marked promoted=TRUE but html_path remains NULL — the watcher will log warnings for missing baked files on every invalidation cycle.".to_string(),
+                    path,
+                    Some(lnum),
+                    Some("registry.toml: feature fsr"),
+                    Some("Remove PROMOTE_AFTER from dynamic routes. Reserve it for static or near-static routes (e.g. /, /about) where the set of URL instances is finite and known at startup."),
+                ));
+            }
+        }
+
         // PRERENDER is removed — build error. Use PROMOTE_AFTER = 0 instead.
         if line.contains("PRERENDER") && line.contains("const") {
             findings.push(finding_with_line(
