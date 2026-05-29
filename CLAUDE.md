@@ -183,13 +183,21 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-None. All address-book FSR work is complete and shipped (commit range `f7ce74d..30d8034`):
-- Removed manual `bake.rs` — framework owns FSR lifecycle
-- Fixed FSR SSE reconnect split (`silcrow:navigate` closes, `silcrow:load` reopens with swapped DOM slots)
-- Fixed `watcher_tick_redis` lifetime error (`stale.iter()` → `into_iter()`)
-- Added `s-live` to all three routes (index, contact detail, edit)
-- Updated registry.toml, validation.rs, MCP tests
-- Full docs update in `docs/Pilcrow-Silcrow Docs/`
+None. All work from this session is complete and shipped (commit range `f7ce74d..62a7eee`):
+
+**address-book FSR fix** — removed manual `bake.rs`, added `s-live` to all three routes, fixed SSE reconnect split (`silcrow:navigate` closes / `silcrow:load` reopens with updated DOM slots), fixed `watcher_tick_redis` lifetime error.
+
+**demo FSR fix** — removed stale `REVALIDATE`/`CACHE_TAGS` constants from `products/index.rs`, converted `TicketStatus` scalar to `StatusBadge` object so badge class updates via SSE (scalar `s-live` patches only `textContent`, not CSS classes).
+
+**Framework** — registry.toml constraints + `pilcrow-fsr-promote-after-dynamic-route` + `pilcrow-fsr-s-live-class-trap` validation rules added; MCP tests green.
+
+**Docs** — `docs/Pilcrow-Silcrow Docs/` updated:
+- `Tutorials/Address Book/` — 14-step tutorial (01 Setup → 14 Live Timestamps)
+- `05 Reference/FSR Ownership and Invalidation.md` — new reference page
+- `03 Rendering/FSR SSE Hub.md` — scalar/object rule + class trap + SSE reconnect lifecycle
+- `03 Rendering/Build an FSR Page.md` — FSR ownership boundary + PROMOTE_AFTER scope
+- `03 Rendering/Rendering Models.md` — FSR ownership + dynamic-route PROMOTE_AFTER warning
+- Learning path and documentation map updated
 
 ## Known issues — do not work around without fixing root cause
 
