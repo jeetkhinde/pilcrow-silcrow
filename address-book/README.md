@@ -15,11 +15,17 @@ The [React Router address book tutorial](https://reactrouter.com/tutorials/addre
 
 ## FSR shape
 
-The contact detail route (`[contact_id]`) has no `PROMOTE_AFTER` — it runs SSR on every request. `load()` returns `Props` with a `live: Live` field populated by the framework extractor; the template renders `{{ live.favorite_mark.value }}` and `{{ live.updated_label.value }}` into `s-live` slots. After any mutation the action calls `req.fsr.invalidate_route()`, which marks both slots stale in `pilcrow_fsr`. The embedded watcher detects the stale rows, re-runs the SQL, and pushes SSE patches to connected clients.
+| Route | Live slots | Invalidated by |
+|---|---|---|
+| `/` | `total_contacts` | `create`, `destroy` |
+| `/contacts/[id]` | `favorite_mark`, `updated_label` | `favorite`, `save`, `destroy` |
+| `/contacts/[id]/edit` | `updated_label` | `save`, `favorite` |
 
-The index route (`/`) declares `PROMOTE_AFTER: u32 = 0` because it is a static route with a single URL instance. The `total_contacts` slot updates the same way.
+All three routes run SSR on every request (`load()` always executes). `load()` returns `Props` with a `live: Live` field populated by the framework extractor; templates render live values into `s-live` slots. After any mutation the action calls `req.fsr.invalidate_route()`, which marks the affected slots stale in `pilcrow_fsr`. The embedded watcher detects stale rows, re-runs the stored SQL, and pushes SSE patches to connected clients within the next poll cycle (200 ms).
 
-`load()` in both routes does only data fetching — the framework owns the FSR lifecycle.
+The index route (`/`) declares `PROMOTE_AFTER: u32 = 0` — a static route with a single URL instance. The contact and edit routes are dynamic (`[contact_id]`) so they use no `PROMOTE_AFTER`.
+
+`load()` does only data fetching — the framework owns the FSR lifecycle.
 
 ## Setup
 
