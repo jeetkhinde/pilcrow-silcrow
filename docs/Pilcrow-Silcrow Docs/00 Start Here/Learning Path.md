@@ -66,7 +66,7 @@ Goal:
 
 Read:
 
-- [[../01 Pilcrow/Address Book Tutorial]]
+- [[../Tutorials/Address Book/00 Introduction]]
 
 Goal:
 

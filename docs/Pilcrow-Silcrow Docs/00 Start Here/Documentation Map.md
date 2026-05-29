@@ -11,7 +11,7 @@
 - [[../01 Pilcrow/API Routes and Fragments]]
 - [[../01 Pilcrow/Typed Routes and Params]]
 - [[../01 Pilcrow/Config Env I18n Images and Head]]
-- [[../01 Pilcrow/Address Book Tutorial]] — end-to-end walkthrough: file routing, layouts, FSR live fields, actions, Silcrow navigation
+- [[../Tutorials/Address Book/00 Introduction]] — end-to-end step-by-step tutorial: setup through FSR live fields
 
 ## Rendering and Interactivity
 

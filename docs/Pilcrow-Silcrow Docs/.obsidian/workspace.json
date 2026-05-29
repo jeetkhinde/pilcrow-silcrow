@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "02 Silcrow/Atoms and Optimistic UI.md",
-                "mode": "source",
+                "file": "Tutorials/Address Book/01 Setup.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Atoms and Optimistic UI"
+              "title": "01 Setup"
             }
           }
         ],
@@ -228,6 +228,28 @@
   },
   "active": "3ab0a31b0dacfcd8",
   "lastOpenFiles": [
+    "Tutorials/Address Book/14 Live Timestamps on the Edit Page.md",
+    "Tutorials/Address Book/13 FSR Live Fields.md",
+    "Tutorials/Address Book/12 Deleting Contacts.md",
+    "Tutorials/Address Book/11 Favourite Toggle.md",
+    "Tutorials/Address Book/10 Edit Form.md",
+    "Tutorials/Address Book/09 Active Link Styling.md",
+    "Tutorials/Address Book/08 Search.md",
+    "Tutorials/Address Book/07 Client-Side Navigation.md",
+    "Tutorials/Address Book/06 Creating Contacts.md",
+    "Tutorials/Address Book/05 Contact Detail.md",
+    "Tutorials/Address Book/04 Loading Data.md",
+    "Tutorials/Address Book/04 Loading Data.md.tmp.23155.b67274d9fb56",
+    "Tutorials/Address Book/03 Route Groups and the App Layout.md",
+    "Tutorials/Address Book/03 Route Groups and the App Layout.md.tmp.23155.5058cdfa0626",
+    "Tutorials/Address Book/00 Introduction.md",
+    "Tutorials/Address Book/02 Root Layout.md",
+    "Tutorials/Address Book/02 Root Layout.md.tmp.23155.eec5c9088007",
+    "Tutorials/Address Book/01 Setup.md",
+    "Tutorials/Address Book/01 Setup.md.tmp.23155.3ab7acdf1456",
+    "02 Silcrow/Atoms and Optimistic UI.md",
+    "Tutorials/Address Book",
+    "Tutorials",
     "01 Pilcrow/Address Book Tutorial.md",
     "05 Reference/FSR Ownership and Invalidation.md",
     "00 Start Here/Documentation Map.md",
@@ -238,28 +260,9 @@
     "03 Rendering/FSR SSE Hub.md",
     "03 Rendering/Live Props and FSR.md",
     "03 Rendering/Build an FSR Page.md",
-    "03 Rendering/React Islands.md",
-    "03 Rendering/Islands.md",
-    "01 Pilcrow/Build Your First Page.md",
-    "00 Start Here/Learning Path.md",
-    "02 Silcrow/Atoms and Optimistic UI.md",
-    "00 Start Here/Feature Status.md",
-    "Debounce.md",
-    "FSR Rendering/Revalidation mechanism.md",
-    "04 Runtime/Security and Limits.md",
-    "04 Runtime/Middleware Hooks and Request Lifecycle.md",
-    "04 Runtime/Assets Dev Server and Deployment.md",
-    "03 Rendering/Rendering Models.md",
-    "01 Pilcrow/Typed Routes and Params.md",
-    "01 Pilcrow/Routing.md",
-    "01 Pilcrow/Pages and Layouts.md",
-    "01 Pilcrow/Mental Model.md",
     "05 Reference",
     "04 Runtime",
     "03 Rendering",
-    "02 Silcrow",
-    "01 Pilcrow",
-    "00 Start Here",
-    "FSR Rendering"
+    "02 Silcrow"
   ]
 }
