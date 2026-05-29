@@ -497,6 +497,7 @@ constraints = [
   "Struct-level #[pilcrow::depends_on_route(table, param)] defaults apply to all LiveProp<T> fields.",
   "Field-level #[pilcrow::*] attributes override struct-level live defaults for that field.",
   "Routekit auto-inserts s-live wrappers for text-node uses of {{ live.field.value }}.",
+  "s-live patches only textContent — never CSS classes, attributes, or src. Attribute expressions like class=\"badge-{{ live.field.value }}\" are rendered at SSR time by Minijinja and are never touched by SSE patches. If a live field controls both displayed text and a CSS class (e.g. a status badge that changes colour), use the object path: define a struct with text + class fields, mark the LiveProp with #[pilcrow::allow_unused], and use s-use=\"fsr.slot\" on the element. The s-use binding spreads text → textContent and class → className on every SSE patch.",
   "Each explicit s-live slot in page.html must match a LiveProp field in inline Live.",
   "Each LiveProp field in inline Live must be used as {{ live.field.value }} or have a matching s-live slot unless marked #[pilcrow::allow_unused].",
   "Duplicate s-live slot names in a single template are build errors.",
@@ -514,6 +515,7 @@ invalid_examples = [
   "Declaring a LiveProp field in inline Live without using {{ live.field.value }}, adding a matching s-live slot, or marking #[pilcrow::allow_unused]",
   "Repeating the same s-live slot name multiple times in one template",
   "Forgetting to enable the live-props feature in Cargo.toml",
+  "Using a scalar LiveProp<String> for a badge field where class=\"badge-{{ live.status.value }}\" controls colour — the class is baked at SSR time and never patched by SSE; the badge text changes but the colour stays stale. Use an object LiveProp<StatusBadge> with text + class fields and s-use=\"fsr.status\" instead.",
 ]
 source_refs = [
   "crates/runtime/src/fsr/",

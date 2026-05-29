@@ -422,6 +422,25 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
 }
 
 fn validate_html(code: &str, path: Option<&str>, findings: &mut Vec<Finding>) {
+    // Detect the "class trap": s-live on an element whose tag also has a class
+    // attribute interpolating the same live field. s-live only patches textContent;
+    // the class stays frozen at SSR value after an SSE update.
+    for (idx, line) in code.lines().enumerate() {
+        let lnum = idx + 1;
+        if line.contains("s-live=") && line.contains("class=") && line.contains("live.") {
+            // Heuristic: same line has both s-live and a class attr referencing a live field.
+            findings.push(finding_with_line(
+                Severity::Warning,
+                "pilcrow-fsr-s-live-class-trap",
+                "Element has both s-live and a class attribute that interpolates a live field value. s-live only patches textContent — the class is rendered at SSR time and will not update on SSE patch. If the live value controls badge colour or other class-dependent styling, use the object path: define a struct with text + class fields and use s-use=\"fsr.<slot>\" instead.".to_string(),
+                path,
+                Some(lnum),
+                Some("docs/Pilcrow-Silcrow Docs/03 Rendering/FSR SSE Hub.md"),
+                Some("Replace LiveProp<String> with LiveProp<Badge { text, class }>, mark #[pilcrow::allow_unused], and use s-use=\"fsr.slot\" on the element."),
+            ));
+        }
+    }
+
     for (slot, count) in collect_s_live_counts(code)
         .into_iter()
         .filter(|(_, count)| *count > 1)
