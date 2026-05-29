@@ -17,6 +17,7 @@
 - [[../03 Rendering/Rendering Models]]
 - [[../03 Rendering/Build an FSR Page]]
 - [[../03 Rendering/Live Props and FSR]]
+- [[../03 Rendering/FSR SSE Hub]]
 - [[../03 Rendering/Islands]]
 - [[../03 Rendering/React Islands]]
 - [[../03 Rendering/Lists and Live Patching]]
