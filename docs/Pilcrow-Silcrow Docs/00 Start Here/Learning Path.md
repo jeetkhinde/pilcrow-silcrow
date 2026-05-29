@@ -74,7 +74,21 @@ Goal:
 - Understand when to use `PROMOTE_AFTER` (static routes only) and when to omit it (dynamic routes).
 - Understand the `silcrow:navigate` / `silcrow:load` SSE reconnect split.
 
-## 6. Add Revalidation and Debounce
+## 6. Go deeper with the Demo App
+
+Read:
+
+- [[../Tutorials/Demo App/00 Introduction]]
+
+Goal:
+
+- Understand FSR multi-counter dashboards — multiple `LiveProp<T>` fields backed by one SQL query.
+- Know when to use the scalar path (`s-live`, text only) vs the object path (`s-use`, text + class).
+- Recognise the class trap: `class="badge-{{ live.field.value }}"` is baked at SSR time and never patched.
+- Write an API route that accesses `FsrStore` directly and calls `invalidate_dep_key`.
+- Add a React island to a server-rendered page.
+
+## 7. Add Revalidation and Debounce
 
 Read:
 
@@ -88,7 +102,7 @@ Goal:
 - Use `[fsr] revalidate_seconds` for a global fallback.
 - Use `#[debounce(N)]` on inline `Live` only when you understand the current runtime caveat.
 
-## 7. Add Islands or React
+## 8. Add Islands or React
 
 Read:
 
@@ -101,7 +115,7 @@ Goal:
 - Choose server-rendered islands for separately loaded HTML.
 - Choose React islands only when the component needs React as a view layer.
 
-## 8. Understand Silcrow Navigation
+## 9. Understand Silcrow Navigation
 
 Read:
 
