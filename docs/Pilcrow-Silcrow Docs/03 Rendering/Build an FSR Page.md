@@ -300,6 +300,22 @@ pub struct Live {
 
 when the route path has no `[id]` segment.
 
+## FSR Ownership Boundary
+
+`load()` does only data fetching. The framework owns the entire FSR lifecycle — slot registration, hit counting, baking, and watcher re-execution. The app's FSR write surface is three things:
+
+| Surface | Where |
+|---|---|
+| `s-live="slot_name"` | HTML template — DOM patch target |
+| `req.fsr.invalidate_route(path)` | Action — mark slots stale after mutation |
+| `req.fsr.tombstone(path)` | Action — mark route dead after delete |
+
+Never write files to `.pilcrow-baked/` from `load()`, never call `UPDATE pilcrow_fsr SET promoted = TRUE` directly, and never call bake functions from `load()`. The generated handler always runs `load()` regardless of promotion state.
+
+## `PROMOTE_AFTER` Scope
+
+Only use `PROMOTE_AFTER` on **static or near-static routes** with a finite known URL set (e.g. `/`, `/about`). On dynamic routes like `/tickets/[id]`, every distinct URL becomes a separate `pilcrow_fsr` row. Setting `PROMOTE_AFTER = 0` marks each URL as promoted on first hit, but `html_path` stays `NULL` because the framework cannot pre-bake an open ID-space. The watcher logs warnings on each invalidation cycle. Omit `PROMOTE_AFTER` on dynamic routes — they work correctly as pure SSR with live patching.
+
 ## Mental Model
 
 `load()` answers: what does the full page need on request?

@@ -11,6 +11,7 @@
 - [[../01 Pilcrow/API Routes and Fragments]]
 - [[../01 Pilcrow/Typed Routes and Params]]
 - [[../01 Pilcrow/Config Env I18n Images and Head]]
+- [[../01 Pilcrow/Address Book Tutorial]] — end-to-end walkthrough: file routing, layouts, FSR live fields, actions, Silcrow navigation
 
 ## Rendering and Interactivity
 
@@ -38,6 +39,7 @@
 ## Reference
 
 - [[Feature Status]]
+- [[../05 Reference/FSR Ownership and Invalidation]] — what the app owns vs what the framework owns; invalidation patterns; anti-patterns
 - [[../05 Reference/Removed and Legacy Features]]
 - [[../05 Reference/Experimental Baked Pages]]
 - [[../05 Reference/Documentation Workflow]]

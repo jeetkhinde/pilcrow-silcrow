@@ -2,6 +2,21 @@
 
 FSR uses one browser `EventSource` per route. That connection carries patch events for every live slot the current page renders.
 
+## SSE Reconnect Lifecycle
+
+The injected FSR client script splits its reconnect work across two Silcrow navigation events:
+
+| Event | When it fires | What the FSR script does |
+|---|---|---|
+| `silcrow:navigate` | Before fetch, before DOM swap, before `history.pushState` | Close old SSE connection. Capture destination URL from `e.detail.url`. |
+| `silcrow:load` | After DOM swap + `pushState` | Reopen SSE with `window.location.pathname` (now the new URL) and `__fsr_slots()` scanning the updated DOM. |
+
+**Why this matters:** `silcrow:navigate` fires before the page content has changed. Calling `__fsr_slots()` at that point returns the old page's `s-live` elements. If you were on an index page with `s-live="total_contacts"` and navigated to a contact detail page, the FSR connection would subscribe to `total_contacts` on the contact route — wrong slots, no patches received.
+
+The `silcrow:load` event fires after Silcrow has applied the PS fragment or full-page swap and after `pushState` has run. At that point `window.location.pathname` is the new route and `querySelectorAll('[s-live]')` returns the new page's live elements. The FSR connection is opened with correct route and correct slots every time.
+
+The guard `if(slots) __fsr_connect()` prevents a wasted SSE connection when navigating to a non-FSR page (no `s-live` elements → empty string → falsy → no connection).
+
 ## Connection Shape
 
 When a page contains `s-live` slots, routekit injects a small client script. On page load it scans the DOM for slot names and opens:

@@ -228,6 +228,8 @@
   },
   "active": "3ab0a31b0dacfcd8",
   "lastOpenFiles": [
+    "01 Pilcrow/Address Book Tutorial.md",
+    "05 Reference/FSR Ownership and Invalidation.md",
     "00 Start Here/Documentation Map.md",
     "05 Reference/Documentation Workflow.md",
     "05 Reference/Experimental Baked Pages.md",
@@ -252,8 +254,6 @@
     "01 Pilcrow/Routing.md",
     "01 Pilcrow/Pages and Layouts.md",
     "01 Pilcrow/Mental Model.md",
-    "01 Pilcrow/Config Env I18n Images and Head.md",
-    "01 Pilcrow/API Routes and Fragments.md",
     "05 Reference",
     "04 Runtime",
     "03 Rendering",
