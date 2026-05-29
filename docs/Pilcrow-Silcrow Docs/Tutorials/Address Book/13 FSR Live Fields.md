@@ -58,7 +58,8 @@ User submits favourite form
   → action: set_favorite() in DB
   → req.fsr.invalidate_route("/contacts/kent-c-dodds")
   → pilcrow_fsr: favorite_mark and updated_label marked stale = TRUE
-  → FSR watcher (polling every 200ms):
+  → FSR watcher (Redis pub/sub on pilcrow:invalidate; falls back to
+     500ms polling without Redis — WatcherConfig::poll_interval_ms default):
       re-runs Live::query("contact_id" = "kent-c-dodds")
       → new values: favorite_mark = "*", updated_label = "Updated 2026-05-29..."
       → publishes SlotPatch events to broadcast channel

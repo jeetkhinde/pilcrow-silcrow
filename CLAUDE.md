@@ -183,22 +183,17 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-None. All work from this session is complete and shipped (commit range `f7ce74d..d0bb7e3`):
+**The single source of truth for pending work is [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md).** It consolidates (and replaces) the old `fsr-cache-persistence-2026-05-24.md` and `security-performance-findings-2026-05-22.md` plans. Open themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths (startup/handler/codegen panics), C) security/DoS, D) DX surfacing (`s-optimistic`, dep-key auto-invalidation, `s-live:class`), E) doc/source drift (ISR/Deferred/Streaming removed-vs-present), F) disk-first baking. Read it before starting framework work.
 
-**address-book FSR fix** — removed manual `bake.rs`, added `s-live` to all three routes, fixed SSE reconnect split (`silcrow:navigate` closes / `silcrow:load` reopens with updated DOM slots), fixed `watcher_tick_redis` lifetime error.
+This session (latest, on top of `d28cbf3`):
 
-**demo FSR fix** — removed stale `REVALIDATE`/`CACHE_TAGS` constants from `products/index.rs`, converted `TicketStatus` scalar to `StatusBadge` object so badge class updates via SSE (scalar `s-live` patches only `textContent`, not CSS classes).
+**address-book** — added `pages/(app)/_loading.html` detail-pane loading skeleton (existing `_loading.html` feature; closes the gap where the About page advertised "pending UI" but none existed). Build green.
 
-**Framework** — registry.toml constraints + `pilcrow-fsr-promote-after-dynamic-route` + `pilcrow-fsr-s-live-class-trap` validation rules added; MCP tests green.
+**Tutorials** — Address Book: new step `15 Loading Skeletons`, wired into `00 Introduction` + `14`; corrected the watcher-interval note in `13 FSR Live Fields` (Redis pub/sub; 500ms polling fallback, not 200ms). Demo App: corrected + deepened the loading-skeleton section in `01 Setup and Layout` (real shimmer markup, `<template>` injection, directory scoping, cross-link to the Address Book step).
 
-**Docs** — `docs/Pilcrow-Silcrow Docs/` updated:
-- `Tutorials/Address Book/` — 14-step tutorial (01 Setup → 14 Live Timestamps)
-- `Tutorials/Demo App/` — 6-step tutorial (01 Setup → 06 React Islands)
-- `05 Reference/FSR Ownership and Invalidation.md` — new reference page
-- `03 Rendering/FSR SSE Hub.md` — scalar/object rule + class trap + SSE reconnect lifecycle
-- `03 Rendering/Build an FSR Page.md` — FSR ownership boundary + PROMOTE_AFTER scope
-- `03 Rendering/Rendering Models.md` — FSR ownership + dynamic-route PROMOTE_AFTER warning
-- Learning path (9 steps), documentation map — both tutorials indexed
+**Plans/docs** — two old plans consolidated into one roadmap; no framework behavior changed, so `registry.toml` / `pilcrow-mcp` need no update this session.
+
+_Prior shipped session (commit range `f7ce74d..d0bb7e3`): address-book/demo FSR fixes, FSR validation rules, 14-step Address Book + 6-step Demo tutorials, FSR ownership/SSE-hub reference docs._
 
 ## Known issues — do not work around without fixing root cause
 

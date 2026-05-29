@@ -147,13 +147,27 @@ Three new things compared to the address-book layout:
 
 ## Loading skeleton
 
-`pages/_loading.html` shows while Silcrow fetches a new page:
+`pages/_loading.html` is a scoped pending-UI placeholder shown while Silcrow fetches the next page. The demo ships a shimmer skeleton:
 
 ```html
-<div class="loading-bar"></div>
+<style>
+  @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+  .skel { background: linear-gradient(90deg,#e8e8e8 25%,#f5f5f5 50%,#e8e8e8 75%);
+          background-size: 800px 100%; animation: shimmer 1.4s infinite linear; border-radius: 4px; }
+  .skel-title { height: 2rem; width: 55%; margin: 2rem auto 1rem; }
+  .skel-line  { height: 1rem; width: 80%; margin: .6rem auto; }
+  .skel-block { height: 10rem; width: 80%; margin: 1.5rem auto; }
+</style>
+<div style="max-width:700px;margin:0 auto;padding:2rem 1.5rem">
+  <div class="skel skel-title"></div>
+  <div class="skel skel-line"></div>
+  <div class="skel skel-block"></div>
+</div>
 ```
 
-Routekit discovers this file automatically. Silcrow appends it to the response body during navigation transitions.
+Routekit discovers `_loading.html` automatically (`is_loading_page_file` in `routekit/src/routing/discovery.rs`) and injects it into the response as a `<template>`; Silcrow shows it inside the navigation target while the next route is in flight. Like `_layout.html`, it is **scoped by directory** — a `_loading.html` placed in `(admin)/` would apply only to admin routes. This one sits at `pages/` so it is the global default.
+
+The Address Book tutorial builds a detail-pane-shaped skeleton for fragment navigation in [[../Address Book/15 Loading Skeletons]].
 
 ---
 

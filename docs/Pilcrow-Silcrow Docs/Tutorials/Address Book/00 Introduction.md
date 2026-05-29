@@ -15,6 +15,7 @@ A full contact manager with:
 - Delete with confirmation
 - Live-updating contact count and timestamps via FSR + SSE
 - Client-side navigation — only the right pane swaps, sidebar stays
+- A loading skeleton that fills the detail pane while the next contact loads
 
 ## Steps
 
@@ -32,6 +33,7 @@ A full contact manager with:
 12. [[12 Deleting Contacts]]
 13. [[13 FSR Live Fields]]
 14. [[14 Live Timestamps on the Edit Page]]
+15. [[15 Loading Skeletons]]
 
 ## Prerequisites
 

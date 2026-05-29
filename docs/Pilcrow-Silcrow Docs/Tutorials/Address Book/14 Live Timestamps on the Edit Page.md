@@ -30,6 +30,10 @@ ORDER BY route, slot;
 
 After clicking the star you should briefly see `stale = true`, then `stale = false` with an incremented `version` after the watcher processes the event.
 
+---
+
+One last polish step before you are done: [[15 Loading Skeletons]] gives the detail pane a pending state during navigation.
+
 ## Tutorial complete
 
 You have built a full contact manager in Pilcrow + Silcrow:
@@ -44,6 +48,7 @@ You have built a full contact manager in Pilcrow + Silcrow:
 - ✓ FSR live fields with `s-live`, `invalidate_route`, and `tombstone`
 - ✓ Optimistic UI for the favourite star
 - ✓ Cross-tab live updates via SSE
+- ✓ A scoped `_loading.html` skeleton for pending navigation UI
 
 ## Further reading
 
