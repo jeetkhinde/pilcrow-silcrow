@@ -47,6 +47,7 @@
 ## Tutorials
 
 - [[../Tutorials/Address Book/00 Introduction]] — build a full contact manager step by step: setup, layouts, loaders, actions, search, FSR live fields, client-side navigation
+- [[../Tutorials/Demo App/00 Introduction]] — FSR multi-counter dashboards, scalar vs object live fields, API routes with FSR store, React islands
 
 ## Maintenance Rule
 
