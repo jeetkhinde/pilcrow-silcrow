@@ -50,16 +50,31 @@ Read:
 
 - [[../03 Rendering/Build an FSR Page]]
 - [[../03 Rendering/Live Props and FSR]]
+- [[../05 Reference/FSR Ownership and Invalidation]]
 
 Goal:
 
 - Define inline `pub struct Live` in the page code-behind.
 - Add `LiveProp<T>` fields.
 - Implement `Live::query()`.
-- Render `{{ live.field.value }}` and let routekit add `s-live`.
+- Add `s-live="field_name"` to the HTML elements that should patch.
 - Pass `live: Live` into `load()`.
+- Call `req.fsr.invalidate_route(path)` from actions that change live data.
+- Understand the ownership boundary: `load()` fetches data only; the framework manages slot registration, hit counting, and watcher re-execution.
 
-## 5. Add Revalidation and Debounce
+## 5. Build a Real App End to End
+
+Read:
+
+- [[../01 Pilcrow/Address Book Tutorial]]
+
+Goal:
+
+- See all concepts wired together: route groups, layout loading, multiple routes with different FSR shapes, named actions, Silcrow navigation, PS fragment navigation, and client-side active-state sync.
+- Understand when to use `PROMOTE_AFTER` (static routes only) and when to omit it (dynamic routes).
+- Understand the `silcrow:navigate` / `silcrow:load` SSE reconnect split.
+
+## 6. Add Revalidation and Debounce
 
 Read:
 
@@ -73,7 +88,7 @@ Goal:
 - Use `[fsr] revalidate_seconds` for a global fallback.
 - Use `#[debounce(N)]` on inline `Live` only when you understand the current runtime caveat.
 
-## 6. Add Islands or React
+## 7. Add Islands or React
 
 Read:
 
@@ -85,3 +100,16 @@ Goal:
 
 - Choose server-rendered islands for separately loaded HTML.
 - Choose React islands only when the component needs React as a view layer.
+
+## 8. Understand Silcrow Navigation
+
+Read:
+
+- [[../02 Silcrow/Navigation and Live Connections]]
+- [[../03 Rendering/FSR SSE Hub]]
+
+Goal:
+
+- Know the difference between `silcrow:navigate` (fires before fetch and DOM swap) and `silcrow:load` (fires after DOM swap and `pushState`).
+- Know when PS fragment navigation applies and when it falls back to full navigation.
+- Know how to keep client-only state (e.g. sidebar active highlight) in sync across fragment navigations using `silcrow:load`.
