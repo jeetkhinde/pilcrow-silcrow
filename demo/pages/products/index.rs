@@ -1,7 +1,7 @@
 use pilcrow_web::AppError;
 
-pub const REVALIDATE: u64 = 60;
-pub const CACHE_TAGS: &[&str] = &["products"];
+// REVALIDATE and CACHE_TAGS were removed when ISR was replaced by FSR.
+// This page fetches from an external API — it runs plain SSR on every request.
 
 #[derive(serde::Deserialize)]
 pub struct ApiResponse {

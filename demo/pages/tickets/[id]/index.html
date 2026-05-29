@@ -184,13 +184,15 @@
   </div>
 
   <!--
-    LiveProp<TicketStatus> — ENUM (scalar path)
-    TicketStatus is a unit enum; serde serialises it to a JSON string ("open"/"closed").
-    FSR treats JSON strings as scalars and patches the s-live slot via textContent.
+    LiveProp<StatusBadge> — STRUCT (object path)
+    StatusBadge serialises to { text, class }. FSR publishes it to the Silcrow
+    atom "fsr.status"; s-use spreads text → textContent and class → className.
+    Using an object rather than a scalar enum because a scalar s-live only patches
+    textContent — the badge colour class would be stale after a status change.
   -->
   <div class="field">
-    <label>Status <span class="type-label">LiveProp&lt;TicketStatus&gt; — enum → scalar</span></label>
-    <span class="badge badge-{{ live.status.value }}">{{ live.status.value }}</span>
+    <label>Status <span class="type-label">LiveProp&lt;StatusBadge&gt; — struct → object</span></label>
+    <span class="{{ live.status.value.class }}" s-use="fsr.status">{{ live.status.value.text }}</span>
   </div>
 
   <!--
@@ -211,8 +213,8 @@
       <div>
         <label for="sel-status">Status</label>
         <select id="sel-status">
-          <option value="open" {% if live.status.value.to_string()=="open" %}selected{% endif %}>Open</option>
-          <option value="closed" {% if live.status.value.to_string()=="closed" %}selected{% endif %}>Closed</option>
+          <option value="open" {% if live.status.value.text=="open" %}selected{% endif %}>Open</option>
+          <option value="closed" {% if live.status.value.text=="closed" %}selected{% endif %}>Closed</option>
         </select>
       </div>
       <div>
@@ -231,14 +233,15 @@
 </div>
 
 <div class="note">
-  <strong>Two LiveProp patterns on one page:</strong><br>
-  <strong>Enum (scalar):</strong> <code>LiveProp&lt;TicketStatus&gt;</code> — serde serialises the enum to
-  <code>"open"</code> or <code>"closed"</code>. FSR patches the <code>s-live</code> slot via
-  <code>textContent</code> on each SSE event.<br><br>
-  <strong>Struct (object):</strong> <code>LiveProp&lt;PriorityBadge&gt;</code> — serde serialises the struct
-  to <code>{ text, class, raw }</code>. FSR calls
-  <code>Silcrow.publish("fsr.priority", obj)</code>; <code>s-use="fsr.priority"</code> spreads
-  <code>text → textContent</code> and <code>class → className</code> onto the badge span.
+  <strong>Object LiveProp pattern (both fields):</strong><br>
+  Both <code>status</code> and <code>priority</code> use the object path — the
+  <code>LiveProp&lt;T&gt;</code> type parameter is a struct that serialises to a JSON object.
+  FSR calls <code>Silcrow.publish("fsr.&lt;slot&gt;", obj)</code>; <code>s-use="fsr.&lt;slot&gt;"</code>
+  spreads each key onto the element: <code>text → textContent</code>, <code>class → className</code>.<br><br>
+  <strong>Why not a scalar for status?</strong> A scalar <code>LiveProp&lt;String&gt;</code> uses
+  <code>s-live</code> which patches only <code>textContent</code>. The badge colour comes from the CSS
+  class, not the text — so after an SSE update the badge text would change but the colour would stay stale.
+  Whenever a live field controls both a value and a class, use the object path.
 </div>
 
 <script>
