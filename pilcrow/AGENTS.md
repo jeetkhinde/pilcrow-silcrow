@@ -77,6 +77,7 @@ Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:300
 | 6 | `cli/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error |
 | 7 | `cli/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start()` instead of `pilcrow_start()` — skips SSG prerendering |
 | 8 | `routekit/route/parser.rs:246` | Medium | Optional catch-all priority false positive — checks `any(!is_empty)` instead of catch-all membership |
+| 9 | `routekit/lib.rs:136` | Low | `is_loading = filename == "loading"` always false (convention is `_loading`) — dead code |
 
 ## How the Build Pipeline Works
 
@@ -203,7 +204,6 @@ HTTP verb attributes: `s-get`, `s-post`, `s-put`, `s-patch`, `s-delete`. Reactiv
 
 - Replace `PRERENDER: bool = true` with `PROMOTE_AFTER: u32 = 0` (FSR bake-on-first-hit).
 - Replace `REVALIDATE: u64 = N` with `#[revalidate(N)]` on `LiveProp<T>` fields in `Props`, or set `[fsr] revalidate_seconds` in `Pilcrow.toml` for a global default.
-- `crates/runtime/src/isr.rs` is stripped to an in-memory SSG cache only; the old ISR TTL logic is gone.
 
 ## Adapter System
 
