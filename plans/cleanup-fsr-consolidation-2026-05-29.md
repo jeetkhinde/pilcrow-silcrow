@@ -16,10 +16,10 @@ _Created 2026-05-29. Executable task spec for roadmap item **E1** (+ parts of **
 - `deferred.rs` (399 lines) contains: `__live_props_response`, `LiveTarget`, `LiveProp<T>` (legacy push-based — `watch`/`poll`/`stream`/`initial`) **[KEEP until S8]**, plus `PatchDelay`/`BakedProp`/`BakedField` **[remove in S5]**.
 - **THREE `LiveProp` definitions exist; the FSR one is the only survivor (user decision 2026-05-29).**
   1. `runtime::fsr::LiveProp` (`web/src/live.rs` → `pilcrow_web::live::LiveProp`) — **KEEP.** Query-backed (`live_query!`, `PilcrowLive::query`), watcher, `s-live`, `pilcrow_fsr` rows, `PROMOTE_AFTER`.
-  2. `runtime::deferred::LiveProp` (`runtime/src/lib.rs` `pub use deferred::{…, LiveProp, …}` → crate-root `pilcrow_web::LiveProp`) — legacy push (`watch`/`poll`/`stream`/`initial`). **DELETE.** Used by 6 demos (below).
+  2. `runtime::deferred::LiveProp` (`runtime/src/lib.rs` `pub use deferred::{…, LiveProp, …}` → crate-root `pilcrow_web::LiveProp`) — legacy push (`watch`/`poll`/`stream`/`initial`). **DELETE.** Its only consumer was the demo app, now deleted (2026-05-29).
   3. `runtime::live_props::model::LiveProp` (+ `LiveFieldData`, `LivePropExtract` derive, used by the `#[handler]` macro + `live_props_derive.rs`) — legacy. **DELETE.**
 - **The `Vec<T>` list system is SEPARATE and KEPT** (user: "we will improve it later"): `live_props::{ListBroadcast, ListPatchEvent, ListRow, ListChunkCache, InMemoryListChunkCache, list_chunk_key}` in `live_props/list_broadcast.rs`, `list_row.rs`, `list_chunk.rs`. **Verified independent** of the legacy `LiveProp`/`LiveBroadcast`/`LivePageStore` glue — they can stay while the legacy parts of `live_props/` (`model.rs`, `broadcast.rs`, `store.rs`, `baking.rs`) are removed.
-- **Legacy demos have NO database** — `demo/pages/live/index.rs`, `demo/pages/demo/fsr/index.rs`, `demo/pages/demo/async-live/index.rs` (+ `islands/activity.rs`), `demo/pages/demo/combined/simple/index.rs`, `combined/complex/index.rs` are in-memory `tokio::watch` counters incremented by a spawned task. FSR is query-backed, so these **cannot migrate 1:1** — each must be re-backed by a DB query or removed (see S7).
+- **The demo app was deleted (2026-05-29)** — it was the sole consumer of the legacy push `LiveProp`. The remaining consumer, **address-book**, uses only the FSR `LiveProp`. So S8 can delete the legacy system with no migration (see S7).
 - **Two live SSE topologies:** FSR = one hub (`fsr_hub_handler`, `/__pilcrow/fsr`). Legacy = per-route `/__pilcrow/live{pattern}` (emitted in `app_module.rs` via `__live_props_response`, discovered by `data-pilcrow-live` anchors + `initLiveElements` in `silcrow.js`). `silcrow.js` opens exactly **one** `EventSource` today. Deleting the legacy system (S8) leaves the FSR hub as the sole connection — invariant #1 satisfied by construction.
 
 ---
@@ -36,7 +36,6 @@ _Created 2026-05-29. Executable task spec for roadmap item **E1** (+ parts of **
 
 ```bash
 cargo build --manifest-path pilcrow/Cargo.toml
-cargo build --manifest-path demo/Cargo.toml
 cargo build --manifest-path address-book/Cargo.toml
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-runtime
@@ -51,7 +50,7 @@ S0 (baseline)
  ├─ S1 → S2 → S3        (removed page consts)
  ├─ S4                  (delete isr.rs)            — independent
  ├─ S5 → S6             (remove baked_pages + doc scrub) — independent
- └─ S7 → S8 → S9        (migrate demos to FSR, then delete legacy live infra)
+ └─ S7 → S8 → S9        (confirm no consumer uses legacy LiveProp, then delete legacy live infra)
 ```
 S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decided — keep only FSR `LiveProp<T>`; delete the legacy push `LiveProp` entirely.**
 
@@ -83,7 +82,7 @@ S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decid
 
 **Success:**
 - `cargo test --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit` passes (flipped + 3 new tests green).
-- `cargo build --manifest-path demo/Cargo.toml` and `--manifest-path address-book/Cargo.toml` stay green (no source page declares these consts).
+- `cargo build --manifest-path address-book/Cargo.toml` stays green (no source page declares these consts).
 - `grep -rn "PRERENDER" pilcrow/crates/routekit/src` shows only the error string and test idents.
 **Boundary:** do not touch the `TRAILING_SLASH`/`LAYOUT`/`PROMOTE_AFTER`/`FSR_JSON` arms; do not change FSR baking.
 
@@ -149,18 +148,16 @@ S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decid
 
 ---
 
-## S7 — Migrate the legacy-`LiveProp` demos onto FSR (then they no longer need the legacy system)
+## S7 — Confirm no consumer uses the legacy `LiveProp` (demo app deleted)
 
-**Decision (2026-05-29):** keep **only** the FSR `LiveProp<T>`. FSR is query-backed, but these demos are DB-less `tokio::watch` counters, so each must be **re-backed by a DB query** or **removed**. Do this BEFORE S8 so deleting the legacy system breaks nothing.
+**The demo app was deleted on 2026-05-29** (commit on `main`), along with the Demo App tutorial. It was the only consumer of the legacy push-based `LiveProp`. **address-book** (the remaining consumer) uses **only** the FSR `LiveProp<T>` (`use pilcrow_web::live::*`). So there is **nothing to migrate** — S8 can delete the legacy system directly.
 
-**Per-demo plan (confirm fate with the user where noted):**
-- `demo/pages/demo/fsr/index.rs` (+ `.html`) — **rewrite as genuine FSR** (it is mislabeled today). Add `demo/pages/demo/fsr/live.rs` with a `Live` struct (`pub live_count: LiveProp<i64>`) and `Live::query` against a real counter table; a background job / action does the DB write + `invalidate!`. Template uses `s-live="live_count"`. This becomes the canonical FSR counter demo.
-- `demo/pages/live/index.rs`, `demo/pages/demo/async-live/index.rs` (+ `islands/activity.rs`), `demo/pages/demo/combined/simple/index.rs`, `combined/complex/index.rs` — these only exist to showcase the **removed** push primitive. **Recommended:** convert `live/index.rs` to a DB-backed FSR counter (mirrors the `fsr/index.rs` pattern) as the single "live counter" showcase, and **remove** the now-redundant `async-live`/`combined` push demos (their FSR equivalents are already covered by `tickets/` + the rewritten `fsr/index`). **Confirm with the user before deleting any page.**
-- For any page kept: drop `use`/imports of `pilcrow_web::LiveProp` (legacy) and `LiveProp::watch/initial`; switch to `use pilcrow_web::live::*` + the FSR `Live`/`live.rs` convention.
-
-**Files:** the 6 demo `.rs` + `.html` listed above; new `live.rs` files; a small migration (counter table) if the executor chooses DB-backed counters; update the Demo App tutorial (`docs/Pilcrow-Silcrow Docs/Tutorials/Demo App/`) for any page that changes or is removed.
-**Success:** `grep -rn "pilcrow_web::LiveProp\b\|LiveProp::watch\|LiveProp::initial\|LiveProp::poll\|LiveProp::stream" demo address-book` returns nothing (no source uses the legacy prop); `cargo build --manifest-path demo/Cargo.toml` green; kept demos render via FSR `s-live`.
-**Boundary:** do not touch the `Vec<T>` list system or the FSR hub. Do not delete a demo page without user confirmation.
+**Steps:**
+- Verify no source still references the legacy prop:
+  `grep -rn "pilcrow_web::LiveProp\b\|LiveProp::watch\|LiveProp::initial\|LiveProp::poll\|LiveProp::stream" address-book pilcrow/crates` — expect **nothing in consumer code** (only the definition + re-export inside `pilcrow/crates`, which S8 removes).
+- A future tutorial (planned) will showcase the FSR features the Address Book does not exercise — that tutorial must use the FSR `LiveProp` only.
+**Success:** confirmed no consumer code uses the legacy prop; proceed to S8.
+**Boundary:** do not touch the `Vec<T>` list system or the FSR hub.
 
 ---
 
@@ -185,9 +182,9 @@ S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decid
 **Success:**
 - `grep -rn "deferred::LiveProp\|live_props::model\|LivePropExtract\|LiveBroadcast\|LivePageStore\|__live_props_response\|data-pilcrow-live\|/__pilcrow/live\b" pilcrow/crates` returns nothing.
 - Exactly one `LiveProp` resolvable: `pilcrow_web::live::LiveProp` (FSR). `grep -rn "pub use .*LiveProp" pilcrow/crates` shows only the `runtime::fsr` path.
-- `cargo build --manifest-path pilcrow/Cargo.toml` + `demo` + `address-book` green; `cargo test -p pilcrow-routekit -p pilcrow-runtime` + `cargo test -p pilcrow-mcp` green; `node silcrow/build.js` succeeds.
+- `cargo build --manifest-path pilcrow/Cargo.toml` + `address-book` green; `cargo test -p pilcrow-routekit -p pilcrow-runtime` + `cargo test -p pilcrow-mcp` green; `node silcrow/build.js` succeeds.
 - `live_props::ListRow`/`ListBroadcast` still compile and are still re-exported.
-- **Out-of-band (human, needs PG+Redis):** load demo + address-book; confirm exactly one live connection per client and FSR `s-live` updates still patch.
+- **Out-of-band (human, needs PG+Redis):** load address-book; confirm exactly one live connection per client and FSR `s-live` updates still patch.
 
 ---
 
@@ -200,5 +197,5 @@ S1–S6 are safe and can ship first. S7–S8 is the large consolidation: **decid
 
 ## Decisions
 
-- **RESOLVED (2026-05-29):** keep **only** the FSR `LiveProp<T>`. The legacy push-based `LiveProp` and its per-route SSE are deleted entirely (S8); demos migrate to query-backed FSR (S7). The `Vec<T>` list system is kept and improved later.
-- **Remaining sub-decision (S7):** the fate of the pure push-showcase demos (`live/`, `async-live/`, `combined/*`) — convert each to a DB-backed FSR counter, or remove the redundant ones. Recommendation in S7: rewrite `demo/fsr/index.rs` as real FSR, convert `live/index.rs` to a DB-backed FSR counter, remove the rest. **Confirm before deleting any demo page.**
+- **RESOLVED (2026-05-29):** keep **only** the FSR `LiveProp<T>`. The legacy push-based `LiveProp` and its per-route SSE are deleted entirely (S8). The `Vec<T>` list system is kept and improved later.
+- **RESOLVED (2026-05-29):** the demo app was deleted (it was the only legacy-`LiveProp` consumer), so there is no demo migration. A future tutorial — built on FSR only — will cover the features the Address Book does not exercise (multi-counter dashboards, scalar vs object, API routes with `FsrStore`, React islands).

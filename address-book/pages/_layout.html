@@ -3,6 +3,7 @@ pub struct Props {}
 ---
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,8 +12,10 @@ pub struct Props {}
     <title>Pilcrow Contacts</title>
   </slot>
 </head>
+
 <body class="min-h-screen bg-slate-100 text-slate-950 antialiased">
   <slot />
   {{ pilcrow_web::assets::assets::script_tag()|safe }}
 </body>
+
 </html>

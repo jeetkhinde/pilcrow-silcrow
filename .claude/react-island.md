@@ -3,7 +3,7 @@
 ## DO NOT
 
 - Do NOT scan files to answer React usage questions
-- Do NOT open `react.rs`, `react-islands.js`, or `demo/react/` for general questions
+- Do NOT open `react.rs` or `react-islands.js` for general questions
 - Do NOT infer architecture by reading multiple files
 
 ## Answer from this model first

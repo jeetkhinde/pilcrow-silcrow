@@ -28,7 +28,7 @@ Pilcrow is a Rust full-stack web framework inspired by SvelteKit/Astro. It uses:
 - **silcrow.js** — Always read `crates/runtime/assets/silcrow.js` via MCP tool `silcrow-docs` before writing anything about it.
 - A **build.rs** pipeline (`routekit`) that compiles `.html` + `.rs` files into a wired axum `Router` — no manual route registration
 
-The repo workspace root `Cargo.toml` has only the framework crates as members. `tools/cli` is excluded from the workspace and must be built separately. In the `pilcrow-silcrow` integration workspace, `demo/` is a production-style consumer app that depends on Pilcrow by path.
+The repo workspace root `Cargo.toml` has only the framework crates as members. `tools/cli` is excluded from the workspace and must be built separately. In the `pilcrow-silcrow` integration workspace, `address-book/` is the consumer app that depends on Pilcrow by path.
 
 ## Build Commands
 
@@ -40,9 +40,9 @@ cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-web
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit -- <test_name>
 
-# Demo app
-cargo build --manifest-path demo/Cargo.toml
-cargo run   --manifest-path demo/Cargo.toml
+# Address-book consumer app
+cargo build --manifest-path address-book/Cargo.toml
+cargo run   --manifest-path address-book/Cargo.toml
 
 # MCP server (run after any MCP file change)
 cargo test --manifest-path pilcrow/tools/pilcrow-mcp/Cargo.toml

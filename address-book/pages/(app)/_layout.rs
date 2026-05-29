@@ -7,10 +7,7 @@ pub struct Props {
 
 pub async fn load(req: Req) -> AppResult<Props> {
     let q = req.query.get("q").unwrap_or("").to_owned();
-    let active_id = req
-        .params
-        .get("contact_id")
-        .map(String::as_str);
+    let active_id = req.params.get("contact_id").map(String::as_str);
     let contacts = crate::data::list(Some(&q), active_id).await?;
     let initial_count = crate::data::count().await?;
 

@@ -8,8 +8,7 @@ Everything lives in one git repo. Commit from the workspace root.
 pilcrow-silcrow/               ← single git repo
   pilcrow/                     # Pilcrow framework (Rust SSR engine)
   silcrow/                     # Silcrow client runtime (JS)
-  demo/                        # Real consumer app, depends on Pilcrow by path
-  address-book/                # FSR reference app — React Router tutorial in Pilcrow
+  address-book/                # FSR reference/consumer app — React Router tutorial in Pilcrow (depends on Pilcrow by path)
   plans/                       # Feature implementation plans
   docs/                        # Obsidian vault — Pilcrow-Silcrow Docs/
   .claude/commands/            # Project slash commands
@@ -20,7 +19,7 @@ pilcrow-silcrow/               ← single git repo
 ```
 
 **Publishing to crates.io (future):** Run `cargo publish -p <crate-name>` from the workspace root.
-Path deps in `demo/Cargo.toml` must become version deps before publishing Pilcrow crates.
+Path deps in `address-book/Cargo.toml` must become version deps before publishing Pilcrow crates.
 Use `git subtree split --prefix=pilcrow` to extract a clean Pilcrow-only history if a separate public repo is ever needed.
 
 NEVER call `scan_project_context` if this file was loaded at session start — topology,
@@ -69,9 +68,9 @@ terser must be available: `npm install` inside `silcrow/` if it is missing.
 cargo build --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 cargo test  --manifest-path pilcrow/Cargo.toml -p pilcrow-routekit
 
-# Demo consumer app
-cargo build --manifest-path demo/Cargo.toml
-cargo run   --manifest-path demo/Cargo.toml
+# Address-book consumer app
+cargo build --manifest-path address-book/Cargo.toml
+cargo run   --manifest-path address-book/Cargo.toml
 
 # Silcrow JS runtime
 cd silcrow && npm run build
@@ -183,17 +182,17 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-**The single source of truth for pending work is [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md).** It consolidates (and replaces) the old `fsr-cache-persistence-2026-05-24.md` and `security-performance-findings-2026-05-22.md` plans. Open themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths (startup/handler/codegen panics), C) security/DoS, D) DX surfacing (`s-optimistic`, dep-key auto-invalidation, `s-live:class`), E) doc/source drift (ISR/Deferred/Streaming removed-vs-present), F) disk-first baking. Read it before starting framework work.
+**Two active plan files:**
+- [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift, F) disk-first baking.
+- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — executable sliced spec (S0–S9) for roadmap **E1**: unify on the FSR model. **Decided: keep only the FSR `LiveProp<T>`** (`use pilcrow::live::*`); delete the legacy push `LiveProp`, ISR/`PRERENDER`/Streaming consts, and `baked_pages`; keep the `Vec<T>` list system and the single multiplexed live hub (one connection per client). Read both before framework work.
 
 This session (latest, on top of `d28cbf3`):
 
-**address-book** — added `pages/(app)/_loading.html` detail-pane loading skeleton (existing `_loading.html` feature; closes the gap where the About page advertised "pending UI" but none existed). Build green.
+**Demo app deleted** — `demo/` and the `Tutorials/Demo App/` docs removed. `address-book/` is now the sole consumer app (FSR `LiveProp` only). Updated all references: `CLAUDE.md` topology/build commands, `pilcrow/AGENTS.md`, `CONTEXT.md`, `/sync-check` (now builds address-book), Learning Path + Documentation Map (Demo App step removed, a future FSR-features tutorial noted as planned), `FSR SSE Hub.md`, `.claude/react-island.md`. A future tutorial will cover the FSR features the Address Book does not exercise (multi-counter dashboards, scalar vs object, API routes with `FsrStore`, React islands).
 
-**Tutorials** — Address Book: new step `15 Loading Skeletons`, wired into `00 Introduction` + `14`; corrected the watcher-interval note in `13 FSR Live Fields` (Redis pub/sub; 500ms polling fallback, not 200ms). Demo App: corrected + deepened the loading-skeleton section in `01 Setup and Layout` (real shimmer markup, `<template>` injection, directory scoping, cross-link to the Address Book step).
+**address-book** — added `pages/(app)/_loading.html` detail-pane loading skeleton; Address Book tutorial gained step `15 Loading Skeletons`; corrected the watcher-interval note in step `13`.
 
-**Plans/docs** — two old plans consolidated into one roadmap; no framework behavior changed, so `registry.toml` / `pilcrow-mcp` need no update this session.
-
-_Prior shipped session (commit range `f7ce74d..d0bb7e3`): address-book/demo FSR fixes, FSR validation rules, 14-step Address Book + 6-step Demo tutorials, FSR ownership/SSE-hub reference docs._
+_Prior shipped session (commit range `f7ce74d..d0bb7e3`): address-book/demo FSR fixes, FSR validation rules, Address Book + (now-removed) Demo tutorials, FSR ownership/SSE-hub reference docs._
 
 ## Known issues — do not work around without fixing root cause
 

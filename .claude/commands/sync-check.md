@@ -1,5 +1,5 @@
 ---
-description: Verify the full silcrow → pilcrow → demo build chain in sequence
+description: Verify the full silcrow → pilcrow → address-book build chain in sequence
 allowed-tools: Bash
 ---
 
@@ -17,14 +17,14 @@ cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcro
 ```
 Failure here usually means a silcrow API mismatch or missing node_modules. Show the first `error[E...]` from stderr.
 
-**Step 3 — Build demo consumer app**
+**Step 3 — Build address-book consumer app**
 ```bash
-cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/demo/Cargo.toml
+cargo build --manifest-path /Users/jagjeet/Development/workspaces/pilcrow-silcrow/address-book/Cargo.toml
 ```
-Failure here usually means the demo has a Pilcrow API incompatibility.
+Failure here usually means address-book has a Pilcrow API incompatibility.
 
 **Report format:**
 - Step 1: ✓ / ✗ + first error line if failed
 - Step 2: ✓ / ✗ + first error line if failed
 - Step 3: ✓ / ✗ + first error line if failed
-- If all pass: "Build chain OK — silcrow.js is embedded and demo compiles."
+- If all pass: "Build chain OK — silcrow.js is embedded and address-book compiles."

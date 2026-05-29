@@ -103,7 +103,7 @@ The client publishes object patches to `Silcrow.publish("fsr.priority", value)`,
 | Patch multiple attributes at once | Object + `s-use` |
 | Drive a Silcrow atom (any shape) | Object + `s-use` |
 
-The demo's `StatusBadge { text, class }` and `PriorityBadge { text, class, raw }` are canonical examples of the object pattern.
+A `StatusBadge { text, class }` object field (text + class together) is the canonical example of the object pattern.
 
 ## Resync and Connection Lifetime
 

@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Tutorials/Demo App/00 Introduction.md",
+                "file": "Tutorials/Address Book/04 Loading Data.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "00 Introduction"
+              "title": "04 Loading Data"
             }
           }
         ],
@@ -96,7 +96,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "promote",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -117,7 +117,8 @@
               "title": "Bookmarks"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -228,40 +229,40 @@
   },
   "active": "3ab0a31b0dacfcd8",
   "lastOpenFiles": [
+    "03 Rendering/Lists and Live Patching.md",
+    "03 Rendering/FSR SSE Hub.md",
+    "03 Rendering/Build an FSR Page.md",
+    "02 Silcrow/Silcrow Runtime.md",
+    "02 Silcrow/Navigation and Live Connections.md",
+    "02 Silcrow/Directives and Bindings.md",
+    "02 Silcrow/Atoms and Optimistic UI.md",
+    "01 Pilcrow/Typed Routes and Params.md",
+    "01 Pilcrow/Routing.md",
+    "01 Pilcrow/Pages and Layouts.md",
+    "01 Pilcrow/Mental Model.md",
+    "01 Pilcrow/Build Your First Page.md",
+    "01 Pilcrow/API Routes and Fragments.md",
+    "01 Pilcrow/Actions and Forms.md",
+    "FSR Rendering/Revalidation mechanism.md",
+    "Tutorials/Demo App/00 Introduction.md",
+    "Tutorials/Address Book/15 Loading Skeletons.md",
+    "Tutorials/Demo App/03 FSR Dashboard.md",
     "Tutorials/Demo App/06 React Islands.md",
     "Tutorials/Demo App/01 Setup and Layout.md",
     "Tutorials/Demo App/05 API Routes with FSR.md",
     "Tutorials/Demo App/04 Ticket Detail — Scalar vs Object.md",
-    "Tutorials/Demo App/00 Introduction.md",
-    "Tutorials/Demo App/03 FSR Dashboard.md",
     "Tutorials/Demo App/03 FSR Dashboard.md.tmp.23155.951dc02fd987",
     "Tutorials/Address Book/00 Introduction.md",
     "Tutorials/Demo App/02 Basic SSR Pages.md",
     "Tutorials/Address Book/13 FSR Live Fields.md",
     "Tutorials/Address Book/12 Deleting Contacts.md",
-    "Tutorials/Address Book/11 Favourite Toggle.md",
-    "Tutorials/Address Book/10 Edit Form.md",
-    "Tutorials/Address Book/09 Active Link Styling.md",
-    "Tutorials/Address Book/08 Search.md",
-    "Tutorials/Address Book/07 Client-Side Navigation.md",
-    "Tutorials/Address Book/06 Creating Contacts.md",
-    "Tutorials/Address Book/05 Contact Detail.md",
-    "Tutorials/Address Book/04 Loading Data.md",
-    "Tutorials/Address Book/03 Route Groups and the App Layout.md",
-    "Tutorials/Address Book/02 Root Layout.md",
-    "Tutorials/Address Book/01 Setup.md",
     "Tutorials/Demo App",
-    "Tutorials/Address Book/14 Live Timestamps on the Edit Page.md",
     "Tutorials/Address Book/04 Loading Data.md.tmp.23155.b67274d9fb56",
     "Tutorials/Address Book/03 Route Groups and the App Layout.md.tmp.23155.5058cdfa0626",
     "Tutorials/Address Book/02 Root Layout.md.tmp.23155.eec5c9088007",
     "Tutorials/Address Book/01 Setup.md.tmp.23155.3ab7acdf1456",
-    "02 Silcrow/Atoms and Optimistic UI.md",
     "Tutorials/Address Book",
     "Tutorials",
-    "01 Pilcrow/Address Book Tutorial.md",
-    "05 Reference/FSR Ownership and Invalidation.md",
-    "00 Start Here/Documentation Map.md",
     "05 Reference",
     "04 Runtime"
   ]
