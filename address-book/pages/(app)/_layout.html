@@ -1,0 +1,75 @@
+---
+---
+<div class="min-h-screen lg:grid lg:grid-cols-[22rem_1fr]">
+  <aside id="sidebar" class="border-b border-slate-200 bg-white p-4 shadow-sm lg:min-h-screen lg:border-b-0 lg:border-r">
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <h1 class="text-base font-semibold tracking-tight text-slate-950">
+        <a href="/about" s-get="/about">Pilcrow Contacts</a>
+      </h1>
+      <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ sidebar_contact_count }} rows</span>
+    </div>
+
+    <div class="mb-4 grid grid-cols-[1fr_auto] gap-2">
+      <form id="search-form" role="search" s-get="/" s-target="body" s-skip-history class="relative min-w-0">
+        <input
+          aria-label="Search contacts"
+          class="w-full rounded-md border px-3 py-2 pr-9 text-sm outline-none transition {% if searching %}border-blue-500 bg-white ring-2 ring-blue-100{% else %}border-slate-300 bg-slate-50 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100{% endif %}"
+          id="q"
+          name="q"
+          placeholder="Search"
+          type="search"
+          value="{{ q }}"
+          autocomplete="off"
+          oninput="window.__contactSearch && window.__contactSearch(this.form)" />
+        <div aria-hidden="true" class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" {% if !searching %}hidden{% endif %}></div>
+      </form>
+      <form method="post" action="/?/create" s-post="/?/create">
+        <button class="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800" type="submit">New</button>
+      </form>
+    </div>
+
+    <nav aria-label="Contacts" class="max-h-[calc(100vh-8rem)] overflow-auto pr-1">
+      {% if contacts.len() > 0 %}
+      <ul class="grid gap-1">
+        {% for contact in contacts %}
+        <li>
+          <a href="{{ contact.href }}" s-get="{{ contact.href }}" class="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm transition {% if contact.active %}bg-blue-50 font-semibold text-blue-900{% else %}text-slate-600 hover:bg-slate-100 hover:text-slate-950{% endif %}" {% if contact.active %}aria-current="page"{% endif %}>
+            <span class="truncate">{{ contact.name }}</span>
+            {% if contact.favorite %}<span class="text-amber-500" aria-label="Favorite">*</span>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="rounded-md bg-slate-50 px-3 py-6 text-center text-sm italic text-slate-500">No contacts</p>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <main id="detail" class="min-w-0 p-5 transition-opacity duration-150 sm:p-8 lg:p-12">
+    <slot />
+  </main>
+</div>
+<script>
+  window.__contactSearch = (function () {
+    var timer = 0;
+    return function (form) {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (window.Silcrow && window.Silcrow.submit) {
+          window.Silcrow.submit(form, { replace: true });
+        } else {
+          form.requestSubmit();
+        }
+      }, 140);
+    };
+  })();
+  document.addEventListener('silcrow:navigate', function () {
+    var detail = document.getElementById('detail');
+    if (detail) detail.classList.add('opacity-50');
+    setTimeout(function () {
+      var next = document.getElementById('detail');
+      if (next) next.classList.remove('opacity-50');
+    }, 220);
+  });
+</script>

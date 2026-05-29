@@ -1,0 +1,29 @@
+<pilcrow:head>
+  <title>Edit Contact - Pilcrow Contacts</title>
+</pilcrow:head>
+
+<form id="contact-form" class="mx-auto grid max-w-2xl gap-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm" method="post" action="?/save" s-post="?/save">
+  <div>
+    <span class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Name</span>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" aria-label="First name" name="first" placeholder="First" type="text" value="{{ first }}" />
+      <input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" aria-label="Last name" name="last" placeholder="Last" type="text" value="{{ last }}" />
+    </div>
+  </div>
+  <label class="grid gap-2">
+    <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Twitter</span>
+    <input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" name="twitter" placeholder="@jack" type="text" value="{{ twitter }}" />
+  </label>
+  <label class="grid gap-2">
+    <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Avatar URL</span>
+    <input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" aria-label="Avatar URL" name="avatar" placeholder="https://example.com/avatar.jpg" type="text" value="{{ avatar }}" />
+  </label>
+  <label class="grid gap-2">
+    <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Notes</span>
+    <textarea class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" name="notes" rows="6">{{ notes }}</textarea>
+  </label>
+  <div class="flex flex-wrap gap-3">
+    <button class="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800" type="submit">Save</button>
+    <button class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50" type="button" onclick="history.back()">Cancel</button>
+  </div>
+</form>
