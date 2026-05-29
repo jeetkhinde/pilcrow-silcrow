@@ -1,7 +1,6 @@
 pilcrow_web::pilcrow_app!();
 
 mod data;
-mod bake;
 mod db;
 
 #[tokio::main]

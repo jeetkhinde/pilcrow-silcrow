@@ -180,8 +180,11 @@ pub async fn watcher_tick_redis(
     // Phase 1: run DB queries with bounded concurrency.
     // buffer_unordered keeps the pipeline full (max 8 in-flight); each future
     // carries its slot_row so Phase 2 can iterate directly without a zip.
-    let results: Vec<_> = futures_util::stream::iter(stale.iter())
-        .map(|slot_row| async move { (slot_row, re_execute_query(store, slot_row).await) })
+    let results: Vec<_> = futures_util::stream::iter(stale.into_iter())
+        .map(|slot_row| async move {
+            let result = re_execute_query(store, &slot_row).await;
+            (slot_row, result)
+        })
         .buffer_unordered(8)
         .collect()
         .await;

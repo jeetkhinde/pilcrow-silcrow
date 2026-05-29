@@ -13,9 +13,6 @@ pub struct Props {
     pub live: Live,
 }
 
-pub const PROMOTE_AFTER: u32 = 0;
-pub const FSR_JSON: bool = true;
-
 #[pilcrow::depends_on_route(contacts, contact_id)]
 pub struct Live {
     pub favorite_mark: LiveProp<String>,
@@ -44,7 +41,6 @@ pub async fn load(req: Req, live: Live) -> AppResult<Props> {
     let contact = crate::data::get(&id)
         .await?
         .ok_or_else(|| AppError::NotFound("contact not found".into()))?;
-    crate::bake::bake_contact_pane(&contact).await?;
 
     Ok(Props {
         id,

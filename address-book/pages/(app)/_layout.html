@@ -72,4 +72,20 @@
       if (next) next.classList.remove('opacity-50');
     }, 220);
   });
+
+  document.addEventListener('silcrow:load', function () {
+    var path = window.location.pathname;
+    document.querySelectorAll('#sidebar nav a[href]').forEach(function (a) {
+      var active = a.getAttribute('href') === path;
+      if (active) {
+        a.classList.remove('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-950');
+        a.classList.add('bg-blue-50', 'font-semibold', 'text-blue-900');
+        a.setAttribute('aria-current', 'page');
+      } else if (a.classList.contains('bg-blue-50')) {
+        a.classList.remove('bg-blue-50', 'font-semibold', 'text-blue-900');
+        a.classList.add('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-950');
+        a.removeAttribute('aria-current');
+      }
+    });
+  });
 </script>

@@ -15,7 +15,7 @@
           aria-label="{% if favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
           name="favorite"
           value="{% if favorite %}false{% else %}true{% endif %}"
-          type="submit"><span id="favorite-slot">{{ live.favorite_mark.value }}</span></button>
+          type="submit"><span id="favorite-slot" s-live="favorite_mark">{{ live.favorite_mark.value }}</span></button>
       </form>
     </h1>
     {% if twitter.len() > 0 %}
@@ -26,7 +26,7 @@
     {% else %}
     <p class="mt-6 italic text-slate-500">No notes yet.</p>
     {% endif %}
-    <p class="mt-4 text-sm text-slate-500">{{ live.updated_label.value }}</p>
+    <p class="mt-4 text-sm text-slate-500"><span s-live="updated_label">{{ live.updated_label.value }}</span></p>
     <div class="mt-8 flex flex-wrap gap-3">
       <form method="get" action="/contacts/{{ id }}/edit">
         <button class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50" type="submit">Edit</button>
@@ -34,10 +34,6 @@
       <form method="post" action="?/destroy" s-post="?/destroy" onsubmit="return confirm('Please confirm you want to delete this record.')">
         <button class="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50" type="submit">Delete</button>
       </form>
-    </div>
-    <div class="mt-8 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-      <strong>FSR shape:</strong> this route declares <code>PROMOTE_AFTER = 0</code>, so the shell is eligible to bake immediately.
-      The favorite marker and update timestamp are inline SQL-backed <code>LiveProp</code> fields registered in <code>pilcrow_fsr</code>.
     </div>
   </div>
 </article>

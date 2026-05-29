@@ -18,7 +18,6 @@ impl Live {
 }
 
 pub async fn load(_req: Req, live: Live) -> AppResult<Props> {
-    crate::bake::bake_index_pane(live.total_contacts.value).await?;
     Ok(Props { live })
 }
 
