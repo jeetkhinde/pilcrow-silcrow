@@ -1,33 +1,50 @@
 # Pilcrow Address Book
 
-This is the React Router address book tutorial rebuilt as an independent Pilcrow/Silcrow project.
+The [React Router address book tutorial](https://reactrouter.com/tutorials/address-book) rebuilt as a Pilcrow + Silcrow app. It covers the same DX surfaces — file routes, layouts, loaders, actions — and adds FSR live fields on top.
 
-It mirrors the tutorial's core DX surfaces:
+## What it demonstrates
 
-- file-system routes: `pages/(app)/contacts/[contact_id]/index.html`
-- route-group layouts: `pages/(app)/_layout.html` scopes the sidebar without changing URLs
-- typed server loading: each route keeps `Props` and `load()` beside its template
-- named actions: `?/create`, `?/save`, `?/favorite`, and `?/destroy`
-- Silcrow-enhanced links and forms with normal HTTP fallbacks
-- Postgres-backed contacts seeded from the React Router tutorial data
-- Tailwind via `<script src="https://cdn.tailwindcss.com"></script>`
-- Redis-backed FSR using Pilcrow's `pilcrow_fsr` table, `PROMOTE_AFTER = 0`, and SQL-driven `LiveProp` fields
+- **File-system routes** — `pages/(app)/contacts/[contact_id]/index.html`
+- **Route-group layouts** — `pages/(app)/_layout.html` scopes the two-column sidebar without changing URLs
+- **Typed server loading** — `Props` + `load()` co-located with each template
+- **Named actions** — `?/create`, `?/save`, `?/favorite`, `?/destroy` posted by Silcrow-enhanced forms with normal HTTP fallbacks
+- **FSR live fields** — two `LiveProp<String>` fields (`favorite_mark`, `updated_label`) on the contact detail route; the index route tracks `total_contacts`. All three update in the browser via SSE without a page reload when data changes.
+- **Postgres-backed contacts** seeded from the React Router tutorial data
+- **Redis-backed FSR** — watcher subscribes to `pilcrow:invalidate`, re-executes stored SQL, and publishes `pilcrow:patch` to connected SSE clients
+- **Tailwind** via CDN (`<script src="https://cdn.tailwindcss.com">`)
 
-Configuration:
+## FSR shape
 
-- Put `DATABASE_URL` in `.env`.
-- Set the Redis URL in `Pilcrow.toml` under `fsr.redis_url`.
-- Run from this directory so both files are discovered.
+The contact detail route (`[contact_id]`) has no `PROMOTE_AFTER` — it runs SSR on every request. `load()` returns `Props` with a `live: Live` field populated by the framework extractor; the template renders `{{ live.favorite_mark.value }}` and `{{ live.updated_label.value }}` into `s-live` slots. After any mutation the action calls `req.fsr.invalidate_route()`, which marks both slots stale in `pilcrow_fsr`. The embedded watcher detects the stale rows, re-runs the SQL, and pushes SSE patches to connected clients.
 
-Run:
+The index route (`/`) declares `PROMOTE_AFTER: u32 = 0` because it is a static route with a single URL instance. The `total_contacts` slot updates the same way.
+
+`load()` in both routes does only data fetching — the framework owns the FSR lifecycle.
+
+## Setup
+
+1. Create a Postgres database and put `DATABASE_URL` in `address-book/.env`.
+2. Set `redis_url` in `address-book/Pilcrow.toml` under `[fsr]`.
+3. The `pilcrow_fsr` and `contacts` tables are created automatically on first run.
+
+## Run
+
+```bash
+cargo run --manifest-path address-book/Cargo.toml
+```
+
+Or from inside `address-book/`:
 
 ```bash
 cargo run
 ```
 
-Then open `http://127.0.0.1:3010`. If that port is already occupied, Pilcrow will print the fallback port.
+Then open `http://127.0.0.1:3010`.
 
-After visiting `/` and `/contacts/ryan-florence`, the promoted artifacts appear under:
+To reset the FSR state (e.g. after changing slot definitions):
 
-- `.pilcrow-baked/pages/*.html`
-- `.pilcrow-baked/data/*.json`
+```sql
+TRUNCATE pilcrow_fsr;
+```
+
+Rows are re-registered on the next request to each route.
