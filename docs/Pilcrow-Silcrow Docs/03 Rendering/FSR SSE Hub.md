@@ -69,6 +69,8 @@ Routekit rewrites that text-node use into an `s-live` slot:
 
 When an `fsr` event arrives, scalar values update `textContent` for matching `[s-live="open_count"]` elements.
 
+**Scalar limitation:** `s-live` patches only `textContent`. It does not update attributes, CSS classes, or `src`. If a live field controls both displayed text and a CSS class (e.g. a badge that changes colour on status change), use the object path instead. Routekit only auto-inserts `s-live` for text-node uses of `{{ live.field.value }}`; attribute expressions like `class="badge-{{ live.field.value }}"` are rendered at SSR time and are never patched.
+
 Object values are published as Silcrow atoms instead:
 
 ```rust
@@ -91,6 +93,17 @@ pub struct Live {
 ```
 
 The client publishes object patches to `Silcrow.publish("fsr.priority", value)`, and normal Silcrow bindings update the element.
+
+**When to use object vs scalar:**
+
+| Need | Use |
+|---|---|
+| Patch a text node only | Scalar `LiveProp<T>` — auto `s-live` via routekit |
+| Patch both text and CSS class | Object `LiveProp<Badge>` with `text` + `class` fields + `s-use="fsr.slot"` |
+| Patch multiple attributes at once | Object + `s-use` |
+| Drive a Silcrow atom (any shape) | Object + `s-use` |
+
+The demo's `StatusBadge { text, class }` and `PriorityBadge { text, class, raw }` are canonical examples of the object pattern.
 
 ## Resync and Connection Lifetime
 

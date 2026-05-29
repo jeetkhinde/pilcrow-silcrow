@@ -180,7 +180,13 @@ What matters:
 - It creates a dependency relationship for the route.
 - Use explicit `#[pilcrow::depends_on(dep!(...))]` when the dependency value is not a route param.
 
-## Step 6: Use `allow_unused` for Object Fields
+## Step 6: Scalar vs Object Fields
+
+**Scalar** (`LiveProp<String>`, `LiveProp<i64>`, etc.) — routekit auto-inserts `s-live` for text-node uses of `{{ live.field.value }}`. The SSE patch updates only `textContent`. Use this when the field drives visible text and nothing else.
+
+**Object** (`LiveProp<MyStruct>`) — the struct serialises to a JSON object. The SSE patch publishes it to a Silcrow atom (`fsr.<slot_name>`); `s-use="fsr.slot"` binds the element and spreads each key. Use this when the field controls both text and a CSS class, multiple attributes, or any other compound DOM state.
+
+**The class trap:** attribute expressions like `class="badge badge-{{ live.field.value }}"` are rendered at SSR time by Minijinja. `s-live` never patches them — only `textContent` is updated. If a live field controls badge colour, button state, or any class-dependent styling, always use the object path.
 
 Some live fields should update a Silcrow atom instead of a direct text slot.
 
