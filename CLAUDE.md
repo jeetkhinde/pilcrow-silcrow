@@ -9,7 +9,9 @@ pilcrow-silcrow/               ← single git repo
   pilcrow/                     # Pilcrow framework (Rust SSR engine)
   silcrow/                     # Silcrow client runtime (JS)
   demo/                        # Real consumer app, depends on Pilcrow by path
+  address-book/                # FSR reference app — React Router tutorial in Pilcrow
   plans/                       # Feature implementation plans
+  docs/                        # Obsidian vault — Pilcrow-Silcrow Docs/
   .claude/commands/            # Project slash commands
   .claude/hooks/               # Stop hook scripts
   .claude/react-island.md      # React island operating rules + decision guide
@@ -181,7 +183,13 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-None.
+None. All address-book FSR work is complete and shipped (commit range `f7ce74d..30d8034`):
+- Removed manual `bake.rs` — framework owns FSR lifecycle
+- Fixed FSR SSE reconnect split (`silcrow:navigate` closes, `silcrow:load` reopens with swapped DOM slots)
+- Fixed `watcher_tick_redis` lifetime error (`stale.iter()` → `into_iter()`)
+- Added `s-live` to all three routes (index, contact detail, edit)
+- Updated registry.toml, validation.rs, MCP tests
+- Full docs update in `docs/Pilcrow-Silcrow Docs/`
 
 ## Known issues — do not work around without fixing root cause
 
