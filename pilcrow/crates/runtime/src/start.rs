@@ -4,7 +4,7 @@ use std::time::Duration;
 use axum::Router;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use pilcrow_core::PilcrowConfig;
+use pilcrow_core::{PilcrowConfig, StartupError};
 use pilcrow_core::config::config::CacheProvider;
 
 use tower_http::compression::CompressionLayer;
@@ -37,31 +37,21 @@ pub async fn start(app: Router) {
     start_with_adapter(app, TokioAdapter).await;
 }
 
-/// Start the Pilcrow web server with a custom deployment [`PilcrowAdapter`].
-///
-/// The adapter receives the fully-wired `Router` and the bind address from
-/// `Pilcrow.toml`. Use this when targeting a non-standard runtime (Lambda, etc.).
-///
-/// ```rust,ignore
-/// pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, MyAdapter).await;
-/// ```
-pub async fn start_with_adapter<A>(app: Router, adapter: A)
+/// Fallible variant of [`start_with_adapter`]. Returns [`StartupError`] instead of calling `process::exit` so test harnesses and custom runtimes can handle failure.
+pub async fn try_start_with_adapter<A>(app: Router, adapter: A) -> Result<(), StartupError>
 where
     A: PilcrowAdapter,
 {
-    let config = Arc::new(load_config_or_exit());
+    let config = Arc::new(load_config()?);
     // Fail fast for cache providers that are configured but not yet implemented.
     // Tracking: roadmap A2. Implement or remove this guard when a backend lands.
     if matches!(
         config.cache.provider,
         CacheProvider::Sqlite | CacheProvider::Redis
     ) {
-        panic!(
-            "Pilcrow: `[cache] provider = {:?}` is not yet implemented. \
-             Use `provider = \"memory\"` (default) or `provider = \"filesystem\"`. \
-             See roadmap item A2.",
-            config.cache.provider
-        );
+        return Err(StartupError::UnsupportedProvider(
+            format!("{:?}", config.cache.provider),
+        ));
     }
 
     let bind_addr = web_bind_addr(&config);
@@ -363,6 +353,31 @@ where
             }),
         )
         .await;
+    Ok(())
+}
+
+/// Start the Pilcrow web server with a custom deployment [`PilcrowAdapter`].
+///
+/// The adapter receives the fully-wired `Router` and the bind address from
+/// `Pilcrow.toml`. Use this when targeting a non-standard runtime (Lambda, etc.).
+///
+/// ```rust,ignore
+/// pilcrow_web::start_with_adapter(pilcrow_router(), |_| async {}, MyAdapter).await;
+/// ```
+pub async fn start_with_adapter<A>(app: Router, adapter: A)
+where
+    A: PilcrowAdapter,
+{
+    if let Err(e) = try_start_with_adapter(app, adapter).await {
+        tracing::error!(error = %e, "Pilcrow startup failed");
+        eprintln!("pilcrow: {e}");
+        std::process::exit(1);
+    }
+}
+
+/// Fallible variant of [`start`]. Returns [`StartupError`] on failure.
+pub async fn try_start(app: Router) -> Result<(), StartupError> {
+    try_start_with_adapter(app, TokioAdapter).await
 }
 
 /// Enforce a per-request timeout and log the path when it fires.
@@ -498,13 +513,7 @@ fn spawn_redis_patch_bridge(
     });
 }
 
-fn load_config_or_exit() -> PilcrowConfig {
-    match PilcrowConfig::load_from_current_dir() {
-        Ok(config) => config,
-        Err(err) => {
-            tracing::error!(error = %err, "failed to load Pilcrow configuration");
-            eprintln!("pilcrow: failed to load Pilcrow configuration: {err}");
-            std::process::exit(1);
-        }
-    }
+fn load_config() -> Result<PilcrowConfig, StartupError> {
+    PilcrowConfig::load_from_current_dir()
+        .map_err(|e| StartupError::ConfigLoad(e.to_string()))
 }
