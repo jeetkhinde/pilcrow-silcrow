@@ -1090,6 +1090,11 @@ pilcrow_web::start() (and pilcrow_start() for SSG apps) registers both SIGTERM a
 On either signal, axum's with_graceful_shutdown() stops accepting new connections and waits for
 active requests to complete. A tracing::info! log line is emitted when the signal is received.
 No application-level configuration is needed — this is always on.
+pilcrow_web::try_start(router) -> Result<(), StartupError> and try_start_with_adapter are the
+fallible variants — they return StartupError::ConfigLoad on bad Pilcrow.toml or
+StartupError::UnsupportedProvider on an unimplemented cache backend, instead of calling
+process::exit(1). Use these in test harnesses or custom adapters that need to handle startup
+failures as errors rather than process termination.
 """
 canonical_usage = """
 // main.rs — nothing to configure; graceful shutdown is automatic
