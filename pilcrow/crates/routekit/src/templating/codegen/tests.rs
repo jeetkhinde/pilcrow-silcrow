@@ -1115,4 +1115,65 @@ pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(P
             "HTML error response must appear in generated source:\n{source}"
         );
     }
+
+    #[test]
+    fn page_with_load_no_error_mod_uses_html_response() {
+        use super::app_module::{AppCodegenMaps, render_generated_app_module};
+        use crate::templating::codegen::{GeneratedPageRoute, HookFlags, LoadSignature};
+        use std::collections::{HashMap, HashSet};
+
+        let page_entry = GeneratedPageRoute {
+            pattern: "/profile".to_string(),
+            template_path: "/tmp/src/pages/profile.html".to_string(),
+            symbol: "page_profile".to_string(),
+            render_symbol: "render_page_profile".to_string(),
+            route_params: vec![],
+            param_matchers: HashMap::new(),
+        };
+
+        let mut load_map: HashMap<String, Option<LoadSignature>> = HashMap::new();
+        load_map.insert(
+            "page_profile".to_string(),
+            Some(LoadSignature {
+                is_async: true,
+                wants_client: false,
+                wants_req: true,
+                wants_page: false,
+                wants_live: false,
+                returns_result: true,
+            }),
+        );
+
+        let maps = AppCodegenMaps {
+            load_map: &load_map,
+            layout_fields_map: &HashMap::new(),
+            error_module_for_page: &HashMap::new(),
+            not_found_module: None,
+            loading_module_for_page: &HashMap::new(),
+            action_map: &HashMap::new(),
+            page_options_map: &HashMap::new(),
+            live_fields_map: &HashMap::new(),
+            has_live_fn_map: &HashMap::new(),
+            fsr_live_source_map: &HashMap::new(),
+            fsr_live_fields_map: &HashMap::new(),
+            fsr_default_revalidate_symbols: &HashSet::new(),
+            layout_chain_ids_map: &HashMap::new(),
+            page_slot_map: &HashMap::new(),
+        };
+
+        let source = render_generated_app_module(
+            &[page_entry],
+            &[],
+            &maps,
+            HookFlags { has_handle: false, has_handle_error: false, has_init: false },
+            false,
+            false,
+        )
+        .expect("render_generated_app_module should succeed");
+
+        assert!(
+            source.contains("axum::response::Html"),
+            "HTML error response must appear in generated source:\n{source}"
+        );
+    }
 }

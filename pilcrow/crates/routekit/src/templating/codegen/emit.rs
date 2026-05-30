@@ -66,7 +66,7 @@ pub fn emit_app_error_body(error_mod: Option<&str>, indent_levels: usize) -> Str
     } else {
         let _ = writeln!(
             s,
-            "{pad}let mut __err_resp = (::pilcrow_web::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();"
+            "{pad}let mut __err_resp = (::pilcrow_web::StatusCode::INTERNAL_SERVER_ERROR, ::pilcrow_web::axum::response::Html(format!(\"<h1>500 Internal Server Error</h1><p>{{e}}</p>\"))).into_response();"
         );
         let _ = writeln!(s, "{pad}__resp_handle.apply_to(&mut __err_resp);");
         let _ = writeln!(s, "{pad}return __err_resp;");
