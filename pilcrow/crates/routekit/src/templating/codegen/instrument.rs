@@ -111,14 +111,14 @@ pub fn instrument_frontmatter(
             _ => true,
         }
     });
-    if let Some(err) = promote_after_err {
-        return Err(err);
-    }
     if !removed_const_msgs.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             removed_const_msgs.join("\n"),
         ));
+    }
+    if let Some(err) = promote_after_err {
+        return Err(err);
     }
 
     // Validate that any `Props` struct present is public.

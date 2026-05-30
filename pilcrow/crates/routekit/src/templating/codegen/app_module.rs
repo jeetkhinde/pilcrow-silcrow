@@ -452,7 +452,6 @@ pub fn render_generated_app_module(
             || has_typed_param_guards
             || error_mod.is_some()
             || any_load_returns_result
-            || !live_fields.is_empty()
             || !ps_layout_chain.is_empty();
         let page_wants_live = page_load.is_some_and(|s| s.wants_live);
 
