@@ -174,39 +174,24 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
             ));
         }
 
-        // STREAMING conflicts: detect incompatible const combinations at build time.
-        if line.contains("STREAMING") && line.contains("const") {
-            if code.contains("REVALIDATE") {
+        // Removed page constants — now build errors in routekit. Mirror them here so
+        // validate_implementation catches them before build.
+        for (const_name, migration) in [
+            ("REVALIDATE", "Use `#[revalidate(N)]` on a `LiveProp` field for time-based FSR invalidation instead."),
+            ("STREAMING",  "STREAMING is removed. Use FSR `LiveProp<T>` fields for reactive updates instead."),
+            ("CACHE_TAGS", "CACHE_TAGS is removed and is no longer supported."),
+            ("MAX_STALE",  "MAX_STALE is removed and is no longer supported."),
+            ("CACHE_VARY", "CACHE_VARY is removed and is no longer supported."),
+        ] {
+            if line.contains(const_name) && line.contains("const") {
                 findings.push(finding_with_line(
                     Severity::Error,
-                    "pilcrow-streaming-isr-conflict",
-                    "STREAMING = true is incompatible with REVALIDATE — routekit reports this as a structured build error.".to_string(),
+                    "pilcrow-removed-page-const",
+                    format!("`{const_name}` was removed — {migration}"),
                     path,
                     Some(lnum),
-                    Some("registry.toml: feature SSR Streaming"),
-                    Some("Use FSR LiveProp fields for surgical live updates, or split slow UI into an island/fragment instead of enabling STREAMING on ISR."),
-                ));
-            }
-            if code.contains("LiveProp<") {
-                findings.push(finding_with_line(
-                    Severity::Error,
-                    "pilcrow-streaming-fsr-conflict",
-                    "STREAMING = true is incompatible with FSR (inline Live / LiveProp) — routekit reports this as a structured build error.".to_string(),
-                    path,
-                    Some(lnum),
-                    Some("registry.toml: feature fsr"),
-                    Some("FSR routes serve pre-baked HTML with surgical slot patches. Remove STREAMING = true, or remove the inline Live/LiveProp fields."),
-                ));
-            }
-            if code.contains("FSR_JSON") {
-                findings.push(finding_with_line(
-                    Severity::Error,
-                    "pilcrow-streaming-fsr-json-conflict",
-                    "STREAMING = true is incompatible with FSR_JSON = true — routekit reports this as a structured build error.".to_string(),
-                    path,
-                    Some(lnum),
-                    Some("registry.toml: feature fsr"),
-                    Some("Baked JSON output requires a promoted (non-streaming) route. Remove FSR_JSON = true from streaming pages."),
+                    Some("crates/routekit/src/templating/codegen/instrument.rs — removed-const rejection"),
+                    Some(migration),
                 ));
             }
         }
@@ -225,25 +210,6 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
                 Some("Use Arc<Mutex<T>> or a plain T that is Sync instead."),
             ));
         }
-    }
-
-    // ISR safety: if REVALIDATE is enabled and handler code reads request-scoped values,
-    // recommend CACHE_VARY to avoid cross-context cache reuse.
-    if code.contains("REVALIDATE")
-        && !code.contains("CACHE_VARY")
-        && (code.contains("req.cookies")
-            || code.contains("req.headers")
-            || code.contains("req.locale")
-            || code.contains("req.locals"))
-    {
-        findings.push(finding(
-            Severity::Warning,
-            "pilcrow-isr-missing-cache-vary",
-            "REVALIDATE is set and request-scoped values are used, but CACHE_VARY is not declared. This can cause cache key collisions across users/locales.".to_string(),
-            path,
-            Some("registry.toml: feature incremental-ssr"),
-            Some("Add `pub const CACHE_VARY: &[&str] = &[\"session\", \"accept-language\"];` (or relevant keys) in the page code-behind."),
-        ));
     }
 
     if kind != Some("api")
@@ -386,34 +352,6 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
                             ));
                         }
                     }
-                } else if name == "REVALIDATE" || name == "MAX_STALE" {
-                    // Must be an integer literal (u64), not a string like "60"
-                    if let syn::Expr::Lit(expr_lit) = c.expr.as_ref() {
-                        if matches!(&expr_lit.lit, syn::Lit::Str(_)) {
-                            findings.push(finding(
-                                Severity::Error,
-                                "pilcrow-isr-const-wrong-type",
-                                format!("`{name}` must be a u64 integer literal: `pub const {name}: u64 = 60;` — not a string."),
-                                path,
-                                Some("crates/routekit/src/templating/page_options.rs"),
-                                Some("Use a plain integer, e.g. `pub const REVALIDATE: u64 = 60;`."),
-                            ));
-                        }
-                    }
-                } else if name == "STREAMING" {
-                    // Must be a bool literal, not a string like "true"
-                    if let syn::Expr::Lit(expr_lit) = c.expr.as_ref() {
-                        if matches!(&expr_lit.lit, syn::Lit::Str(_)) {
-                            findings.push(finding(
-                                Severity::Error,
-                                "pilcrow-streaming-wrong-type",
-                                "STREAMING must be a bool literal: `pub const STREAMING: bool = true;` — not a string.".to_string(),
-                                path,
-                                Some("crates/routekit/src/templating/page_options.rs"),
-                                Some("Use `pub const STREAMING: bool = true;` in your .rs code-behind."),
-                            ));
-                        }
-                    }
                 }
             }
             _ => {}
@@ -548,11 +486,11 @@ fn validate_html(code: &str, path: Option<&str>, findings: &mut Vec<Finding>) {
             findings.push(finding_with_line(
                 Severity::Warning,
                 "pilcrow-isr-const-in-html",
-                "ISR constants (REVALIDATE, CACHE_TAGS, CACHE_VARY) belong in the .rs code-behind, not the HTML template.".to_string(),
+                "REVALIDATE, CACHE_TAGS, and CACHE_VARY are removed page constants and are no longer supported. Remove them entirely.".to_string(),
                 path,
                 Some(lnum),
-                Some("registry.toml: feature incremental-ssr"),
-                Some("Move ISR constants to the paired .rs file alongside your Props and load() fn."),
+                Some("crates/routekit/src/templating/codegen/instrument.rs — removed-const rejection"),
+                Some("Use `#[revalidate(N)]` on a `LiveProp` field for time-based FSR invalidation. Remove CACHE_TAGS and CACHE_VARY entirely."),
             ));
         }
 
@@ -895,37 +833,22 @@ mod tests {
     }
 
     #[test]
-    fn rejects_revalidate_as_string_literal() {
-        let report = validate_implementation(
+    fn rejects_revalidate_const_as_removed() {
+        for code in [
             "pub const REVALIDATE: &str = \"60\";",
-            Some("pages/products/index.rs"),
-            None,
-        );
-        assert!(
-            report
-                .findings
-                .iter()
-                .any(|f| f.rule_id == "pilcrow-isr-const-wrong-type"),
-            "expected pilcrow-isr-const-wrong-type, got: {:?}",
-            report.findings
-        );
-    }
-
-    #[test]
-    fn accepts_revalidate_as_integer_literal() {
-        let report = validate_implementation(
             "pub const REVALIDATE: u64 = 60;",
-            Some("pages/products/index.rs"),
-            None,
-        );
-        assert!(
-            !report
-                .findings
-                .iter()
-                .any(|f| f.rule_id == "pilcrow-isr-const-wrong-type"),
-            "unexpected finding: {:?}",
-            report.findings
-        );
+        ] {
+            let report = validate_implementation(code, Some("pages/products/index.rs"), None);
+            assert!(
+                report
+                    .findings
+                    .iter()
+                    .any(|f| f.rule_id == "pilcrow-removed-page-const"
+                        && f.severity == Severity::Error),
+                "expected pilcrow-removed-page-const for `{code}`, got: {:?}",
+                report.findings
+            );
+        }
     }
 
     #[test]
@@ -963,15 +886,9 @@ mod tests {
     }
 
     #[test]
-    fn warns_when_revalidate_uses_request_scoped_values_without_cache_vary() {
+    fn rejects_cache_vary_const_as_removed() {
         let report = validate_implementation(
-            r#"
-pub const REVALIDATE: u64 = 60;
-pub async fn load(req: Req) -> AppResult<Props> {
-    let locale = req.headers.get("accept-language");
-    Ok(Props {})
-}
-"#,
+            r#"pub const CACHE_VARY: &[&str] = &["accept-language"];"#,
             Some("pages/products/index.rs"),
             None,
         );
@@ -979,32 +896,9 @@ pub async fn load(req: Req) -> AppResult<Props> {
             report
                 .findings
                 .iter()
-                .any(|f| f.rule_id == "pilcrow-isr-missing-cache-vary"),
-            "expected pilcrow-isr-missing-cache-vary, got: {:?}",
-            report.findings
-        );
-    }
-
-    #[test]
-    fn no_warning_when_cache_vary_is_declared() {
-        let report = validate_implementation(
-            r#"
-pub const REVALIDATE: u64 = 60;
-pub const CACHE_VARY: &[&str] = &["accept-language"];
-pub async fn load(req: Req) -> AppResult<Props> {
-    let _locale = req.headers.get("accept-language");
-    Ok(Props {})
-}
-"#,
-            Some("pages/products/index.rs"),
-            None,
-        );
-        assert!(
-            !report
-                .findings
-                .iter()
-                .any(|f| f.rule_id == "pilcrow-isr-missing-cache-vary"),
-            "unexpected pilcrow-isr-missing-cache-vary: {:?}",
+                .any(|f| f.rule_id == "pilcrow-removed-page-const"
+                    && f.severity == Severity::Error),
+            "expected pilcrow-removed-page-const for CACHE_VARY, got: {:?}",
             report.findings
         );
     }

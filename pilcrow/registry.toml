@@ -682,15 +682,26 @@ constraints = [
   "TRAILING_SLASH values: \"always\" (redirect to /path/), \"ignore\" (redirect to /path), \"never\" (default).",
   "LAYOUT values: only \"none\" is supported.",
   "Constants are stripped from the emitted module — they never reach the template.",
+  "REVALIDATE, STREAMING, CACHE_TAGS, MAX_STALE, CACHE_VARY are removed — using any of them is a build error. REVALIDATE → use #[revalidate(N)] on a LiveProp field. PRERENDER → use pub const PROMOTE_AFTER: u32 = 0.",
 ]
 invalid_examples = [
   "pub const TRAILING_SLASH: &str = \"redirect\" — invalid value",
   "pub const LAYOUT: &str = \"minimal\" — only \"none\" is valid",
+  "pub const REVALIDATE: u64 = 300; — removed, use #[revalidate(N)] on a LiveProp field",
+  "pub const STREAMING: bool = true; — removed and no longer supported",
+  "pub const CACHE_TAGS: &[&str] = &[\"posts\"]; — removed and no longer supported",
+  "pub const MAX_STALE: u64 = 60; — removed and no longer supported",
+  "pub const CACHE_VARY: &[&str] = &[\"Accept-Language\"]; — removed and no longer supported",
+  "pub const PRERENDER: bool = true; — removed, use pub const PROMOTE_AFTER: u32 = 0",
 ]
 source_refs = ["crates/routekit/src/templating/page_options.rs"]
 test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
 validation_rules = [
   "Unsupported page option constants should be rejected during validation.",
+  "pub const REVALIDATE in code-behind is a build error — suggest #[revalidate(N)] on a LiveProp field.",
+  "pub const STREAMING in code-behind is a build error — suggest removing it and using FSR LiveProp<T>.",
+  "pub const PRERENDER in code-behind is a build error — suggest pub const PROMOTE_AFTER: u32 = 0.",
+  "pub const CACHE_TAGS, MAX_STALE, CACHE_VARY in code-behind are build errors — these constants are removed.",
 ]
 scaffold_templates = []
 
