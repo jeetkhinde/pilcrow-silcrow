@@ -7,4 +7,4 @@ pub use config::config::{
     WebConfig,
 };
 pub use envelope::envelope::{ApiEnvelope, Meta};
-pub use error::error::{AppError, AppResult, HookError};
+pub use error::error::{AppError, AppResult, HookError, StartupError};

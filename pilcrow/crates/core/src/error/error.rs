@@ -60,3 +60,33 @@ impl AppError {
         }
     }
 }
+
+/// Returned by [`try_start`] and [`try_start_with_adapter`] when Pilcrow cannot
+/// start successfully. The `start` / `start_with_adapter` wrappers catch this,
+/// print the message, and call `std::process::exit(1)`.
+#[derive(Debug, Error)]
+pub enum StartupError {
+    /// Pilcrow.toml could not be loaded or parsed.
+    #[error("failed to load Pilcrow configuration: {0}")]
+    ConfigLoad(String),
+    /// The configured `[cache] provider` is not yet implemented.
+    #[error(
+        "unsupported cache provider `{0}`: use `memory` (default) or `filesystem`"
+    )]
+    UnsupportedProvider(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn startup_error_display() {
+        let e = StartupError::ConfigLoad("missing field `web`".to_string());
+        assert!(e.to_string().contains("missing field `web`"));
+
+        let e2 = StartupError::UnsupportedProvider("Redis".to_string());
+        assert!(e2.to_string().contains("Redis"));
+        assert!(e2.to_string().contains("memory"));
+    }
+}
