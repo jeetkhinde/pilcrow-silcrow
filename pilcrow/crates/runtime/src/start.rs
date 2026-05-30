@@ -5,6 +5,7 @@ use axum::Router;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use pilcrow_core::PilcrowConfig;
+use pilcrow_core::config::config::CacheProvider;
 
 use tower_http::compression::CompressionLayer;
 use tower_http::trace::TraceLayer;
@@ -49,6 +50,20 @@ where
     A: PilcrowAdapter,
 {
     let config = Arc::new(load_config_or_exit());
+    // Fail fast for cache providers that are configured but not yet implemented.
+    // Tracking: roadmap A2. Implement or remove this guard when a backend lands.
+    if matches!(
+        config.cache.provider,
+        CacheProvider::Sqlite | CacheProvider::Redis
+    ) {
+        panic!(
+            "Pilcrow: `[cache] provider = {:?}` is not yet implemented. \
+             Use `provider = \"memory\"` (default) or `provider = \"filesystem\"`. \
+             See roadmap item A2.",
+            config.cache.provider
+        );
+    }
+
     let bind_addr = web_bind_addr(&config);
     let request_body_limit_bytes = config.web.request_body_limit_bytes;
     let http = reqwest::Client::new();
@@ -179,7 +194,9 @@ where
         if let Ok(db_url) = std::env::var("DATABASE_URL") {
             match sqlx::PgPool::connect(&db_url).await {
                 Ok(pool) => {
-                    let fsr_store = Arc::new(FsrStore::new(pool));
+                    let fsr_store = Arc::new(
+                        FsrStore::new(pool).with_global_debounce(fsr_config.patch_debounce_secs),
+                    );
                     app = app.layer(axum::Extension(Arc::clone(&fsr_store)));
 
                     if fsr_config.watcher == "embedded" {

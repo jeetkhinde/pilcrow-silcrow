@@ -68,7 +68,7 @@ impl WatcherConfig {
         Self {
             poll_interval_ms: 500,
             promote_after_hits: 100,
-            patch_debounce_secs: 30,
+            patch_debounce_secs: 0,
             purge_after_seconds: 2_592_000,
             scheduled_invalidations: Vec::new(),
             idle_evict_secs: 1_800,
