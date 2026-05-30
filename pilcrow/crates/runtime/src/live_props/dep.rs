@@ -1,4 +1,4 @@
-/// Constructs a [`DependencyKey`](crate::baked_pages::DependencyKey) from
+/// Constructs a [`DependencyKey`](crate::deferred::DependencyKey) from
 /// table name, column name, and a runtime value expression.
 ///
 /// Macro arguments mean: table, column, runtime value.
@@ -20,7 +20,7 @@
 #[macro_export]
 macro_rules! dep {
     ($table:ident, $column:ident, $value:expr) => {
-        $crate::baked_pages::DependencyKey::new(::std::format!(
+        $crate::deferred::DependencyKey::new(::std::format!(
             "{}:{}={}",
             ::std::stringify!($table),
             ::std::stringify!($column),

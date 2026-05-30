@@ -1,4 +1,4 @@
-use crate::baked_pages::DependencyKey;
+use crate::deferred::DependencyKey;
 use serde::{Deserialize, Serialize};
 
 // ── LiveProp<T> ──────────────────────────────────────────────────────────────

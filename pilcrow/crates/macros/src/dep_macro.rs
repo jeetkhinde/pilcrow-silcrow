@@ -40,7 +40,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
     let table_str = table.to_string();
     let column_str = column.to_string();
     let expanded: TokenStream2 = quote! {
-        ::runtime::baked_pages::DependencyKey::new(
+        ::runtime::deferred::DependencyKey::new(
             ::std::format!("{}:{}={}", #table_str, #column_str, #value)
         )
     };

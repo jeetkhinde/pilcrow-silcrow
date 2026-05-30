@@ -1,7 +1,7 @@
 #![cfg(feature = "live-props")]
 
 use pilcrow_macros::PilcrowProps;
-use runtime::baked_pages::DependencyKey;
+use runtime::deferred::DependencyKey;
 use runtime::live_props::{LiveProp, LivePropExtract};
 
 #[derive(PilcrowProps)]

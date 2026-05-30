@@ -219,181 +219,35 @@ impl<T: Serialize> serde::Serialize for LiveProp<T> {
     }
 }
 
-// ── BakedProp<T> ─────────────────────────────────────────────────────────────
+// ── DependencyKey ─────────────────────────────────────────────────────────────
 
-/// Controls how quickly a baked JSON artifact is updated when a dependency key fires.
+/// A domain-owned key linking a live field to the data that can invalidate it.
 ///
-/// Stored in route metadata so external patchers (written in any language) can honour
-/// the same delay without Pilcrow being involved.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, serde::Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-pub enum PatchDelay {
-    /// Write the JSON artifact immediately when the dep key fires.
-    Immediate,
-    /// Batch rapid-fire signals: wait `millis` ms after the last one before writing.
-    Debounced { millis: u64 },
-    /// Mark the artifact stale; re-render from source on the next request miss.
-    LazyOnNextMiss,
-}
+/// Keys use the shape `"table:column=value"` by convention, matching the
+/// `depends_on @> ARRAY['table:column=value']` Postgres invalidation query.
+/// Construct with the [`dep!`](crate::dep) macro or `DependencyKey::new("…")`.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(transparent)]
+pub struct DependencyKey(String);
 
-impl PatchDelay {
-    pub fn debounced(duration: Duration) -> Self {
-        Self::Debounced {
-            millis: duration.as_millis() as u64,
-        }
+impl DependencyKey {
+    pub fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
     }
 
-    pub fn as_duration(&self) -> Option<Duration> {
-        match self {
-            Self::Debounced { millis } => Some(Duration::from_millis(*millis)),
-            _ => None,
-        }
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
-#[allow(dead_code)]
-pub(crate) enum BakedProducer<T: 'static> {
-    Watch(watch::Receiver<T>),
-    Poll {
-        interval: Duration,
-        factory: Arc<dyn Fn() -> Pin<Box<dyn Future<Output = T> + Send>> + Send + Sync>,
-    },
-    Stream(Pin<Box<dyn Stream<Item = T> + Send + 'static>>),
-    Static,
-}
-
-/// A baked prop field. Renders the initial value `T` in the shell HTML, writes it to
-/// a JSON artifact on first hit (or at threshold), and patches the artifact when the
-/// dependency key fires — without re-running `load()` or querying the database.
-///
-/// ```rust,ignore
-/// pub struct Props {
-///     pub status: BakedProp<String>,
-/// }
-///
-/// pub async fn load(req: Req) -> AppResult<Props> {
-///     let id = req.param("id")?;
-///     let rx = ticket_status_channel(&id).subscribe();
-///     Ok(Props {
-///         status: BakedProp::watch(format!("TicketStatus:ticket_id={id}"), rx),
-///     })
-/// }
-/// ```
-pub struct BakedProp<T: 'static> {
-    pub(crate) initial: T,
-    pub(crate) dep_key: String,
-    #[allow(dead_code)]
-    pub(crate) producer: BakedProducer<T>,
-    pub(crate) patch_delay: PatchDelay,
-}
-
-impl<T: Clone + Send + 'static> BakedProp<T> {
-    /// Create a baked prop backed by a `tokio::sync::watch` receiver.
-    /// Initial value is cloned from the current receiver state.
-    pub fn watch(dep_key: impl Into<String>, rx: watch::Receiver<T>) -> Self {
-        let initial = rx.borrow().clone();
-        Self {
-            initial,
-            dep_key: dep_key.into(),
-            producer: BakedProducer::Watch(rx),
-            patch_delay: PatchDelay::Immediate,
-        }
+impl From<&str> for DependencyKey {
+    fn from(value: &str) -> Self {
+        Self::new(value)
     }
 }
 
-impl<T: Send + 'static> BakedProp<T> {
-    /// Create a baked prop that re-runs an async factory on a fixed interval.
-    /// `initial` is rendered in the shell; the factory is called each interval tick.
-    pub fn poll<Fut>(
-        dep_key: impl Into<String>,
-        initial: T,
-        interval: Duration,
-        factory: impl Fn() -> Fut + Send + Sync + 'static,
-    ) -> Self
-    where
-        Fut: Future<Output = T> + Send + 'static,
-    {
-        Self {
-            initial,
-            dep_key: dep_key.into(),
-            producer: BakedProducer::Poll {
-                interval,
-                factory: Arc::new(move || Box::pin(factory())),
-            },
-            patch_delay: PatchDelay::Immediate,
-        }
+impl From<String> for DependencyKey {
+    fn from(value: String) -> Self {
+        Self::new(value)
     }
-
-    /// Create a baked prop backed by an arbitrary stream.
-    /// `initial` is rendered in the shell; stream items patch the JSON artifact.
-    pub fn stream(
-        dep_key: impl Into<String>,
-        initial: T,
-        stream: impl Stream<Item = T> + Send + 'static,
-    ) -> Self {
-        Self {
-            initial,
-            dep_key: dep_key.into(),
-            producer: BakedProducer::Stream(Box::pin(stream)),
-            patch_delay: PatchDelay::Immediate,
-        }
-    }
-
-    /// Create a static baked prop: initial value baked once, no automatic re-patching.
-    pub fn static_value(dep_key: impl Into<String>, value: T) -> Self {
-        Self {
-            initial: value,
-            dep_key: dep_key.into(),
-            producer: BakedProducer::Static,
-            patch_delay: PatchDelay::Immediate,
-        }
-    }
-
-    /// Set the patch delay for this field (default: `Immediate`).
-    pub fn patch_delay(mut self, delay: PatchDelay) -> Self {
-        self.patch_delay = delay;
-        self
-    }
-}
-
-impl<T: Serialize + 'static> BakedProp<T> {
-    /// Called by generated baked-route code. Extracts this field into a `BakedField`
-    /// for JSON artifact construction and reverse-index registration.
-    #[doc(hidden)]
-    pub fn __into_baked_field(self, field_name: &'static str) -> BakedField {
-        BakedField {
-            field_name,
-            dep_key: self.dep_key,
-            patch_delay: self.patch_delay,
-            initial_json: serde_json::to_value(&self.initial).unwrap_or_default(),
-        }
-    }
-}
-
-impl<T: fmt::Display> fmt::Display for BakedProp<T> {
-    /// Renders the initial value. Askama calls this for `{{ field }}` in the shell template.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.initial.fmt(f)
-    }
-}
-
-impl<T: fmt::Debug> fmt::Debug for BakedProp<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "BakedProp({:?})", self.initial)
-    }
-}
-
-impl<T: Serialize> serde::Serialize for BakedProp<T> {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.initial.serialize(serializer)
-    }
-}
-
-/// Carries the extracted baked field info from a `BakedProp<T>`.
-/// Produced by `BakedProp::__into_baked_field` in generated route code.
-pub struct BakedField {
-    pub field_name: &'static str,
-    pub dep_key: String,
-    pub patch_delay: PatchDelay,
-    pub initial_json: serde_json::Value,
 }

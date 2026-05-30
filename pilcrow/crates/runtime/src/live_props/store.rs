@@ -1,5 +1,5 @@
 use super::model::LiveFieldData;
-use crate::baked_pages::DependencyKey;
+use crate::deferred::DependencyKey;
 use sqlx::PgPool;
 use std::sync::Arc;
 
@@ -146,7 +146,7 @@ impl LivePageStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::baked_pages::DependencyKey;
+    use crate::deferred::DependencyKey;
     use serde_json::json;
 
     async fn test_pool() -> PgPool {

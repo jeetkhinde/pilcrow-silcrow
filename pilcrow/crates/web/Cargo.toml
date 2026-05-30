@@ -7,18 +7,7 @@ license = "MIT"
 
 [features]
 lambda = ["runtime/lambda"]
-experimental-baked-pages = ["runtime/experimental-baked-pages"]
 live-props = ["runtime/live-props"]
-
-[[example]]
-name = "baked_prebake"
-path = "examples/baked_prebake.rs"
-required-features = ["experimental-baked-pages"]
-
-[[example]]
-name = "baked_ticket"
-path = "examples/baked_ticket.rs"
-required-features = ["experimental-baked-pages"]
 
 [dependencies]
 pilcrow-core = { path = "../core" }
