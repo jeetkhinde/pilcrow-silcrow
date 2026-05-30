@@ -183,7 +183,7 @@ fn validate_rust(code: &str, path: Option<&str>, kind: Option<&str>, findings: &
             ("MAX_STALE",  "MAX_STALE is removed and is no longer supported."),
             ("CACHE_VARY", "CACHE_VARY is removed and is no longer supported."),
         ] {
-            if line.contains(const_name) && line.contains("const") {
+            if !line_lower.starts_with("//") && line.contains(const_name) && line.contains("const") {
                 findings.push(finding_with_line(
                     Severity::Error,
                     "pilcrow-removed-page-const",

@@ -3,7 +3,14 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{FnArg, Ident, ItemFn, Pat, PatType, parse_macro_input, visit::Visit};
 
-pub fn expand(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
+    if !attr.is_empty() {
+        let msg = format!(
+            "#[handler({attr})] is no longer supported — `#[handler]` takes no arguments. \
+             The `live` argument was removed; use FSR `LiveProp<T>` fields instead."
+        );
+        return quote! { compile_error!(#msg); }.into();
+    }
     let func = parse_macro_input!(item as ItemFn);
 
     let uses_client = body_uses_client(&func);
