@@ -4,7 +4,7 @@
   <aside id="sidebar" class="border-b border-slate-200 bg-white p-4 shadow-sm lg:min-h-screen lg:border-b-0 lg:border-r">
     <div class="mb-4 flex items-center justify-between gap-3">
       <h1 class="text-base font-semibold tracking-tight text-slate-950">
-        <a href="/about" s-get="/about">Pilcrow Contacts</a>
+        <a href="/about" s-get="/about" class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-sm">Pilcrow Contacts</a>
       </h1>
       <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ sidebar_contact_count }} rows</span>
     </div>
@@ -24,7 +24,7 @@
         <div aria-hidden="true" class="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" {% if !searching %}hidden{% endif %}></div>
       </form>
       <form method="post" action="/?/create" s-post="/?/create">
-        <button class="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800" type="submit">New</button>
+        <button class="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" type="submit">New</button>
       </form>
     </div>
 
@@ -33,7 +33,7 @@
       <ul class="grid gap-1">
         {% for contact in contacts %}
         <li>
-          <a href="{{ contact.href }}" s-get="{{ contact.href }}" class="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm transition {% if contact.active %}bg-blue-50 font-semibold text-blue-900{% else %}text-slate-600 hover:bg-slate-100 hover:text-slate-950{% endif %}" {% if contact.active %}aria-current="page"{% endif %}>
+          <a href="{{ contact.href }}" s-get="{{ contact.href }}" class="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 {% if contact.active %}bg-blue-50 font-semibold text-blue-900{% else %}text-slate-600 hover:bg-slate-100 hover:text-slate-950{% endif %}" {% if contact.active %}aria-current="page"{% endif %}>
             <span class="truncate">{{ contact.name }}</span>
             {% if contact.favorite %}<span class="text-amber-500" aria-label="Favorite">*</span>{% endif %}
           </a>
