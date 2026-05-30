@@ -182,9 +182,11 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-**Two active plan files:**
-- [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift, F) disk-first baking.
-- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — executable sliced spec (S0–S9) for roadmap **E1**: unify on the FSR model. **Decided: keep only the FSR `LiveProp<T>`** (`use pilcrow::live::*`); delete the legacy push `LiveProp`, ISR/`PRERENDER`/Streaming consts, and `baked_pages`; keep the `Vec<T>` list system and the single multiplexed live hub (one connection per client). Read both before framework work.
+**One active plan file:**
+- [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift (E1 ✅ done), F) disk-first baking.
+
+**Completed plan (reference only):**
+- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — ✅ **COMPLETE** (S0–S9 shipped 2026-05-29, branch `worktree-fsr-consolidation-cleanup`). FSR consolidation done: only FSR `LiveProp<T>` remains; legacy live infra, `isr.rs`, `baked_pages/`, and removed page consts all deleted.
 
 This session (latest, on top of `d28cbf3`):
 

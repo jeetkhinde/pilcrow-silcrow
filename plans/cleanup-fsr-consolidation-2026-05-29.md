@@ -1,5 +1,7 @@
 # Cleanup & Consolidation Plan — Unify on the FSR Rendering Model
 
+> **Status: COMPLETE** — All slices S0–S9 shipped 2026-05-29 on branch `worktree-fsr-consolidation-cleanup`. Merged to main pending PR review.
+
 _Created 2026-05-29. Executable task spec for roadmap item **E1** (+ parts of **E5**) in [`roadmap-2026-05-29.md`](roadmap-2026-05-29.md). Update the roadmap as each slice lands._
 
 > **For the implementing AI (Codex / Gemini / Claude):** Each `S#` slice below is **self-contained** — you can be handed one slice and complete it without the others, in the listed dependency order. Every slice states the **files**, the **exact change**, a **boundary** (what NOT to touch), and a **success check** (commands that must pass). **Locate code by the named symbol, not by line number** — line numbers in this doc are approximate and drift. If a symbol named here does not exist in the file, **stop and report** — do not invent a replacement.
