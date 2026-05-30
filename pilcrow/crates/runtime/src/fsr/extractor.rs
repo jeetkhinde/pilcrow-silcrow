@@ -12,6 +12,11 @@ use super::store::{FsrStore, HitStatus};
 static FSR_STORE: OnceLock<Arc<FsrStore>> = OnceLock::new();
 
 /// Register the FSR store globally. Call once from app init (e.g. hooks.rs::init()).
+///
+/// This store handles handler-side writes (slot upserts, hit counts, invalidations).
+/// It does not need `global_debounce_secs` because debounce is enforced in
+/// `fetch_stale_slots`, which is only called by the watcher using the Axum Extension
+/// store (configured in `start.rs` via `.with_global_debounce()`).
 pub fn register_fsr_store(pool: sqlx::PgPool) -> Arc<FsrStore> {
     let store = Arc::new(FsrStore::new(pool));
     FSR_STORE.set(Arc::clone(&store)).ok();

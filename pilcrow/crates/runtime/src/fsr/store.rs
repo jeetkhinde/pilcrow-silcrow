@@ -44,13 +44,12 @@ impl FsrStore {
     }
 
     /// Create an `FsrStore` that also publishes invalidation events to Redis.
+    ///
+    /// `global_debounce_secs` defaults to 0. Chain `.with_global_debounce(secs)` after
+    /// construction to apply a config-driven debounce fallback.
     #[cfg(feature = "live-props-redis")]
     pub fn with_redis(pool: PgPool, redis: Arc<RedisCache>) -> Self {
-        Self {
-            pool: Arc::new(pool),
-            global_debounce_secs: 0,
-            redis: Some(redis),
-        }
+        Self::new(pool).with_redis_attached(redis)
     }
 
     /// Return a clone of this store with a Redis cache attached.

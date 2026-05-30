@@ -85,8 +85,8 @@ mod tests {
         let e = StartupError::ConfigLoad("missing field `web`".to_string());
         assert!(e.to_string().contains("missing field `web`"));
 
-        let e2 = StartupError::UnsupportedProvider("Redis".to_string());
-        assert!(e2.to_string().contains("Redis"));
+        let e2 = StartupError::UnsupportedProvider("redis".to_string());
+        assert!(e2.to_string().contains("redis"));
         assert!(e2.to_string().contains("memory"));
     }
 }

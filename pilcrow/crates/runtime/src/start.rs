@@ -42,16 +42,24 @@ pub async fn try_start_with_adapter<A>(app: Router, adapter: A) -> Result<(), St
 where
     A: PilcrowAdapter,
 {
-    let config = Arc::new(load_config()?);
+    let config = Arc::new(load_config().map_err(|e| {
+        tracing::error!(error = %e, "Pilcrow startup failed");
+        e
+    })?);
     // Fail fast for cache providers that are configured but not yet implemented.
     // Tracking: roadmap A2. Implement or remove this guard when a backend lands.
     if matches!(
         config.cache.provider,
         CacheProvider::Sqlite | CacheProvider::Redis
     ) {
-        return Err(StartupError::UnsupportedProvider(
-            format!("{:?}", config.cache.provider),
-        ));
+        let name = match config.cache.provider {
+            CacheProvider::Sqlite => "sqlite",
+            CacheProvider::Redis => "redis",
+            _ => unreachable!(),
+        };
+        let e = StartupError::UnsupportedProvider(name.to_string());
+        tracing::error!(error = %e, "Pilcrow startup failed");
+        return Err(e);
     }
 
     let bind_addr = web_bind_addr(&config);
@@ -369,7 +377,6 @@ where
     A: PilcrowAdapter,
 {
     if let Err(e) = try_start_with_adapter(app, adapter).await {
-        tracing::error!(error = %e, "Pilcrow startup failed");
         eprintln!("pilcrow: {e}");
         std::process::exit(1);
     }
@@ -531,9 +538,10 @@ mod tests {
 
     #[test]
     fn startup_error_unsupported_provider_message() {
-        let e = StartupError::UnsupportedProvider("Redis".to_string());
+        // "redis" lowercase — matches what start.rs passes from the match arm.
+        let e = StartupError::UnsupportedProvider("redis".to_string());
         let msg = e.to_string();
-        assert!(msg.contains("Redis"), "must name the provider: {msg}");
+        assert!(msg.contains("redis"), "must name the provider: {msg}");
         assert!(msg.contains("memory"), "must name a valid alternative: {msg}");
     }
 }
