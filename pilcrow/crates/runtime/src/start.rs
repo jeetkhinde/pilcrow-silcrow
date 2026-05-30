@@ -517,3 +517,23 @@ fn load_config() -> Result<PilcrowConfig, StartupError> {
     PilcrowConfig::load_from_current_dir()
         .map_err(|e| StartupError::ConfigLoad(e.to_string()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn load_config_returns_err_on_bad_input() {
+        let e = StartupError::ConfigLoad("bad toml: unexpected char".to_string());
+        assert!(e.to_string().contains("bad toml"));
+        assert!(matches!(e, StartupError::ConfigLoad(_)));
+    }
+
+    #[test]
+    fn startup_error_unsupported_provider_message() {
+        let e = StartupError::UnsupportedProvider("Redis".to_string());
+        let msg = e.to_string();
+        assert!(msg.contains("Redis"), "must name the provider: {msg}");
+        assert!(msg.contains("memory"), "must name a valid alternative: {msg}");
+    }
+}
