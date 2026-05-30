@@ -677,7 +677,7 @@ fn generate_from_row_impl(
     }
     out.push_str("        ]\n");
     out.push_str("    }\n");
-    // Emit route_promote_after() only when a page-level PROMOTE_AFTER / PRERENDER = true
+    // Emit route_promote_after() only when a page-level PROMOTE_AFTER constant was set.
     // was set. The default trait impl returns None, which preserves existing behaviour.
     if let Some(n) = route_promote_after {
         out.push_str(&format!(
