@@ -44,7 +44,6 @@ pub mod generated_routes;
 pub mod i18n;
 pub mod image;
 pub mod island_ssr;
-pub mod isr;
 #[cfg(feature = "live-props")]
 pub mod live_props;
 pub mod middleware;

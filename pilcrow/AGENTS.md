@@ -74,11 +74,10 @@ Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:300
 | 3 | `runtime/deferred.rs:174-210` | Critical | Orphaned tokio tasks on client disconnect — memory leak for long-lived streams |
 | 4 | `runtime/island_ssr.rs:183-185` | Critical | Mutex poison on SSR worker panic propagates to all subsequent requests |
 | 5 | `runtime/start.rs:240`, `dev.rs:233`, `sw.rs:158` | High | Unbounded body consumption (`usize::MAX`) — OOM risk on large responses |
-| 6 | `runtime/isr.rs:172-183` | High | Race condition in `begin_revalidation` — thundering herd (check-then-act not atomic) |
-| 7 | `cli/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error |
-| 8 | `cli/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start()` instead of `pilcrow_start()` — skips SSG prerendering |
-| 9 | `routekit/route/parser.rs:246` | Medium | Optional catch-all priority false positive — checks `any(!is_empty)` instead of catch-all membership |
-| 10 | `routekit/lib.rs:136` | Low | `is_loading = filename == "loading"` always false (convention is `_loading`) — dead code |
+| 6 | `cli/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error |
+| 7 | `cli/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start()` instead of `pilcrow_start()` — skips SSG prerendering |
+| 8 | `routekit/route/parser.rs:246` | Medium | Optional catch-all priority false positive — checks `any(!is_empty)` instead of catch-all membership |
+| 9 | `routekit/lib.rs:136` | Low | `is_loading = filename == "loading"` always false (convention is `_loading`) — dead code |
 
 ## How the Build Pipeline Works
 
@@ -192,7 +191,7 @@ HTTP verb attributes: `s-get`, `s-post`, `s-put`, `s-patch`, `s-delete`. Reactiv
 
 ## ISR (Incremental Static Regeneration) — Removed
 
-ISR (`REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`) is removed. Using any of these constants is a **build error**. Use FSR with `#[revalidate(N)]` on a `LiveProp` field for time-based invalidation. `isr.rs` is dead and will be deleted in a follow-up slice.
+ISR (`REVALIDATE`, `MAX_STALE`, `CACHE_TAGS`, `CACHE_VARY`) is removed. Using any of these constants is a **build error**. Use FSR with `#[revalidate(N)]` on a `LiveProp` field for time-based invalidation.
 
 ## Adapter System
 
