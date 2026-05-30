@@ -47,6 +47,17 @@ pub fn validate_implementation(
             .map(|path| path.ends_with(".html"))
             .unwrap_or_else(|| !is_rust);
 
+    if code.contains("provider = \"sqlite\"") || code.contains("provider = \"redis\"") {
+        findings.push(finding(
+            Severity::Error,
+            "unsupported-cache-provider",
+            "cache.provider is set to sqlite or redis, which are not yet implemented. Use provider = \"memory\" (default) or provider = \"filesystem\".".to_string(),
+            path,
+            Some("crates/runtime/src/start.rs"),
+            Some("Remove the provider line or set provider = \"filesystem\"."),
+        ));
+    }
+
     if is_rust {
         validate_rust(code, path, kind, &mut findings);
     }
@@ -919,5 +930,26 @@ mod tests {
             "expected pilcrow-fsr-duplicate-s-live, got: {:?}",
             report.findings
         );
+    }
+
+    #[test]
+    fn rejects_unsupported_cache_provider() {
+        for provider in ["sqlite", "redis"] {
+            let report = validate_implementation(
+                &format!("[cache]\nprovider = \"{provider}\"\n"),
+                Some("Pilcrow.toml"),
+                Some("toml"),
+            );
+            assert!(!report.valid);
+            assert!(
+                report
+                    .findings
+                    .iter()
+                    .any(|f| f.rule_id == "unsupported-cache-provider"
+                        && f.severity == Severity::Error),
+                "expected unsupported-cache-provider for {provider}, got: {:?}",
+                report.findings
+            );
+        }
     }
 }

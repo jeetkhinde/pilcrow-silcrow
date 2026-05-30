@@ -39,14 +39,15 @@ pub use runtime::extract_ps_fragment;
 
 // ── Domain primitives (from pilcrow-core) ────────────────────
 pub use pilcrow_core::{
-    ApiEnvelope, AppError, AppResult, BackendConfig, HookError, Meta, PilcrowConfig, WebConfig,
+    ApiEnvelope, AppError, AppResult, BackendConfig, HookError, Meta, PilcrowConfig, StartupError,
+    WebConfig,
 };
 
 pub use pilcrow_client::PilcrowClient;
 pub use pilcrow_macros::handler;
 pub use runtime::island_ssr::IslandSsrWorker;
 pub use runtime::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use runtime::{start, start_with_adapter};
+pub use runtime::{start, start_with_adapter, try_start, try_start_with_adapter};
 
 /// FSR (Field-Selective Rendering) developer-facing surface.
 ///

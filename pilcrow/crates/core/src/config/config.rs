@@ -96,7 +96,7 @@ impl Default for FsrConfig {
             watcher: "embedded".to_string(),
             poll_interval_ms: 500,
             promote_after_hits: 100,
-            patch_debounce_secs: 30,
+            patch_debounce_secs: 0,
             purge_after_seconds: 2_592_000,
             max_sse_connections: 1000,
             connection_ttl_secs: 3600,
@@ -551,5 +551,26 @@ mod tests {
         assert_eq!(cfg.artifact_ttl_secs, 3600);
         assert_eq!(cfg.idle_evict_secs, 900);
         assert_eq!(cfg.idle_threshold_secs, 7200);
+    }
+
+    #[test]
+    fn fsr_patch_debounce_default_is_zero() {
+        let cfg = FsrConfig::default();
+        assert_eq!(
+            cfg.patch_debounce_secs, 0,
+            "Default must be 0; non-zero silently debounces all routes on upgrade"
+        );
+    }
+
+    #[test]
+    fn cache_provider_memory_and_filesystem_are_implemented() {
+        fn is_unimplemented(provider: &CacheProvider) -> bool {
+            matches!(provider, CacheProvider::Sqlite | CacheProvider::Redis)
+        }
+
+        assert!(!is_unimplemented(&CacheProvider::Memory));
+        assert!(!is_unimplemented(&CacheProvider::Filesystem));
+        assert!(is_unimplemented(&CacheProvider::Sqlite));
+        assert!(is_unimplemented(&CacheProvider::Redis));
     }
 }

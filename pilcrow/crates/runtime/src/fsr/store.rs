@@ -19,6 +19,9 @@ pub enum HitStatus {
 #[derive(Debug, Clone)]
 pub struct FsrStore {
     pool: Arc<PgPool>,
+    /// Global debounce fallback (seconds). Used when a slot has no per-field debounce_secs.
+    /// 0 = no debounce (patch immediately). Set from [fsr] patch_debounce_secs in Pilcrow.toml.
+    global_debounce_secs: u32,
     #[cfg(feature = "live-props-redis")]
     redis: Option<Arc<RedisCache>>,
 }
@@ -27,18 +30,26 @@ impl FsrStore {
     pub fn new(pool: PgPool) -> Self {
         Self {
             pool: Arc::new(pool),
+            global_debounce_secs: 0,
             #[cfg(feature = "live-props-redis")]
             redis: None,
         }
     }
 
+    /// Set the global debounce fallback. Applied to slots with no per-field `#[debounce(N)]`.
+    /// 0 = patch immediately (default).
+    pub fn with_global_debounce(mut self, secs: u32) -> Self {
+        self.global_debounce_secs = secs;
+        self
+    }
+
     /// Create an `FsrStore` that also publishes invalidation events to Redis.
+    ///
+    /// `global_debounce_secs` defaults to 0. Chain `.with_global_debounce(secs)` after
+    /// construction to apply a config-driven debounce fallback.
     #[cfg(feature = "live-props-redis")]
     pub fn with_redis(pool: PgPool, redis: Arc<RedisCache>) -> Self {
-        Self {
-            pool: Arc::new(pool),
-            redis: Some(redis),
-        }
+        Self::new(pool).with_redis_attached(redis)
     }
 
     /// Return a clone of this store with a Redis cache attached.
@@ -49,6 +60,7 @@ impl FsrStore {
     pub fn with_redis_attached(&self, redis: Arc<RedisCache>) -> Self {
         Self {
             pool: Arc::clone(&self.pool),
+            global_debounce_secs: self.global_debounce_secs,
             redis: Some(redis),
         }
     }
@@ -324,8 +336,14 @@ impl FsrStore {
             SELECT route, slot, query, query_params, depends_on, promoted, debounce_secs, html_path, json_path, column_name
             FROM pilcrow_fsr
             WHERE stale = TRUE AND slot != ''
+              AND (
+                COALESCE(debounce_secs, $1::integer) = 0
+                OR last_patched_at IS NULL
+                OR last_patched_at + (COALESCE(debounce_secs, $1::integer) * interval '1 second') <= NOW()
+              )
             "#,
         )
+        .bind(self.global_debounce_secs as i32)
         .fetch_all(&*self.pool)
         .await
     }
@@ -408,7 +426,7 @@ impl FsrStore {
     /// Mark a slot as no longer stale and bump its version.
     pub async fn mark_fresh(&self, route: &str, slot: &str) -> sqlx::Result<()> {
         sqlx::query(
-            "UPDATE pilcrow_fsr SET stale = FALSE, version = version + 1 WHERE route = $1 AND slot = $2",
+            "UPDATE pilcrow_fsr SET stale = FALSE, version = version + 1, last_patched_at = NOW() WHERE route = $1 AND slot = $2",
         )
         .bind(route)
         .bind(slot)
@@ -479,6 +497,15 @@ mod tests {
         let s = HitStatus::Tombstoned;
         let _s2 = s;
         let _s3 = s;
+    }
+
+    #[test]
+    fn global_debounce_defaults_to_zero() {
+        let cfg = crate::fsr::watcher::WatcherConfig::default();
+        assert_eq!(
+            cfg.patch_debounce_secs, 0,
+            "WatcherConfig default must be 0; non-zero would silently debounce all deployments"
+        );
     }
 }
 

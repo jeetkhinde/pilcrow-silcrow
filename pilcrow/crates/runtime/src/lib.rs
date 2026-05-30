@@ -52,7 +52,7 @@ pub(crate) mod sw;
 pub mod validator;
 pub mod ws;
 pub use adapter::{AdapterFuture, PilcrowAdapter, TokioAdapter};
-pub use start::{start, start_with_adapter};
+pub use start::{start, start_with_adapter, try_start, try_start_with_adapter};
 // ── Core API re-exports ──────────────────────────────────────
 pub use axum::http::StatusCode;
 pub use axum::response::Response;

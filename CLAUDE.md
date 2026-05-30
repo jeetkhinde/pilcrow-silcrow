@@ -185,9 +185,6 @@ Use `/update-docs <feature-name>` to run this interactively.
 **One active plan file:**
 - [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift (E1 ✅ done), F) disk-first baking.
 
-**Completed plan (reference only):**
-- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — ✅ **COMPLETE** (S0–S9 shipped 2026-05-29, branch `worktree-fsr-consolidation-cleanup`). FSR consolidation done: only FSR `LiveProp<T>` remains; legacy live infra, `isr.rs`, `baked_pages/`, and removed page consts all deleted.
-
 This session (latest, on top of `d28cbf3`):
 
 **Demo app deleted** — `demo/` and the `Tutorials/Demo App/` docs removed. `address-book/` is now the sole consumer app (FSR `LiveProp` only). Updated all references: `CLAUDE.md` topology/build commands, `pilcrow/AGENTS.md`, `CONTEXT.md`, `/sync-check` (now builds address-book), Learning Path + Documentation Map (Demo App step removed, a future FSR-features tutorial noted as planned), `FSR SSE Hub.md`, `.claude/react-island.md`. A future tutorial will cover the FSR features the Address Book does not exercise (multi-counter dashboards, scalar vs object, API routes with `FsrStore`, React islands).
