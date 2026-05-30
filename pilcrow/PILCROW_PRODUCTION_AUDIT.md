@@ -141,7 +141,7 @@ Suggested fix: use `unwrap_or_else(|e| e.into_inner())` or return a result.
 
 **Status:** Fixed. `Res::state()` uses `self.0.lock().unwrap_or_else(|err| err.into_inner())` — identical pattern to `Locals`. Audit was stale.
 
-### 7. Codegen validation uses panic
+### 7. ✅ Codegen validation uses panic (FIXED)
 
 File: `crates/routekit/src/templating/codegen/app_module.rs`
 
@@ -150,6 +150,8 @@ Problem: build validation uses `panic!`.
 Why it matters: errors are not source-spanned and are harder for users/AI tools to repair.
 
 Suggested fix: return `io::Error` with route, source path, and suggested patch.
+
+**Status:** Fixed. No `panic!` in production codegen — `route_config_error` returns `io::Error` with route, module, message, and suggested fix. Only `panic!` in routekit is in a test helper. Audit was stale.
 
 ### 8. ✅ Generated handlers panic on template render errors (FIXED)
 
