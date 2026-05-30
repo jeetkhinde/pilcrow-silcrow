@@ -826,6 +826,10 @@ mod tests {
             .unwrap()
             .to_path_buf();
         let workspace_root = pilcrow_root.parent().unwrap_or_else(|| Path::new("."));
+        let address_book = workspace_root.join("address-book");
+        if address_book.join("Cargo.toml").exists() {
+            return address_book;
+        }
         let demo = workspace_root.join("demo");
         if demo.join("Cargo.toml").exists() {
             demo
@@ -842,10 +846,14 @@ mod tests {
             !context.crate_versions.is_empty(),
             "expected at least one crate version"
         );
-        assert!(context
-            .routes
-            .iter()
-            .any(|route| route.path == "index.html"));
+        assert!(
+            context
+                .route_graph
+                .iter()
+                .any(|route| route.url_pattern == "/"),
+            "expected a root route, got {:?}",
+            context.route_graph
+        );
     }
 
     #[test]
