@@ -93,9 +93,6 @@ pub mod adapters {
     pub use runtime::adapters::LambdaAdapter;
 }
 
-// ── Live props (old per-route SSE system) ────────────────────
-pub use runtime::{__live_props_response, LiveProp, LiveTarget};
-
 // ── i18n ─────────────────────────────────────────────────────
 pub use runtime::{FmtHelper, I18nBundles};
 

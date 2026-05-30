@@ -135,27 +135,6 @@ where
         .layer(axum::Extension(config))
         .layer(axum::Extension(http));
 
-    // live-props: register broadcast channel + optional DB store.
-    #[cfg(feature = "live-props")]
-    {
-        use crate::live_props::{LiveBroadcast, LivePageStore};
-        let live_broadcast = LiveBroadcast::new(256);
-        app = app.layer(axum::Extension(live_broadcast));
-
-        if let Ok(db_url) = std::env::var("DATABASE_URL") {
-            match sqlx::PgPool::connect(&db_url).await {
-                Ok(pool) => {
-                    let live_store = Arc::new(LivePageStore::new(pool));
-                    app = app.layer(axum::Extension(live_store));
-                    tracing::info!("live-props: connected to DATABASE_URL");
-                }
-                Err(err) => {
-                    tracing::warn!("live-props: failed to connect to DATABASE_URL: {err}");
-                }
-            }
-        }
-    }
-
     // FSR: register broadcast channel, optional DB store, and embedded watcher.
     #[cfg(feature = "live-props")]
     {

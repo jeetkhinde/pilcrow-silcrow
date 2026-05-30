@@ -307,41 +307,6 @@ validation_rules = [
 ]
 scaffold_templates = ["silcrow-form"]
 
-
-[[features]]
-id = "live-props"
-name = "Live Props"
-domain = "pilcrow"
-status = "stable"
-summary = "LiveProp<T> fields render an initial value in SSR HTML and automatically subscribe the browser to server-pushed SSE updates."
-spec = "Props fields typed LiveProp<T> opt in to persistent SSE subscriptions. Codegen wraps {{ field }} template expressions with <span :text=\"field\"> for DOM patching, injects a hidden <div s-sse=\"/__pilcrow/live{path}\"> into the response HTML, and generates a GET /__pilcrow/live{pattern} SSE route. The client subscribes via Silcrow's s-sse directive and receives SilcrowEvent::patch events. LiveTarget::Dom patches :text bindings; LiveTarget::DomAndStore also publishes to a Silcrow stream: atom; LiveTarget::Store publishes only to the atom with no DOM binding. All live fields on a page share one EventSource connection."
-canonical_usage = "pub struct Props { pub count: LiveProp<u64>, pub label: String }. pub async fn load(_req: Req) -> AppResult<Props> { let rx = COUNTER.subscribe(); Ok(Props { count: LiveProp::watch(rx).target(LiveTarget::Dom), label: String::from(\"counter\") }) }. In template: {{ count }} (auto-wrapped as <span :text=\"count\">{{ count }}</span>)."
-constraints = [
-  "LiveProp<T>: T must implement Display, Clone, Serialize, Send, Sync, and 'static.",
-  "LiveProp::watch(rx) clones the current watch value as the initial; requires T: Clone.",
-  "LiveProp::initial(v) creates a static field with no producer — useful as placeholder when live() is defined separately.",
-  "All live fields on a page share a single SSE connection at /__pilcrow/live{path}.",
-  "The SSE route re-calls load() (or live() if defined) on every new client connection — producers must be cheap to recreate.",
-  "{{ live_field }} in templates is automatically wrapped with :text span; no manual wrapping needed.",
-]
-invalid_examples = [
-  "Using LiveProp<T> where T does not implement Serialize or Sync",
-  "Manually writing <span :text=\"field\"> — the template compiler does this automatically",
-  "Assuming LiveProp fields share state across requests — each SSE connection re-calls load()",
-]
-source_refs = [
-  "crates/runtime/src/deferred.rs",
-  "crates/routekit/src/templating/codegen/app_module.rs",
-  "crates/routekit/src/templating/codegen/instrument.rs",
-  "crates/routekit/src/templating/compiler.rs",
-]
-test_refs = []
-validation_rules = [
-  "LiveProp<T> fields must be declared in Props.",
-  "T in LiveProp<T> must implement Display, Clone, Serialize, Send, Sync.",
-]
-scaffold_templates = []
-
 [[features]]
 id = "fsr"
 name = "FSR (Field-Selective Rendering)"

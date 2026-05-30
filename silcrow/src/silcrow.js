@@ -1431,14 +1431,14 @@ function destroyAllLive() {
 function initLiveElements() {
   // WS is checked first; an element should carry only one live protocol attribute.
   // If somehow both are present, WS wins and SSE is skipped for that element.
-  document.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss]").forEach(el => {
+  document.querySelectorAll("[s-sse], [s-ws], [s-wss]").forEach(el => {
     const wsUrl = el.getAttribute("s-ws") || el.getAttribute("s-wss");
     if (wsUrl) {
       openWsLive(el, wsUrl);
       return;
     }
 
-    const sseUrl = el.getAttribute("data-pilcrow-live") || el.getAttribute("s-sse");
+    const sseUrl = el.getAttribute("s-sse");
     if (sseUrl) {
       openLive(el, sseUrl);
     }
@@ -2089,11 +2089,8 @@ function finalizeNavigation(ctx) {
   // Re-initialize any live connection elements that arrived in the swapped content.
   // The MutationObserver cleans up removed elements; this connects the new ones.
   if (targetEl) {
-    targetEl.querySelectorAll("[data-pilcrow-live], [s-sse]").forEach(function (el) {
+    targetEl.querySelectorAll("[s-sse]").forEach(function (el) {
       let url;
-      if ((url = el.getAttribute("data-pilcrow-live"))) {
-        openLive(el, url);
-      }
       if ((url = el.getAttribute("s-sse"))) {
         openLive(el, url);
       }
@@ -2669,8 +2666,8 @@ function init() {
         unbindElementAtoms(removed);
 
         if (removed.querySelectorAll) {
-          for (const child of removed.querySelectorAll("[data-pilcrow-live], [s-sse], [s-ws], [s-wss], [s-bind]")) {
-            if (child.hasAttribute("data-pilcrow-live") || child.hasAttribute("s-sse") || child.hasAttribute("s-ws") || child.hasAttribute("s-wss")) {
+          for (const child of removed.querySelectorAll("[s-sse], [s-ws], [s-wss], [s-bind]")) {
+            if (child.hasAttribute("s-sse") || child.hasAttribute("s-ws") || child.hasAttribute("s-wss")) {
               cleanupLiveNode(child);
             }
             if (child.hasAttribute("s-bind")) {

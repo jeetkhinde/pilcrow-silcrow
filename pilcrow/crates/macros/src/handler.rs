@@ -3,8 +3,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{FnArg, Ident, ItemFn, Pat, PatType, parse_macro_input, visit::Visit};
 
-pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let is_live = is_live_attr(TokenStream2::from(attr));
+pub fn expand(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let func = parse_macro_input!(item as ItemFn);
 
     let uses_client = body_uses_client(&func);
@@ -14,23 +13,6 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
     if uses_client {
         extra_params.push(quote! {
             __pilcrow_client: ::pilcrow_client::PilcrowClient
-        });
-    }
-
-    // When `#[handler(live)]` is used, inject matched path + live-props extensions.
-    if is_live {
-        extra_params.push(quote! {
-            __pilcrow_matched_path: ::axum::extract::MatchedPath
-        });
-        extra_params.push(quote! {
-            ::axum::Extension(__pilcrow_live_store): ::axum::Extension<
-                ::std::sync::Arc<::runtime::live_props::LivePageStore>
-            >
-        });
-        extra_params.push(quote! {
-            ::axum::Extension(__pilcrow_live_broadcast): ::axum::Extension<
-                ::runtime::live_props::LiveBroadcast
-            >
         });
     }
 
@@ -80,31 +62,6 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
     let sig_ident = &func.sig.ident;
     let body = &func.block;
 
-    // Generate the live-props write code inserted after the handler closure returns.
-    let live_write = if is_live {
-        quote! {
-            {
-                use ::runtime::live_props::LivePropExtract as _;
-                let __live_fields = __r.live_fields();
-                if !__live_fields.is_empty() {
-                    let __route = __pilcrow_matched_path.as_str().to_string();
-                    let __params = ::serde_json::json!({});
-                    let __promote_after = __live_fields.iter().find_map(|f| f.promote_after);
-                    let _ = __pilcrow_live_store
-                        .write_live_fields(&__route, &__params, &__live_fields)
-                        .await;
-                    let __just_promoted = __pilcrow_live_store
-                        .increment_hit(&__route, __promote_after)
-                        .await
-                        .unwrap_or(false);
-                    let _ = __just_promoted;
-                }
-            }
-        }
-    } else {
-        quote! {}
-    };
-
     let expanded = quote! {
         #vis async fn #sig_ident(#(#all_params),*) -> ::pilcrow_web::AppResult<::axum::response::Response> {
             use ::axum::response::IntoResponse;
@@ -114,7 +71,6 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
             })().await;
             match __result {
                 Ok(__r) => {
-                    #live_write
                     Ok(__r.into_response())
                 }
                 Err(e) => Err(e),
@@ -123,12 +79,6 @@ pub fn expand(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     expanded.into()
-}
-
-// ── Attribute parsing ─────────────────────────────────────────────────────────
-
-fn is_live_attr(attr: TokenStream2) -> bool {
-    attr.to_string().trim() == "live"
 }
 
 // ── Client detection ──────────────────────────────────────────────────────────
@@ -176,14 +126,4 @@ mod tests {
         assert!(!body_uses_client(&func));
     }
 
-    #[test]
-    fn is_live_attr_parses_live_keyword() {
-        let ts: proc_macro2::TokenStream = quote! { live };
-        assert!(is_live_attr(ts));
-    }
-
-    #[test]
-    fn is_live_attr_empty_is_false() {
-        assert!(!is_live_attr(proc_macro2::TokenStream::new()));
-    }
 }

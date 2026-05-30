@@ -576,10 +576,6 @@ pub fn render_generated_app_module(
             if needs_req {
                 out.push_str("            let __resp_handle = req.res.clone();\n");
             }
-            if !live_fields.is_empty() {
-                out.push_str("            let __live_path = req.path.clone();\n");
-            }
-
             // ── Layout loads (one per active chain entry, outermost first) ───────
             // When a client is cloned: it must be cloned for every call except the
             // very last consumer (page or last layout).
@@ -769,25 +765,6 @@ pub fn render_generated_app_module(
                     out.push_str("                format!(\"{}{}\", __FSR_SCRIPT, html)\n");
                     out.push_str("            };\n");
                 }
-                // ── Live props: inject data-pilcrow-live anchor ───────────────
-                // Silcrow's initLiveElements() discovers [data-pilcrow-live] and
-                // manages the SSE connection and live-event patching.
-                if !live_fields.is_empty() && !has_fsr {
-                    out.push_str("            let html = {\n");
-                    out.push_str("                let __live_anchor = format!(\"<div data-pilcrow-live=\\\"/__pilcrow/live{}\\\" style=\\\"display:none\\\"></div>\", __live_path);\n");
-                    out.push_str(
-                        "                if let Some(__pos) = html.rfind(\"</body>\") {\n",
-                    );
-                    out.push_str("                    let mut __s = String::with_capacity(html.len() + __live_anchor.len());\n");
-                    out.push_str("                    __s.push_str(&html[..__pos]);\n");
-                    out.push_str("                    __s.push_str(&__live_anchor);\n");
-                    out.push_str("                    __s.push_str(&html[__pos..]);\n");
-                    out.push_str("                    __s\n");
-                    out.push_str("                } else {\n");
-                    out.push_str("                    format!(\"{}{}\", html, __live_anchor)\n");
-                    out.push_str("                }\n");
-                    out.push_str("            };\n");
-                }
                 out.push_str(&emit_loading_append(loading_mod, "html"));
                 if !ps_layout_chain.is_empty() {
                     if let Some(slot) = ps_page_slot {
@@ -822,18 +799,6 @@ pub fn render_generated_app_module(
                 mod_name,
                 error_mod,
             ));
-        }
-
-        // ── Live props SSE route ──────────────────────────────────────────────────
-        // FSR routes use the shared /__pilcrow/fsr hub instead of per-route SSE.
-        if !live_fields.is_empty() && !has_fsr {
-            let live_fn_name = format!("__pilcrow_live_{mod_name}");
-            let live_pattern = format!("/__pilcrow/live{}", entry.pattern);
-            let live_pattern_lit = rust_string(&live_pattern);
-            let _ = writeln!(
-                out,
-                "        .route({live_pattern_lit}, ::pilcrow_web::axum::routing::get({live_fn_name}))"
-            );
         }
 
         // ── Trailing slash redirect routes ───────────────────────────────────────
@@ -987,58 +952,6 @@ pub fn render_generated_app_module(
         out.push_str("    crate::hooks::init().await;\n");
     }
     out.push_str("}\n");
-
-    // ── Live props SSE handlers ───────────────────────────────────────────────
-    // FSR routes use the shared /__pilcrow/fsr hub — skip per-route handler generation.
-    for entry in page_entries {
-        let live_fields: &[String] = live_fields_map
-            .get(&entry.symbol)
-            .map(Vec::as_slice)
-            .unwrap_or(&[]);
-        if live_fields.is_empty() {
-            continue;
-        }
-        // FSR routes have inline Live — skip old per-route SSE handler.
-        if fsr_live_source_map.contains_key(&entry.symbol) {
-            continue;
-        }
-        let mod_name = &entry.symbol;
-        let has_live_fn = *has_live_fn_map.get(&entry.symbol).unwrap_or(&false);
-        let fn_name = format!("__pilcrow_live_{mod_name}");
-        out.push('\n');
-        let _ = writeln!(
-            out,
-            "#[allow(dead_code)]\nasync fn {fn_name}(req: ::pilcrow_web::Req) -> impl ::pilcrow_web::axum::response::IntoResponse {{"
-        );
-        out.push_str("    use ::pilcrow_web::axum::response::IntoResponse as _;\n");
-        // Call live() if it exists, else call load()
-        if has_live_fn {
-            let _ = writeln!(
-                out,
-                "    let __props = match __pilcrow_gen::{mod_name}::live(req).await {{"
-            );
-        } else {
-            let _ = writeln!(
-                out,
-                "    let __props = match __pilcrow_gen::{mod_name}::load(req).await {{"
-            );
-        }
-        out.push_str("        Ok(p) => p,\n");
-        out.push_str("        Err(_) => return (::pilcrow_web::StatusCode::INTERNAL_SERVER_ERROR, \"live props failed\").into_response(),\n");
-        out.push_str("    };\n");
-        // Build the streams vec
-        out.push_str("    let __live_streams = vec![\n");
-        for field in live_fields {
-            let field_lit = rust_string(field);
-            let _ = writeln!(
-                out,
-                "        __props.{field}.__into_sse_stream({field_lit}),"
-            );
-        }
-        out.push_str("    ];\n");
-        out.push_str("    ::pilcrow_web::__live_props_response(__live_streams).into_response()\n");
-        out.push_str("}\n");
-    }
 
     // ── handle shim: extracts Req (body stays intact), calls hooks::handle ────
     if hooks.has_handle {

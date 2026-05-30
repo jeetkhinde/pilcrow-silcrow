@@ -250,7 +250,7 @@ impl Live {
     }
 
     #[test]
-    fn live_anchor_emits_data_pilcrow_live_element() {
+    fn live_fields_no_longer_emit_legacy_live_anchor() {
         use super::app_module::{AppCodegenMaps, render_generated_app_module};
         use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
         use std::collections::{HashMap, HashSet};
@@ -312,9 +312,10 @@ impl Live {
         )
         .expect("render_generated_app_module should succeed");
 
+        // Legacy per-route SSE anchor removed in S8 — FSR hub handles live updates.
         assert!(
-            source.contains("data-pilcrow-live"),
-            "expected data-pilcrow-live anchor element, got:\n{source}"
+            !source.contains("data-pilcrow-live"),
+            "legacy data-pilcrow-live anchor must not appear after S8, got:\n{source}"
         );
         assert!(
             !source.contains("__LIVE_SHIM"),

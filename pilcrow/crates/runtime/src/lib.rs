@@ -5,7 +5,6 @@ pub mod adapters;
 pub mod assets;
 pub mod context;
 pub mod csrf;
-pub mod deferred;
 pub(crate) mod dev;
 #[cfg(feature = "live-props")]
 pub mod fsr;
@@ -84,7 +83,6 @@ pub use axum;
 #[doc(hidden)]
 pub use response::response::html;
 
-pub use deferred::{DependencyKey, __live_props_response, LiveProp, LiveTarget};
 pub use nav::extract_ps_fragment;
 pub mod prebake;
 pub use prebake::trigger as prebake_next;
