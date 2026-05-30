@@ -149,7 +149,7 @@ Why it matters: errors are not source-spanned and are harder for users/AI tools 
 
 Suggested fix: return `io::Error` with route, source path, and suggested patch.
 
-### 8. Generated handlers panic on template render errors
+### 8. ✅ Generated handlers panic on template render errors (FIXED)
 
 File: `crates/routekit/src/templating/codegen/app_module.rs`
 
@@ -158,6 +158,8 @@ Problem: generated handlers use `.expect("template render failed")`.
 Why it matters: a render failure can crash request handling instead of rendering `_error.html`.
 
 Suggested fix: convert render errors into `AppError::Internal` and route through page error boundary.
+
+**Status:** Fixed. `emit_render_binding` (no-req path) and `emit_app_error_body` (no-error-mod path) now emit `axum::response::Html(...)` responses instead of plain-text tuples. Pages with `_error.html` already used the full error boundary — only the plain-text fallback paths were wrong.
 
 ### 9. HTML rewriting is custom string scanning
 
