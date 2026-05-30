@@ -113,7 +113,7 @@ For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 
 **FSR promotion threshold:** `pub const PROMOTE_AFTER: u32 = N` in page code-behind is the **only** surface. `0` = bake on first hit. `#[pilcrow::promote_after(N)]` on live fields no longer exists — it was removed because it controlled the whole route via an arbitrary `fields.first()` fallback, not any field-level concept.
 
-Do NOT open `codegen/app_module.rs` or `deferred.rs` unless actively debugging a mismatch between the docs and real behavior.
+Do NOT open `codegen/app_module.rs` unless actively debugging a mismatch between the docs and real behavior.
 
 ## React island questions — read docs, do not scan
 
