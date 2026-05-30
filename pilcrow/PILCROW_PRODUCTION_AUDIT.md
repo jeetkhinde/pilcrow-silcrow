@@ -129,7 +129,7 @@ Why it matters: exposes cache keys/tags in production.
 
 Suggested fix: gate behind dev mode or explicit admin auth/config.
 
-### 6. Response state lock can cascade panics
+### 6. ✅ Response state lock can cascade panics (FIXED)
 
 File: `crates/runtime/src/context.rs`
 
@@ -138,6 +138,8 @@ Problem: `Res` methods use `lock().unwrap()` unlike `Locals`, which handles pois
 Why it matters: one panic can poison response state and trigger cascading panics.
 
 Suggested fix: use `unwrap_or_else(|e| e.into_inner())` or return a result.
+
+**Status:** Fixed. `Res::state()` uses `self.0.lock().unwrap_or_else(|err| err.into_inner())` — identical pattern to `Locals`. Audit was stale.
 
 ### 7. Codegen validation uses panic
 
