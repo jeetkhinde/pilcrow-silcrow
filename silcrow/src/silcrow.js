@@ -1294,12 +1294,13 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
-        const k = n.getAttribute("data-pilcrow-live-field");
-        if (k in data) {
+      // BOLT OPTIMIZATION: Instead of scanning the entire DOM for all live fields O(N_total),
+      // we only query for the specific keys that were actually updated in this patch payload O(K_updated).
+      for (const k of Object.keys(data)) {
+        document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function (n) {
           n.textContent = data[k] == null ? "" : String(data[k]);
-        }
-      });
+        });
+      }
     } catch (err) {
       warn("Failed to parse SSE live event: " + err.message);
     }
@@ -2636,12 +2637,13 @@ function init() {
     if (typeof window.__pilcrow_live_patch === "function") {
       window.__pilcrow_live_patch(data);
     } else {
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
-        const k = n.getAttribute("data-pilcrow-live-field");
-        if (k in data) {
+      // BOLT OPTIMIZATION: Instead of scanning the entire DOM for all live fields O(N_total),
+      // we only query for the specific keys that were actually updated in this patch payload O(K_updated).
+      for (const k of Object.keys(data)) {
+        document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function (n) {
           n.textContent = data[k] == null ? "" : String(data[k]);
-        }
-      });
+        });
+      }
     }
   });
 
