@@ -20,9 +20,11 @@ pub fn instrument_frontmatter(
     })?;
 
     // Parse and strip framework-reserved `pub const` declarations before other processing.
-    // Handled: TRAILING_SLASH, LAYOUT, PRERENDER, PROMOTE_AFTER, FSR_JSON.
+    // Handled: TRAILING_SLASH, LAYOUT, PROMOTE_AFTER, FSR_JSON.
+    // Rejected (build errors): REVALIDATE, PRERENDER, STREAMING, CACHE_TAGS, MAX_STALE, CACHE_VARY.
     let mut page_options = PageOptions::default();
     let mut promote_after_err: Option<io::Error> = None;
+    let mut removed_const_msgs: Vec<String> = Vec::new();
     file.items.retain(|item| {
         let syn::Item::Const(c) = item else {
             return true;
@@ -68,9 +70,53 @@ pub fn instrument_frontmatter(
                 page_options.fsr.json = value_str.trim() == "true";
                 false
             }
+            "REVALIDATE" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `REVALIDATE` was removed — \
+                     use `#[revalidate(N)]` on a `LiveProp` field instead"
+                ));
+                false
+            }
+            "PRERENDER" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `PRERENDER` was removed — \
+                     use `pub const PROMOTE_AFTER: u32 = 0` instead"
+                ));
+                false
+            }
+            "STREAMING" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `STREAMING` was removed and is no longer supported"
+                ));
+                false
+            }
+            "CACHE_TAGS" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `CACHE_TAGS` was removed and is no longer supported"
+                ));
+                false
+            }
+            "MAX_STALE" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `MAX_STALE` was removed and is no longer supported"
+                ));
+                false
+            }
+            "CACHE_VARY" => {
+                removed_const_msgs.push(format!(
+                    "`{source_path}`: `CACHE_VARY` was removed and is no longer supported"
+                ));
+                false
+            }
             _ => true,
         }
     });
+    if !removed_const_msgs.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            removed_const_msgs.join("\n"),
+        ));
+    }
     if let Some(err) = promote_after_err {
         return Err(err);
     }

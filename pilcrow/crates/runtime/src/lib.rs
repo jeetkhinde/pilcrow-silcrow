@@ -3,11 +3,8 @@
 pub mod adapter;
 pub mod adapters;
 pub mod assets;
-#[cfg(feature = "experimental-baked-pages")]
-pub mod baked_pages;
 pub mod context;
 pub mod csrf;
-pub mod deferred;
 pub(crate) mod dev;
 #[cfg(feature = "live-props")]
 pub mod fsr;
@@ -44,7 +41,6 @@ pub mod generated_routes;
 pub mod i18n;
 pub mod image;
 pub mod island_ssr;
-pub mod isr;
 #[cfg(feature = "live-props")]
 pub mod live_props;
 pub mod middleware;
@@ -87,7 +83,6 @@ pub use axum;
 #[doc(hidden)]
 pub use response::response::html;
 
-pub use deferred::{__live_props_response, LiveProp, LiveTarget};
 pub use nav::extract_ps_fragment;
 pub mod prebake;
 pub use prebake::trigger as prebake_next;

@@ -250,7 +250,7 @@ impl Live {
     }
 
     #[test]
-    fn live_anchor_emits_data_pilcrow_live_element() {
+    fn live_fields_no_longer_emit_legacy_live_anchor() {
         use super::app_module::{AppCodegenMaps, render_generated_app_module};
         use crate::templating::codegen::{GeneratedPageRoute, HookFlags};
         use std::collections::{HashMap, HashSet};
@@ -312,9 +312,10 @@ impl Live {
         )
         .expect("render_generated_app_module should succeed");
 
+        // Legacy per-route SSE anchor removed in S8 — FSR hub handles live updates.
         assert!(
-            source.contains("data-pilcrow-live"),
-            "expected data-pilcrow-live anchor element, got:\n{source}"
+            !source.contains("data-pilcrow-live"),
+            "legacy data-pilcrow-live anchor must not appear after S8, got:\n{source}"
         );
         assert!(
             !source.contains("__LIVE_SHIM"),
@@ -964,9 +965,9 @@ pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(P
     }
 
     #[test]
-    fn streaming_constant_is_silently_stripped() {
+    fn streaming_constant_is_build_error() {
         let frontmatter = "pub const STREAMING: bool = true;\npub struct Props {}\n";
-        let _generated = render_generated_templates_module(&[TemplateCodegenInput {
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
             module_name: "page_about".to_string(),
             render_symbol: "render_page_about".to_string(),
             source_path: "/tmp/src/pages/about.html".to_string(),
@@ -978,7 +979,69 @@ pub async fn load(req: pilcrow_web::Req) -> pilcrow_web::AppResult<Props> { Ok(P
             layout_chain_ids: vec![],
             page_slot: None,
         }])
-        .expect("STREAMING should be ignored, not a build error");
+        .expect_err("STREAMING must be a build error");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("STREAMING"), "got: {err}");
+    }
+
+    #[test]
+    fn revalidate_constant_is_build_error() {
+        let frontmatter = "pub const REVALIDATE: u64 = 300;\npub struct Props {}\n";
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_about".to_string(),
+            render_symbol: "render_page_about".to_string(),
+            source_path: "/tmp/src/pages/about.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("REVALIDATE must be a build error");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("REVALIDATE"), "got: {err}");
+    }
+
+    #[test]
+    fn prerender_constant_is_build_error() {
+        let frontmatter = "pub const PRERENDER: bool = true;\npub struct Props {}\n";
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_about".to_string(),
+            render_symbol: "render_page_about".to_string(),
+            source_path: "/tmp/src/pages/about.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("PRERENDER must be a build error");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("PRERENDER"), "got: {err}");
+    }
+
+    #[test]
+    fn cache_tags_constant_is_build_error() {
+        let frontmatter = "pub const CACHE_TAGS: &[&str] = &[\"posts\"];\npub struct Props {}\n";
+        let err = render_generated_templates_module(&[TemplateCodegenInput {
+            module_name: "page_about".to_string(),
+            render_symbol: "render_page_about".to_string(),
+            source_path: "/tmp/src/pages/about.html".to_string(),
+            rust_frontmatter: frontmatter.to_string(),
+            template_source: "<h1>hi</h1>".to_string(),
+            layout_chain: vec![],
+            fragment_url_prefix: None,
+            route_params: vec![],
+            layout_chain_ids: vec![],
+            page_slot: None,
+        }])
+        .expect_err("CACHE_TAGS must be a build error");
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("CACHE_TAGS"), "got: {err}");
     }
 
     #[test]

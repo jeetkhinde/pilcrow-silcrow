@@ -86,109 +86,6 @@ validation_rules = ["ignore_directories paths should be valid glob patterns."]
 scaffold_templates = []
 
 [[features]]
-id = "experimental-baked-pages"
-name = "Experimental Baked Pages"
-domain = "pilcrow"
-status = "experimental"
-summary = "Experimental baked-page declarations, durable artifact storage, build-time prebake, lazy serving helpers, and dependency-scoped slot patching."
-spec = """
-Baked pages are Pilcrow's experimental durable serving artifact model. Current
-runtime support exposes declaration types plus filesystem-backed artifact and
-metadata storage, marker-bounded slot patching, and a minimal library prebake
-API for BuildTime declarations. It also exposes an explicit opt-in lazy serving
-helper for route handlers that want baked serving without global router/codegen
-changes. It does not change route handling, codegen, or SSR/load rendering
-unless a route calls the helper itself.
-
-Route declarations choose a bake timing policy:
-- BuildTime
-- LazyOnFirstHit
-- NeverBake
-
-Route declarations also choose an artifact strategy:
-- FullPage
-- FragmentComposed with a layout key
-
-The experimental BakedPageStore can write FullPage artifacts, write
-FragmentComposed page bodies, persist metadata, rebuild the dependency reverse
-index from metadata, mark pages stale, read a fresh stored artifact, and patch
-slot content atomically. BakedPageStore::prebake_declared runs a caller-provided
-renderer for BuildTime declarations and writes the same durable artifacts as the
-store's lower-level artifact API. BakedPageStore::get_or_render_declared checks
-serve_if_fresh for LazyOnFirstHit declarations, runs the caller-provided renderer
-on miss, writes the baked artifact, and returns the response HTML. FragmentComposed
-responses are composed through the declared layout's page_body slot. BakedPatchRegistry
-finds affected pages through the reverse index, recomputes declared slots, and marks
-pages stale when recompute or marker validation fails. SSR/load remains the
-source-of-truth renderer. Future patches may connect these types to routekit codegen.
-"""
-canonical_usage = """
-// Cargo.toml
-pilcrow-web = { path = "...", features = ["experimental-baked-pages"] }
-
-use pilcrow_web::experimental::baked_pages::{
-    serve_baked_or_render, BakedPageStore, BakedPatchRegistry, BakedRenderedPage, BakedRoute,
-    BakedRouteDeclaration, DependencyKey, SlotValue,
-};
-
-let declaration = BakedRouteDeclaration::lazy_on_first_hit("/tickets/:id", "/tickets/123")
-    .full_page()
-    .text_slot("ticket_status", vec![DependencyKey::new("ticket:123")]);
-let store = BakedPageStore::new(".pilcrow-baked");
-let route = BakedRoute::new(store.clone(), declaration);
-let response = route.serve(|_decl| {
-    Ok(BakedRenderedPage::new("<html>...</html>", "render-v1"))
-})?;
-let response_without_wrapper = serve_baked_or_render(&store, route.declaration(), |_decl| {
-    Ok(BakedRenderedPage::new("<html>...</html>", "render-v1"))
-})?;
-let mut patches = BakedPatchRegistry::new(store.clone());
-patches.register_slot_recompute("ticket_status", |_key, _page| {
-    Ok(SlotValue::text("Closed"))
-});
-"""
-constraints = [
-  "This is an experimental library API; it is not wired into generated routes yet.",
-  "The API is available only with the experimental-baked-pages feature flag.",
-  "Do not replace existing SSR/load behavior broadly; routes must explicitly call the baked serving helper.",
-  "BuildTime behavior remains library/prebake-only for now; get_or_render_declared does not render BuildTime misses.",
-  "Prebake is library-only and accepts BuildTime declarations; no CLI or generated build hook exists yet.",
-  "BakedPageStore reads and writes local filesystem artifacts only; no production adapters exist yet.",
-  "Slot patching requires explicit dependency ownership through DependencyKey values.",
-  "Trusted HTML slot patches require an explicit TrustedHtml wrapper; text slot patches are escaped.",
-]
-invalid_examples = [
-  "Expecting BakedRouteDeclaration to automatically register a page route.",
-  "Calling prebake_declared on a NeverBake declaration.",
-  "Using FragmentComposed without later providing a compatible layout artifact containing a page_body slot.",
-  "Treating TrustedHtml slots as escaped text slots.",
-]
-source_refs = [
-  "docs/experimental-baked-pages.md",
-  "crates/web/examples/baked_prebake.rs",
-  "crates/web/examples/baked_ticket.rs",
-  "crates/runtime/src/baked_pages/model.rs",
-  "crates/runtime/src/baked_pages/store.rs",
-  "crates/runtime/src/baked_pages/patch.rs",
-  "crates/runtime/src/baked_pages/prebake.rs",
-  "crates/runtime/src/baked_pages/serving.rs",
-  "crates/runtime/src/baked_pages/mod.rs",
-  "crates/web/src/lib.rs",
-]
-test_refs = [
-  "crates/runtime/src/baked_pages/model.rs",
-  "crates/runtime/src/baked_pages/store.rs",
-  "crates/runtime/src/baked_pages/patch.rs",
-  "crates/runtime/src/baked_pages/prebake.rs",
-  "crates/runtime/src/baked_pages/serving.rs",
-  "crates/web/src/lib.rs",
-]
-validation_rules = [
-  "No routekit syntax validation exists yet because this API is not parsed from page codegen.",
-]
-scaffold_templates = []
-
-[[features]]
 id = "layouts"
 name = "Layouts"
 domain = "pilcrow"
@@ -409,41 +306,6 @@ validation_rules = [
   "Do not model Silcrow forms as standalone client-state islands.",
 ]
 scaffold_templates = ["silcrow-form"]
-
-
-[[features]]
-id = "live-props"
-name = "Live Props"
-domain = "pilcrow"
-status = "stable"
-summary = "LiveProp<T> fields render an initial value in SSR HTML and automatically subscribe the browser to server-pushed SSE updates."
-spec = "Props fields typed LiveProp<T> opt in to persistent SSE subscriptions. Codegen wraps {{ field }} template expressions with <span :text=\"field\"> for DOM patching, injects a hidden <div s-sse=\"/__pilcrow/live{path}\"> into the response HTML, and generates a GET /__pilcrow/live{pattern} SSE route. The client subscribes via Silcrow's s-sse directive and receives SilcrowEvent::patch events. LiveTarget::Dom patches :text bindings; LiveTarget::DomAndStore also publishes to a Silcrow stream: atom; LiveTarget::Store publishes only to the atom with no DOM binding. All live fields on a page share one EventSource connection."
-canonical_usage = "pub struct Props { pub count: LiveProp<u64>, pub label: String }. pub async fn load(_req: Req) -> AppResult<Props> { let rx = COUNTER.subscribe(); Ok(Props { count: LiveProp::watch(rx).target(LiveTarget::Dom), label: String::from(\"counter\") }) }. In template: {{ count }} (auto-wrapped as <span :text=\"count\">{{ count }}</span>)."
-constraints = [
-  "LiveProp<T>: T must implement Display, Clone, Serialize, Send, Sync, and 'static.",
-  "LiveProp::watch(rx) clones the current watch value as the initial; requires T: Clone.",
-  "LiveProp::initial(v) creates a static field with no producer — useful as placeholder when live() is defined separately.",
-  "All live fields on a page share a single SSE connection at /__pilcrow/live{path}.",
-  "The SSE route re-calls load() (or live() if defined) on every new client connection — producers must be cheap to recreate.",
-  "{{ live_field }} in templates is automatically wrapped with :text span; no manual wrapping needed.",
-]
-invalid_examples = [
-  "Using LiveProp<T> where T does not implement Serialize or Sync",
-  "Manually writing <span :text=\"field\"> — the template compiler does this automatically",
-  "Assuming LiveProp fields share state across requests — each SSE connection re-calls load()",
-]
-source_refs = [
-  "crates/runtime/src/deferred.rs",
-  "crates/routekit/src/templating/codegen/app_module.rs",
-  "crates/routekit/src/templating/codegen/instrument.rs",
-  "crates/routekit/src/templating/compiler.rs",
-]
-test_refs = []
-validation_rules = [
-  "LiveProp<T> fields must be declared in Props.",
-  "T in LiveProp<T> must implement Display, Clone, Serialize, Send, Sync.",
-]
-scaffold_templates = []
 
 [[features]]
 id = "fsr"
@@ -682,15 +544,26 @@ constraints = [
   "TRAILING_SLASH values: \"always\" (redirect to /path/), \"ignore\" (redirect to /path), \"never\" (default).",
   "LAYOUT values: only \"none\" is supported.",
   "Constants are stripped from the emitted module — they never reach the template.",
+  "REVALIDATE, STREAMING, CACHE_TAGS, MAX_STALE, CACHE_VARY are removed — using any of them is a build error. REVALIDATE → use #[revalidate(N)] on a LiveProp field. PRERENDER → use pub const PROMOTE_AFTER: u32 = 0.",
 ]
 invalid_examples = [
   "pub const TRAILING_SLASH: &str = \"redirect\" — invalid value",
   "pub const LAYOUT: &str = \"minimal\" — only \"none\" is valid",
+  "pub const REVALIDATE: u64 = 300; — removed, use #[revalidate(N)] on a LiveProp field",
+  "pub const STREAMING: bool = true; — removed and no longer supported",
+  "pub const CACHE_TAGS: &[&str] = &[\"posts\"]; — removed and no longer supported",
+  "pub const MAX_STALE: u64 = 60; — removed and no longer supported",
+  "pub const CACHE_VARY: &[&str] = &[\"Accept-Language\"]; — removed and no longer supported",
+  "pub const PRERENDER: bool = true; — removed, use pub const PROMOTE_AFTER: u32 = 0",
 ]
 source_refs = ["crates/routekit/src/templating/page_options.rs"]
 test_refs = ["crates/routekit/src/templating/codegen/tests.rs"]
 validation_rules = [
   "Unsupported page option constants should be rejected during validation.",
+  "pub const REVALIDATE in code-behind is a build error — suggest #[revalidate(N)] on a LiveProp field.",
+  "pub const STREAMING in code-behind is a build error — suggest removing it and using FSR LiveProp<T>.",
+  "pub const PRERENDER in code-behind is a build error — suggest pub const PROMOTE_AFTER: u32 = 0.",
+  "pub const CACHE_TAGS, MAX_STALE, CACHE_VARY in code-behind are build errors — these constants are removed.",
 ]
 scaffold_templates = []
 

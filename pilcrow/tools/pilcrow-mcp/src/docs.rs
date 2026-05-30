@@ -373,12 +373,6 @@ fn document_specs() -> Vec<DocumentSpec> {
             path: "crates/routekit/README.md",
             category: KnowledgeCategory::Docs,
         },
-        DocumentSpec {
-            id: "experimental-baked-pages-guide",
-            title: "Experimental baked pages guide",
-            path: "docs/experimental-baked-pages.md",
-            category: KnowledgeCategory::Docs,
-        },
     ]
 }
 

@@ -113,7 +113,7 @@ For ANY question about rendering modes (SSR, FSR, LiveProp, island strategies):
 
 **FSR promotion threshold:** `pub const PROMOTE_AFTER: u32 = N` in page code-behind is the **only** surface. `0` = bake on first hit. `#[pilcrow::promote_after(N)]` on live fields no longer exists — it was removed because it controlled the whole route via an arbitrary `fields.first()` fallback, not any field-level concept.
 
-Do NOT open `pilcrow/crates/runtime/src/isr.rs` (stripped to in-memory SSG cache only), `codegen/app_module.rs`, or `deferred.rs` unless actively debugging a mismatch between the docs and real behavior.
+Do NOT open `codegen/app_module.rs` unless actively debugging a mismatch between the docs and real behavior.
 
 ## React island questions — read docs, do not scan
 
@@ -182,9 +182,11 @@ Use `/update-docs <feature-name>` to run this interactively.
 
 ## Active plans
 
-**Two active plan files:**
-- [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift, F) disk-first baking.
-- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — executable sliced spec (S0–S9) for roadmap **E1**: unify on the FSR model. **Decided: keep only the FSR `LiveProp<T>`** (`use pilcrow::live::*`); delete the legacy push `LiveProp`, ISR/`PRERENDER`/Streaming consts, and `baked_pages`; keep the `Vec<T>` list system and the single multiplexed live hub (one connection per client). Read both before framework work.
+**One active plan file:**
+- [`plans/roadmap-2026-05-29.md`](plans/roadmap-2026-05-29.md) — the pending-work backlog. Themes: A) features that lie (`#[debounce]` no-op, Redis/SQLite cache unimplemented), B) crash paths, C) security/DoS, D) DX surfacing, E) doc/source drift (E1 ✅ done), F) disk-first baking.
+
+**Completed plan (reference only):**
+- [`plans/cleanup-fsr-consolidation-2026-05-29.md`](plans/cleanup-fsr-consolidation-2026-05-29.md) — ✅ **COMPLETE** (S0–S9 shipped 2026-05-29, branch `worktree-fsr-consolidation-cleanup`). FSR consolidation done: only FSR `LiveProp<T>` remains; legacy live infra, `isr.rs`, `baked_pages/`, and removed page consts all deleted.
 
 This session (latest, on top of `d28cbf3`):
 
