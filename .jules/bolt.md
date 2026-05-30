@@ -11,3 +11,7 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+
+## 2025-05-30 - [Silcrow JS Live Field Patching Optimization]
+**Learning:** The silcrow runtime handled incoming SSE live field patches by scanning the entire DOM (`document.querySelectorAll("[data-pilcrow-live-field]")`) multiple times, which scaled poorly (O(N_total)) with large pages having many live bindings.
+**Action:** Optimize DOM access by checking only the keys that actually changed in the SSE payload. Use a targeted selector (`[data-pilcrow-live-field="${CSS.escape(key)}"]`) within a loop over `Object.keys(data)` to bring the runtime complexity down to O(K_updated), drastically reducing scanning overhead during high-frequency live patch events.
