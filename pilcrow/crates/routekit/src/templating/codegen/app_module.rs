@@ -117,7 +117,7 @@ fn emit_render_binding(
     } else {
         let _ = writeln!(
             s,
-            "{pad}        return (::pilcrow_web::StatusCode::INTERNAL_SERVER_ERROR, \"template render failed\").into_response();"
+            "{pad}        return (::pilcrow_web::StatusCode::INTERNAL_SERVER_ERROR, ::pilcrow_web::axum::response::Html(\"<h1>500 Internal Server Error</h1>\")).into_response();"
         );
     }
     let _ = writeln!(s, "{pad}    }}");
