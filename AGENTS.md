@@ -241,15 +241,20 @@ Rules:
 
 ## Git Workflow & Branch Protection
 
+> **⚠️ HARD RULE — no exceptions, no deferral.**
+> Direct pushes to `main` are rejected by branch protection. Violations have occurred when agents skipped the worktree step before editing files. The correct order is: **create worktree → edit files → commit → PR**. Never the reverse.
+
 To keep the `main` branch clean and stable, you must adhere to the following git workflow rules:
 
 - **No Direct Commits/Pushes to `main`**:
   - You are strictly forbidden from committing or pushing code directly to the `main` branch.
   - All changes must be developed in a feature branch and merged via a Pull Request (PR) process.
+  - **Check your current branch before any `git commit`.** If `git branch --show-current` returns `main`, stop — create a worktree first.
 
-- **Mandatory Git Worktrees**:
-  - When starting a new feature or task, you must create and work within a git `worktree` (e.g., `git worktree add -b <branch-name> <path-to-worktree>`).
-  - This keeps the main workspace directory clean and prevents unwanted local modifications to `main`.
+- **Mandatory Git Worktrees — before touching any file**:
+  - Before making **any** file edits, create a worktree: `git worktree add -b <branch-name> .worktrees/<branch-name>`.
+  - Use the `superpowers:using-git-worktrees` skill at the start of every implementation task.
+  - This keeps the main workspace clean and ensures commits land on a feature branch, not `main`.
 
 - **PR Review and Validation Process**:
   - When a PR is opened and proposed for merging into `main`, you must check:
