@@ -970,6 +970,7 @@ constraints = [
   "<react> tags inside HTML comments are ignored and preserved as comments.",
   "SSR placeholder replacement (strategy=\"ssr\") buffers the entire HTML response in memory. Responses larger than 10 MiB skip SSR processing — the placeholders are left unreplaced and a tracing::warn is emitted.",
   "The Node.js SSR worker communicates over stdin/stdout on the blocking thread pool (spawn_blocking), so SSR renders do not block Tokio workers.",
+  "The SSR worker mutex uses poison-tolerant locking (unwrap_or_else + into_inner). If the worker panics, subsequent requests recover the mutex and degrade gracefully to empty HTML instead of propagating the panic.",
 ]
 invalid_examples = [
   "<react src=\"./react/Counter.tsx\" /> — missing strategy",
