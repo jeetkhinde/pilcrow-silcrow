@@ -27,6 +27,7 @@ export interface FsrConfig {
     idleEvictSecs: number;
     idleThresholdSecs: number;
     revalidateSeconds?: number;
+    postgresUrl?: string;
 }
 export interface ReactRuntimeConfig {
     ssr: boolean;
@@ -78,8 +79,14 @@ export interface PilcrowConfig {
     client: ClientRuntimeConfig;
     live: LiveConfig;
     fsr: FsrConfig;
+    port?: number;
+    pagesDir?: string;
+    apiDir?: string;
 }
 export declare const DEFAULT_CONFIG: PilcrowConfig;
-export declare function defineConfig(config: Partial<PilcrowConfig>): PilcrowConfig;
+export type DeepPartial<T> = {
+    [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+export declare function defineConfig(config: DeepPartial<PilcrowConfig>): PilcrowConfig;
 export declare function loadConfigFromEnv(baseConfig: PilcrowConfig): PilcrowConfig;
 //# sourceMappingURL=config.d.ts.map

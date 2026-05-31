@@ -14,8 +14,29 @@ export function wrapRequest(ctx: any): PilcrowRequest {
     params: ctx.params || {},
     query: ctx.query || {},
     headers: req.headers,
-    formData: () => req.formData(),
-    json: () => req.json(),
+    formData: async () => {
+      if (ctx.body instanceof FormData) {
+        return ctx.body;
+      }
+      if (ctx.body && typeof ctx.body === 'object') {
+        const fd = new FormData();
+        Object.entries(ctx.body).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            v.forEach((val) => fd.append(k, String(val)));
+          } else {
+            fd.append(k, String(v));
+          }
+        });
+        return fd;
+      }
+      return req.formData();
+    },
+    json: async () => {
+      if (ctx.body && typeof ctx.body === 'object') {
+        return ctx.body;
+      }
+      return req.json();
+    },
     isEnhanced,
     layoutsPresent,
     raw: ctx,
@@ -84,6 +105,7 @@ export function sseToReadableStream(stream: AsyncIterable<SSEEvent>): ReadableSt
     },
   });
 }
+
 export function handleElysiaResponse(res: ElysiaResponseImpl, ctx: any) {
   if (res.status) {
     ctx.set.status = res.status;

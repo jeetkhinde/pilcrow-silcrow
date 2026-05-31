@@ -1,14 +1,30 @@
 import { Elysia } from 'elysia';
 export declare const compression: () => (app: Elysia) => Elysia<"", {
-    decorator: any;
-    store: any;
-    derive: any;
-    resolve: any;
-}, any, any, any, {
+    decorator: {};
+    store: {};
+    derive: {};
+    resolve: {};
+}, {
+    typebox: {};
+    error: {};
+}, {
+    schema: {};
+    standaloneSchema: {};
+    macro: {};
+    macroFn: {};
+    parser: {};
+    response: {};
+}, {}, {
     derive: {};
     resolve: {};
     schema: {};
     standaloneSchema: {};
     response: {};
-}, any>;
+}, {
+    derive: {};
+    resolve: {};
+    schema: {};
+    standaloneSchema: {};
+    response: {};
+}>;
 //# sourceMappingURL=compression.d.ts.map

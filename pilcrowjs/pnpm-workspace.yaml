@@ -1,4 +1,6 @@
 packages:
   - 'packages/*'
+  - 'test-app'
 allowBuilds:
-  esbuild: set this to true or false
+  es5-ext: true
+  esbuild: true

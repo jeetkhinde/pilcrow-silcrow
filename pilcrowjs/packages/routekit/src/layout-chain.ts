@@ -11,16 +11,17 @@ export interface LayoutComponentConfig {
  * using display: contents to avoid affecting layout styling.
  */
 export function composeLayoutChain(
-  PageComponent: React.ComponentType<any>,
+  react: any,
+  PageComponent: any,
   layouts: LayoutComponentConfig[],
   pagePattern: string,
   props: any
-): React.ReactElement {
+): any {
   // 1. Start with the page component
-  let currentElement = React.createElement(PageComponent, props);
+  let currentElement = react.createElement(PageComponent, props);
 
   // 2. Wrap page in its own ps-layout wrapper
-  currentElement = React.createElement(
+  currentElement = react.createElement(
     'div',
     { 'data-ps-layout': pagePattern, style: { display: 'contents' } },
     currentElement
@@ -34,25 +35,29 @@ export function composeLayoutChain(
     const childPattern = i === layouts.length - 1 ? pagePattern : layouts[i + 1].pattern;
 
     // Wrap the child element in a slot container
-    const slotElement = React.createElement(
+    const slotElement = react.createElement(
       'div',
       { 'data-ps-slot': childPattern, style: { display: 'contents' } },
       currentElement
     );
 
     // Instantiate layout with the slot element as children
-    const layoutElement = React.createElement(
+    const layoutElement = react.createElement(
       LayoutComponent,
       props,
       slotElement
     );
 
-    // Wrap layout in its own layout container
-    currentElement = React.createElement(
-      'div',
-      { 'data-ps-layout': layoutPattern, style: { display: 'contents' } },
-      layoutElement
-    );
+    // Wrap layout in its own layout container if not outermost (i > 0)
+    if (i > 0) {
+      currentElement = react.createElement(
+        'div',
+        { 'data-ps-layout': layoutPattern, style: { display: 'contents' } },
+        layoutElement
+      );
+    } else {
+      currentElement = layoutElement;
+    }
   }
 
   return currentElement;

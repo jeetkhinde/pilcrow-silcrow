@@ -30,6 +30,7 @@ export interface FsrConfig {
   idleEvictSecs: number;
   idleThresholdSecs: number;
   revalidateSeconds?: number;
+  postgresUrl?: string;
 }
 
 export interface ReactRuntimeConfig {
@@ -90,6 +91,9 @@ export interface PilcrowConfig {
   client: ClientRuntimeConfig;
   live: LiveConfig;
   fsr: FsrConfig;
+  port?: number;
+  pagesDir?: string;
+  apiDir?: string;
 }
 
 export const DEFAULT_CONFIG: PilcrowConfig = {
@@ -156,24 +160,31 @@ export const DEFAULT_CONFIG: PilcrowConfig = {
   },
 };
 
-export function defineConfig(config: Partial<PilcrowConfig>): PilcrowConfig {
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+export function defineConfig(config: DeepPartial<PilcrowConfig>): PilcrowConfig {
   const merged = { ...DEFAULT_CONFIG };
   
-  if (config.web) merged.web = { ...DEFAULT_CONFIG.web, ...config.web };
-  if (config.backend) merged.backend = { ...DEFAULT_CONFIG.backend, ...config.backend };
-  if (config.cache) merged.cache = { ...DEFAULT_CONFIG.cache, ...config.cache };
-  if (config.serviceWorker) merged.serviceWorker = { ...DEFAULT_CONFIG.serviceWorker, ...config.serviceWorker };
-  if (config.i18n) merged.i18n = { ...DEFAULT_CONFIG.i18n, ...config.i18n };
-  if (config.images) merged.images = { ...DEFAULT_CONFIG.images, ...config.images };
+  if (config.web) merged.web = { ...DEFAULT_CONFIG.web, ...config.web } as any;
+  if (config.backend) merged.backend = { ...DEFAULT_CONFIG.backend, ...config.backend } as any;
+  if (config.cache) merged.cache = { ...DEFAULT_CONFIG.cache, ...config.cache } as any;
+  if (config.serviceWorker) merged.serviceWorker = { ...DEFAULT_CONFIG.serviceWorker, ...config.serviceWorker } as any;
+  if (config.i18n) merged.i18n = { ...DEFAULT_CONFIG.i18n, ...config.i18n } as any;
+  if (config.images) merged.images = { ...DEFAULT_CONFIG.images, ...config.images } as any;
   if (config.client) {
     merged.client = {
       ...DEFAULT_CONFIG.client,
       ...config.client,
-      react: { ...DEFAULT_CONFIG.client.react, ...config.client.react },
-    };
+      react: { ...DEFAULT_CONFIG.client.react, ...config.client.react } as any,
+    } as any;
   }
-  if (config.live) merged.live = { ...DEFAULT_CONFIG.live, ...config.live };
-  if (config.fsr) merged.fsr = { ...DEFAULT_CONFIG.fsr, ...config.fsr };
+  if (config.live) merged.live = { ...DEFAULT_CONFIG.live, ...config.live } as any;
+  if (config.fsr) merged.fsr = { ...DEFAULT_CONFIG.fsr, ...config.fsr } as any;
+  if (config.port !== undefined) merged.port = config.port;
+  if (config.pagesDir !== undefined) merged.pagesDir = config.pagesDir as any;
+  if (config.apiDir !== undefined) merged.apiDir = config.apiDir as any;
 
   return merged;
 }

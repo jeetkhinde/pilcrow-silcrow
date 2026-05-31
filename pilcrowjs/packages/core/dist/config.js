@@ -86,6 +86,12 @@ export function defineConfig(config) {
         merged.live = { ...DEFAULT_CONFIG.live, ...config.live };
     if (config.fsr)
         merged.fsr = { ...DEFAULT_CONFIG.fsr, ...config.fsr };
+    if (config.port !== undefined)
+        merged.port = config.port;
+    if (config.pagesDir !== undefined)
+        merged.pagesDir = config.pagesDir;
+    if (config.apiDir !== undefined)
+        merged.apiDir = config.apiDir;
     return merged;
 }
 export function loadConfigFromEnv(baseConfig) {
