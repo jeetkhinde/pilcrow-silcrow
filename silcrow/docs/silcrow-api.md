@@ -40,13 +40,21 @@
 - `data-ps-layout="<id>"` — marks the boundary of each auto-layout level (e.g. `"/"`, `"/tickets"`); read by Silcrow to build `X-PS-Present` header
 - `data-ps-slot="<pattern>"` — marks the page-content insertion point within a layout (e.g. `"/tickets/:id"`); Silcrow swaps only this element on fragment navigations
 
+**Forms**
+- `s-optimistic="<scope>"` — on a non-GET form: serializes non-file FormData, calls `publishOptimistic(scope, data, mutationId)` before the request, passes `mutationId` to `navigate` (sets `silcrow-mutation-id` header), reverts on network/server error. Scope name must match the `data-pilcrow-live-field` name for live DOM patching to take effect.
+
 **Live Connections**
 - `s-sse`
 - `s-ws`
 - `s-wss`
 - `data-pilcrow-live="<url>"` — auto-injected by Pilcrow codegen for pages with `LiveProp<T>` fields; Silcrow discovers this element and opens a managed SSE connection to `url`. Do not write manually.
+- `data-pilcrow-live-field="<field>"` — marks an element as the live text target for `<field>`; the SSE `live` handler sets `textContent` on each matching element. Auto-injected by Pilcrow codegen for `s-live` slots. Guard: skipped while `pendingByScope` has an in-flight mutation for the same scope.
 - `data-pilcrow-list="<field>"` — marks a list container; `list-patch` events target rows within this element by `data-pilcrow-key`. Auto-injected by Pilcrow codegen (Slice F).
 - `data-pilcrow-key="<key>"` — marks a list row with its unique key; targeted by `list-patch` events. Auto-injected by Pilcrow codegen (Slice F).
+
+**Live Modifier Attributes (s-live:\*)**
+- `s-live:<prop>="<field.path>"` — on an element also carrying `data-s-live-mod`, sets the named DOM property on every `live` SSE event via `resolvePath(data, field.path)` + `setValue(el, prop, val)`. `<prop>` may be `text`, `class`, `style`, `show`, or any DOM attribute name. Requires `data-s-live-mod` sentinel on the same element.
+- `data-s-live-mod` — sentinel attribute that makes an element queryable by the `[data-s-live-mod]` loop in the SSE `live` handler. Must be present on any element carrying `s-live:*` attrs. Auto-emitted by Pilcrow codegen alongside `s-live:*`; add manually when writing raw HTML templates.
 
 **Atoms / Store**
 - `s-bind`
@@ -86,7 +94,7 @@
 - `invalidate`
 - `navigate`
 - `custom`
-- `live` — payload: flat JSON object `{ "<field>": <value>, ... }`. Patches all `[data-pilcrow-live-field="field"]` text nodes. Emitted by Pilcrow's per-page SSE route (`/__pilcrow/live{pattern}`) for `LiveProp<T>` fields.
+- `live` — payload: flat or nested JSON object. (1) Patches `[data-pilcrow-live-field="field"]` text nodes for scalar values — skipped if `pendingByScope.has(field)`. (2) Then iterates `[data-s-live-mod]` elements: for each `s-live:<prop>="path"` attr, resolves `path` in payload via `resolvePath` and applies via `setValue`. Emitted by Pilcrow's per-page SSE route (`/__pilcrow/live{pattern}`) for `LiveProp<T>` fields.
 - `list-patch` — payload: `{ "list": "<field>", "key": "<row_key>", "<changed_field>": <value>, ... }`. Silcrow finds `[data-pilcrow-list="field"]` then `[data-pilcrow-key="row_key"]` within it, and calls `patch(changes, row)`.
 
 ## WebSocket Message Types
@@ -141,9 +149,9 @@
 - `publish`
 
 **Feedback**
-- `publishOptimistic(scope, data, mutationId)` — snapshot atom + apply optimistic patch + register pending mutation
+- `publishOptimistic(scope, data, mutationId)` — snapshot atom + apply optimistic patch + update matching `[data-pilcrow-live-field]` DOM elements (stores old `textContent` in `liveSnapshots`) + register pending mutation
 - `confirmOptimistic(mutationId)` — retire a pending mutation (server confirmed)
-- `revertOptimistic(mutationId)` — restore atom snapshot and retire pending mutation
+- `revertOptimistic(mutationId)` — restore atom snapshot + restore `[data-pilcrow-live-field]` DOM `textContent` from `liveSnapshots` + retire pending mutation
 - `onToast`
 
 **Extensibility**
@@ -191,7 +199,7 @@
 
 **PS Fragment** — `extractHeadTemplate`, `applyHeadTemplate`, `parseFragmentSlot`, `applyFragment`, `resolveBoostTarget`
 
-**Optimistic** — `pendingMutations` (Map mutationId→{scope,snapshot}), `pendingByScope` (Map scope→Set<mutationId>), `publishOptimistic`, `confirmOptimistic`, `revertOptimistic`, `scopeForTarget`, `hasPendingMutationForTarget`
+**Optimistic** — `pendingMutations` (Map mutationId→{scope,snapshot,liveSnapshots}), `pendingByScope` (Map scope→Set<mutationId>), `publishOptimistic`, `confirmOptimistic`, `revertOptimistic`, `scopeForTarget`, `hasPendingMutationForTarget`
 
 **Lifecycle** — `liveObserver`, `middlewareLocked`, `init`, `destroy`, auto-boot on `DOMContentLoaded`
 

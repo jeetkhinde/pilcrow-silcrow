@@ -381,11 +381,11 @@ fn validate_html(code: &str, path: Option<&str>, findings: &mut Vec<Finding>) {
             findings.push(finding_with_line(
                 Severity::Warning,
                 "pilcrow-fsr-s-live-class-trap",
-                "Element has both s-live and a class attribute that interpolates a live field value. s-live only patches textContent — the class is rendered at SSR time and will not update on SSE patch. If the live value controls badge colour or other class-dependent styling, use the object path: define a struct with text + class fields and use s-use=\"fsr.<slot>\" instead.".to_string(),
+                "Element has both s-live and a class attribute that interpolates a live field value. s-live only patches textContent — the class is rendered at SSR time and will not update on SSE patch. If the live value controls badge colour or other class-dependent styling, use a struct LiveProp<T> with text + class fields and s-live:text / s-live:class modifier attributes plus data-s-live-mod sentinel on the element.".to_string(),
                 path,
                 Some(lnum),
                 Some("docs/Pilcrow-Silcrow Docs/03 Rendering/FSR SSE Hub.md"),
-                Some("Replace LiveProp<String> with LiveProp<Badge { text, class }>, mark #[pilcrow::allow_unused], and use s-use=\"fsr.slot\" on the element."),
+                Some("Replace LiveProp<String> with LiveProp<Badge { text, class }>, then on the element add: data-pilcrow-live-field=\"field\", s-live:text=\"field.text\", s-live:class=\"field.class\", data-s-live-mod, class=\"{{ live.field.value.class }}\"."),
             ));
         }
     }
