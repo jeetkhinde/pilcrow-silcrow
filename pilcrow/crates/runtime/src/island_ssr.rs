@@ -181,7 +181,10 @@ pub fn replace_ssr_placeholders(html: &str, worker: &Arc<Mutex<IslandSsrWorker>>
 
             let rendered = worker
                 .lock()
-                .unwrap()
+                .unwrap_or_else(|poisoned| {
+                    tracing::warn!("island SSR worker mutex was poisoned; recovering");
+                    poisoned.into_inner()
+                })
                 .render(id, &props)
                 .unwrap_or_default();
 
@@ -441,6 +444,29 @@ mod tests {
         ));
         // Just test the fast path directly
         assert!(!html.contains(SSR_PLACEHOLDER_PREFIX));
+    }
+
+    #[test]
+    fn mutex_poison_recovers_instead_of_panicking() {
+        // Simulate the exact Arc<Mutex<T>> shape used by replace_ssr_placeholders.
+        let shared: Arc<Mutex<u32>> = Arc::new(Mutex::new(42));
+        let shared2 = Arc::clone(&shared);
+
+        // Poison the mutex by panicking while holding the lock.
+        let _ = std::thread::spawn(move || {
+            let _guard = shared2.lock().unwrap();
+            panic!("intentional panic to poison the mutex");
+        })
+        .join();
+
+        // The mutex is now poisoned — .lock() returns Err(PoisonError).
+        assert!(shared.lock().is_err());
+
+        // The poison-tolerant pattern recovers the inner value.
+        let value = shared
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        assert_eq!(*value, 42);
     }
 
     // Dummy stand-in to verify the Arc<Mutex<>> shape compiles.
