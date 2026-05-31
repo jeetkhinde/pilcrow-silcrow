@@ -1,0 +1,223 @@
+export declare const pilcrowFsr: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "pilcrow_fsr";
+    schema: undefined;
+    columns: {
+        route: import("drizzle-orm/pg-core").PgColumn<{
+            name: "route";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        slot: import("drizzle-orm/pg-core").PgColumn<{
+            name: "slot";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        query: import("drizzle-orm/pg-core").PgColumn<{
+            name: "query";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        queryParams: import("drizzle-orm/pg-core").PgColumn<{
+            name: "query_params";
+            tableName: "pilcrow_fsr";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: unknown;
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        dependsOn: import("drizzle-orm/pg-core").PgColumn<{
+            name: "depends_on";
+            tableName: "pilcrow_fsr";
+            dataType: "array";
+            columnType: "PgArray";
+            data: string[];
+            driverParam: string | string[];
+            notNull: true;
+            hasDefault: true;
+            enumValues: [string, ...string[]];
+            baseColumn: import("drizzle-orm").Column<{
+                name: "depends_on";
+                tableName: "pilcrow_fsr";
+                dataType: "string";
+                columnType: "PgText";
+                data: string;
+                driverParam: string;
+                notNull: false;
+                hasDefault: false;
+                enumValues: [string, ...string[]];
+                baseColumn: never;
+            }, object, object>;
+        }, {}, {}>;
+        stale: import("drizzle-orm/pg-core").PgColumn<{
+            name: "stale";
+            tableName: "pilcrow_fsr";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        version: import("drizzle-orm/pg-core").PgColumn<{
+            name: "version";
+            tableName: "pilcrow_fsr";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        hitCount: import("drizzle-orm/pg-core").PgColumn<{
+            name: "hit_count";
+            tableName: "pilcrow_fsr";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        promoted: import("drizzle-orm/pg-core").PgColumn<{
+            name: "promoted";
+            tableName: "pilcrow_fsr";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        tombstoned: import("drizzle-orm/pg-core").PgColumn<{
+            name: "tombstoned";
+            tableName: "pilcrow_fsr";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        promoteAfter: import("drizzle-orm/pg-core").PgColumn<{
+            name: "promote_after";
+            tableName: "pilcrow_fsr";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        debounceSecs: import("drizzle-orm/pg-core").PgColumn<{
+            name: "debounce_secs";
+            tableName: "pilcrow_fsr";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        htmlPath: import("drizzle-orm/pg-core").PgColumn<{
+            name: "html_path";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        jsonPath: import("drizzle-orm/pg-core").PgColumn<{
+            name: "json_path";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        columnName: import("drizzle-orm/pg-core").PgColumn<{
+            name: "column_name";
+            tableName: "pilcrow_fsr";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+        }, {}, {}>;
+        lastHit: import("drizzle-orm/pg-core").PgColumn<{
+            name: "last_hit";
+            tableName: "pilcrow_fsr";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+        lastPatchedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "last_patched_at";
+            tableName: "pilcrow_fsr";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+//# sourceMappingURL=schema.d.ts.map
