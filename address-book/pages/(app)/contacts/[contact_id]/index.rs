@@ -1,6 +1,12 @@
 use pilcrow_web::AppError;
 use pilcrow_web::live::*;
 
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+pub struct FavoriteMark {
+    pub text: String,
+    pub class: String,
+}
+
 pub struct Props {
     pub id: String,
     pub name: String,
@@ -15,7 +21,8 @@ pub struct Props {
 
 #[pilcrow::depends_on_route(contacts, contact_id)]
 pub struct Live {
-    pub favorite_mark: LiveProp<String>,
+    #[pilcrow::allow_unused]
+    pub favorite_mark: LiveProp<FavoriteMark>,
     pub updated_label: LiveProp<String>,
 }
 
@@ -27,7 +34,10 @@ impl Live {
             .unwrap_or("");
         live_query!(
             "SELECT
-               CASE WHEN favorite THEN '*' ELSE '☆' END AS favorite_mark,
+               json_build_object(
+                 'text', CASE WHEN favorite THEN '★' ELSE '☆' END,
+                 'class', CASE WHEN favorite THEN 'text-amber-500' ELSE 'text-slate-400' END
+               ) AS favorite_mark,
                'Updated ' || to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS UTC') AS updated_label
              FROM contacts
              WHERE id = $1",
