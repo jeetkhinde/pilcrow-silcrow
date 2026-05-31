@@ -1,0 +1,68 @@
+import { LiveProp } from './live-prop.js';
+export interface PilcrowRequest {
+    path: string;
+    method: string;
+    params: Record<string, string>;
+    query: Record<string, string>;
+    headers: Headers;
+    formData(): Promise<FormData>;
+    json(): Promise<unknown>;
+    isEnhanced: boolean;
+    layoutsPresent: string[];
+    raw?: any;
+}
+export interface SSEEvent {
+    event?: string;
+    data: string;
+    id?: string;
+    retry?: number;
+}
+export interface PilcrowResponse {
+    status: number;
+    headers: Record<string, string>;
+    body?: string | unknown | AsyncIterable<SSEEvent>;
+    bodyType?: 'html' | 'json' | 'sse' | 'redirect';
+    redirectUrl?: string;
+    html(body: string): void;
+    json(body: unknown): void;
+    redirect(url: string, status?: number): void;
+    sse(stream: AsyncIterable<SSEEvent>): void;
+}
+export interface MiddlewareConfig {
+    csrf?: boolean;
+    timeoutMs?: number;
+    bodyLimitBytes?: number;
+    compression?: boolean;
+}
+export interface ServerAdapter {
+    /** Register a page route (GET) */
+    registerPage(pattern: string, layouts: string[], handler: (req: PilcrowRequest, res: PilcrowResponse) => Promise<void>): void;
+    /** Register a POST action route */
+    registerAction(pattern: string, handler: (req: PilcrowRequest, res: PilcrowResponse) => Promise<void>): void;
+    /** Register an SSE endpoint */
+    registerSSE(pattern: string, handler: (req: PilcrowRequest, res: PilcrowResponse) => Promise<void>): void;
+    /** Register a static asset route */
+    registerAsset(urlPath: string, filePath: string): void;
+    /** Apply all middleware */
+    applyMiddleware(config: MiddlewareConfig): void;
+    /** Start the server */
+    listen(port: number, callback?: (addr: string) => void): Promise<void>;
+}
+export type LoadResult = Record<string, any | LiveProp<any>>;
+export interface ActionHandler {
+    (req: PilcrowRequest): Promise<any> | any;
+}
+export interface PageDefinition {
+    promoteAfter?: number;
+    load?: (req: PilcrowRequest) => Promise<LoadResult> | LoadResult;
+    actions?: Record<string, ActionHandler>;
+    default: any;
+}
+export interface LiveFieldMeta {
+    name: string;
+    revalidate?: number;
+    debounce?: number;
+    dependsOn?: string;
+    deliveryTarget: 'dom' | 'dom-and-store' | 'store';
+}
+//# sourceMappingURL=types.d.ts.map

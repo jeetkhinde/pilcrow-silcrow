@@ -1,0 +1,14 @@
+{
+  "name": "pilcrowjs-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "tsx": "^4.19.1",
+    "prettier": "^3.2.5"
+  }
+}

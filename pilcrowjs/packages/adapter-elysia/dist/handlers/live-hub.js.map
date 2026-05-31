@@ -1,0 +1,1 @@
+{"version":3,"file":"live-hub.js","sourceRoot":"","sources":["../../src/handlers/live-hub.ts"],"names":[],"mappings":"AAEA,MAAM,CAAC,KAAK,UAAU,aAAa,CAAC,GAAmB,EAAE,GAAoB;IAC3E,GAAG,CAAC,GAAG,CAAC;QACN,KAAK,CAAC,CAAC,CAAC,MAAM,CAAC,aAAa,CAAC;YAC3B,MAAM,EAAE,KAAK,EAAE,MAAM,EAAE,IAAI,EAAE,OAAO,EAAE,CAAC;QACzC,CAAC;KACF,CAAC,CAAC;AACL,CAAC"}
