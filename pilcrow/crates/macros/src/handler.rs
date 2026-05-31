@@ -95,10 +95,11 @@ struct ClientVisitor {
 }
 
 impl<'ast> Visit<'ast> for ClientVisitor {
-    fn visit_ident(&mut self, ident: &'ast Ident) {
-        if ident == "client" {
+    fn visit_expr_path(&mut self, expr: &'ast syn::ExprPath) {
+        if expr.path.is_ident("client") {
             self.found = true;
         }
+        syn::visit::visit_expr_path(self, expr);
     }
 }
 
@@ -128,6 +129,28 @@ mod tests {
         let func: ItemFn = parse_quote! {
             fn my_route() {
                 let x = 1 + 1;
+            }
+        };
+        assert!(!body_uses_client(&func));
+    }
+
+    #[test]
+    fn test_body_uses_client_no_false_positive_struct_field() {
+        // `db.client` is a field access, not a bare `client` expression — must not trigger
+        let func: ItemFn = parse_quote! {
+            fn my_route() {
+                let c = db.client;
+            }
+        };
+        assert!(!body_uses_client(&func));
+    }
+
+    #[test]
+    fn test_body_uses_client_no_false_positive_local_var() {
+        // `let client = ...` declares a local; the right-hand side has no bare `client` expr
+        let func: ItemFn = parse_quote! {
+            fn my_route() {
+                let client = some_fn();
             }
         };
         assert!(!body_uses_client(&func));

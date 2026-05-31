@@ -76,12 +76,14 @@ pub fn parse_pattern(
     usize,
     bool,
     HashMap<String, ParameterConstraint>,
+    bool, // has_optional_catch_all
 ) {
     let mut pattern = String::new();
     let mut params = Vec::new();
     let mut optional_params = Vec::new();
     let mut dynamic_count = 0;
     let mut has_catch_all = false;
+    let mut has_optional_catch_all = false;
     let mut param_constraints = HashMap::new();
 
     for segment in path.split('/') {
@@ -148,6 +150,7 @@ pub fn parse_pattern(
                 }
 
                 has_catch_all = true;
+                has_optional_catch_all = true;
                 // Lower priority than required catch-all but still high
                 dynamic_count += 99;
             }
@@ -195,12 +198,13 @@ pub fn parse_pattern(
         dynamic_count,
         has_catch_all,
         param_constraints,
+        has_optional_catch_all,
     )
 }
 
 /// Calculates route priority for matching order (pure function)
 ///
-/// **Pure function**: Maps (has_catch_all, dynamic_count, depth, optional_params) → priority
+/// **Pure function**: Maps (has_catch_all, has_optional_catch_all, dynamic_count, depth, optional_params) → priority
 ///
 /// Lower number = higher priority (matched first).
 ///
@@ -217,37 +221,35 @@ pub fn parse_pattern(
 /// use pilcrow_routekit::route::parser::calculate_priority;
 ///
 /// // Static route: highest priority
-/// assert_eq!(calculate_priority(false, 0, 2, &[]), 0);
+/// assert_eq!(calculate_priority(false, false, 0, 2, &[]), 0);
 ///
 /// // Dynamic route with one param
-/// assert_eq!(calculate_priority(false, 1, 2, &[]), 4); // 1 + 2 + 1
+/// assert_eq!(calculate_priority(false, false, 1, 2, &[]), 4); // 1 + 2 + 1
 ///
 /// // Required catch-all
-/// assert_eq!(calculate_priority(true, 100, 2, &[]), 1002); // 1000 + 2
+/// assert_eq!(calculate_priority(true, false, 100, 2, &[]), 1002); // 1000 + 2
 ///
 /// // Optional catch-all
-/// assert_eq!(calculate_priority(true, 99, 2, &["slug".to_string()]), 2002); // 2000 + 2
+/// assert_eq!(calculate_priority(true, true, 99, 2, &["slug".to_string()]), 2002); // 2000 + 2
 /// ```
 ///
 /// # Performance
 ///
-/// - O(n) where n is number of optional params (for checking if catch-all is optional)
-/// - Functional predicate: `any(|p| p.len() > 0)`
-/// - Constant time for non-catch-all routes
+/// - O(1): all inputs directly determine the output branch
+/// - Constant time for all route types
 pub fn calculate_priority(
     has_catch_all: bool,
+    has_optional_catch_all: bool,
     dynamic_count: usize,
     depth: usize,
     optional_params: &[String],
 ) -> usize {
     if has_catch_all {
-        // Check if catch-all is optional (present in optional_params)
-        // Functional predicate: any
-        if optional_params.iter().any(|p| !p.is_empty()) {
-            // Optional catch-all: lower priority (higher number)
+        if has_optional_catch_all {
+            // Optional catch-all ([[...slug]]): lower priority (higher number)
             2000 + depth
         } else {
-            // Required catch-all
+            // Required catch-all ([...slug])
             1000 + depth
         }
     } else if dynamic_count > 0 {
@@ -264,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_static() {
-        let (pattern, params, opt, dyn_count, has_catch, _) = parse_pattern("about");
+        let (pattern, params, opt, dyn_count, has_catch, _, _) = parse_pattern("about");
         assert_eq!(pattern, "/about");
         assert_eq!(params.len(), 0);
         assert_eq!(opt.len(), 0);
@@ -274,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_dynamic() {
-        let (pattern, params, opt, dyn_count, has_catch, _) = parse_pattern("users/[id]");
+        let (pattern, params, opt, dyn_count, has_catch, _, _) = parse_pattern("users/[id]");
         assert_eq!(pattern, "/users/:id");
         assert_eq!(params, vec!["id".to_string()]);
         assert_eq!(opt.len(), 0);
@@ -284,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_optional_param() {
-        let (pattern, params, opt, _, _, _) = parse_pattern("posts/[id?]");
+        let (pattern, params, opt, _, _, _, _) = parse_pattern("posts/[id?]");
         assert_eq!(pattern, "/posts/:id?");
         assert_eq!(params, vec!["id".to_string()]);
         assert_eq!(opt, vec!["id".to_string()]);
@@ -292,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_catch_all() {
-        let (pattern, params, _, _, has_catch, _) = parse_pattern("docs/[...slug]");
+        let (pattern, params, _, _, has_catch, _, _) = parse_pattern("docs/[...slug]");
         assert_eq!(pattern, "/docs/*slug");
         assert_eq!(params, vec!["slug".to_string()]);
         assert!(has_catch);
@@ -300,55 +302,62 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_optional_catch_all() {
-        let (pattern, params, opt, _, has_catch, _) = parse_pattern("docs/[[...slug]]");
+        let (pattern, params, opt, _, has_catch, _, has_opt_catch) = parse_pattern("docs/[[...slug]]");
         assert_eq!(pattern, "/docs/*slug?");
         assert_eq!(params, vec!["slug".to_string()]);
         assert_eq!(opt, vec!["slug".to_string()]);
         assert!(has_catch);
+        assert!(has_opt_catch);
     }
 
     #[test]
     fn test_parse_pattern_skips_special_files() {
-        let (pattern, params, _, _, _, _) = parse_pattern("users/_layout/[id]/index");
+        let (pattern, params, _, _, _, _, _) = parse_pattern("users/_layout/[id]/index");
         assert_eq!(pattern, "/users/:id");
         assert_eq!(params, vec!["id".to_string()]);
     }
 
     #[test]
     fn test_parse_pattern_skips_route_groups() {
-        let (pattern, _, _, _, _, _) = parse_pattern("(admin)/users");
+        let (pattern, _, _, _, _, _, _) = parse_pattern("(admin)/users");
         assert_eq!(pattern, "/users");
     }
 
     #[test]
     fn test_parse_pattern_skips_parallel_slots() {
-        let (pattern, _, _, _, _, _) = parse_pattern("dashboard/@analytics/page");
+        let (pattern, _, _, _, _, _, _) = parse_pattern("dashboard/@analytics/page");
         assert_eq!(pattern, "/dashboard/page");
     }
 
     #[test]
     fn test_parse_pattern_skips_intercept_markers() {
-        let (pattern, _, _, _, _, _) = parse_pattern("feed/(.)/photo/[id]");
+        let (pattern, _, _, _, _, _, _) = parse_pattern("feed/(.)/photo/[id]");
         assert_eq!(pattern, "/feed/photo/:id");
     }
 
     #[test]
     fn test_calculate_priority_static() {
-        assert_eq!(calculate_priority(false, 0, 2, &[]), 0);
+        assert_eq!(calculate_priority(false, false, 0, 2, &[]), 0);
     }
 
     #[test]
     fn test_calculate_priority_dynamic() {
-        assert_eq!(calculate_priority(false, 1, 2, &[]), 4); // 1 + 2 + 1
+        assert_eq!(calculate_priority(false, false, 1, 2, &[]), 4); // 1 + 2 + 1
     }
 
     #[test]
     fn test_calculate_priority_required_catch_all() {
-        assert_eq!(calculate_priority(true, 100, 2, &[]), 1002);
+        assert_eq!(calculate_priority(true, false, 100, 2, &[]), 1002);
     }
 
     #[test]
     fn test_calculate_priority_optional_catch_all() {
-        assert_eq!(calculate_priority(true, 99, 2, &["slug".to_string()]), 2002);
+        assert_eq!(calculate_priority(true, true, 99, 2, &["slug".to_string()]), 2002);
+    }
+
+    #[test]
+    fn test_calculate_priority_required_catch_all_with_optional_regular_param() {
+        // [id?]/[...slug] — regular optional param does NOT make catch-all optional
+        assert_eq!(calculate_priority(true, false, 101, 2, &["id".to_string()]), 1002);
     }
 }
