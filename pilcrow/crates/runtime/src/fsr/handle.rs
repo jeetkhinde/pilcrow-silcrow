@@ -74,4 +74,30 @@ impl FsrHandle {
     pub fn prebake_next(&self, path: &str) {
         crate::prebake::trigger(path);
     }
+
+    /// Fan out stale-marking to all slots registered under a dep key.
+    ///
+    /// `table` and `param` form the dep key as `"table:param"`. All slots
+    /// whose `depends_on` array contains this key are marked stale; the
+    /// background watcher re-bakes them on the next poll.
+    ///
+    /// No-op when FSR is not configured or no rows match the dep key.
+    pub async fn invalidate_dep_key(&self, table: &str, param: &str) {
+        let Some(ref store) = self.store else { return };
+        let key = format!("{table}:{param}");
+        if let Err(e) = store.invalidate_dep_key(&key).await {
+            tracing::warn!(key, error = %e, "fsr.invalidate_dep_key: DB error");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn invalidate_dep_key_no_store_is_noop() {
+        let handle = FsrHandle::default();
+        handle.invalidate_dep_key("contacts", "abc").await;
+    }
 }
