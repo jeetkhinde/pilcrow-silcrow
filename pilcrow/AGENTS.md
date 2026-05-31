@@ -69,10 +69,7 @@ Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:300
 
 | # | Location | Severity | Description |
 |---|----------|----------|-------------|
-| 1 | `macros/handler.rs:98-100` | High | `body_uses_client()` matches ANY `client` identifier (local vars, struct fields), injecting bogus `PilcrowClient` param and shadowing user variables |
-| 2 | `tools/cli/src/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error at startup |
-| 3 | `tools/cli/src/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start(pilcrow_router())` instead of `pilcrow_start()` — skips SSG prerendering |
-| 4 | `crates/routekit/src/routing/route/parser.rs:246` | Medium | Optional catch-all priority false positive — `any(|p| !p.is_empty())` checks non-empty params, not catch-all membership |
+| — | — | — | No known bugs at this time. |
 
 ## How the Build Pipeline Works
 
