@@ -148,12 +148,13 @@ impl Route {
             None
         };
 
-        let (pattern, params, optional_params, dynamic_count, has_catch_all, param_constraints) =
+        let (pattern, params, optional_params, dynamic_count, has_catch_all, param_constraints, has_optional_catch_all) =
             routing::route::parse_pattern(without_ext);
 
         let depth = pattern.matches('/').count();
         let priority = routing::route::calculate_priority(
             has_catch_all,
+            has_optional_catch_all,
             dynamic_count,
             depth,
             &optional_params,
@@ -473,7 +474,7 @@ impl Route {
             from.clone()
         };
 
-        let (pattern, params, optional_params, dynamic_count, has_catch_all, param_constraints) =
+        let (pattern, params, optional_params, dynamic_count, has_catch_all, param_constraints, has_optional_catch_all) =
             if has_params {
                 routing::route::parse_pattern(&normalized_from)
             } else {
@@ -482,12 +483,13 @@ impl Route {
                 } else {
                     format!("/{}", from)
                 };
-                (normalized, Vec::new(), Vec::new(), 0, false, HashMap::new())
+                (normalized, Vec::new(), Vec::new(), 0, false, HashMap::new(), false)
             };
 
         let depth = pattern.matches('/').count();
         let priority = routing::route::calculate_priority(
             has_catch_all,
+            has_optional_catch_all,
             dynamic_count,
             depth,
             &optional_params,

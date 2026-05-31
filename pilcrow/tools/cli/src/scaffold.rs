@@ -72,21 +72,19 @@ host = "127.0.0.1"
 port = 3000
 "#,
     );
+    // Collect all private env vars into one [env.private] block — duplicate tables are a TOML parse error.
+    let mut private_env: Vec<(&str, &str)> = Vec::new();
     if with_postgres {
-        pilcrow_toml.push_str(
-            r#"
-[env.private]
-DATABASE_URL = { env = "DATABASE_URL" }
-"#,
-        );
+        private_env.push(("DATABASE_URL", "DATABASE_URL"));
     }
     if with_auth {
-        pilcrow_toml.push_str(
-            r#"
-[env.private]
-SECRET_KEY = { env = "SECRET_KEY" }
-"#,
-        );
+        private_env.push(("SECRET_KEY", "SECRET_KEY"));
+    }
+    if !private_env.is_empty() {
+        pilcrow_toml.push_str("\n[env.private]\n");
+        for (key, env_var) in private_env {
+            pilcrow_toml.push_str(&format!("{key} = {{ env = \"{env_var}\" }}\n"));
+        }
     }
     fs::write(root.join("Pilcrow.toml"), pilcrow_toml)?;
 
@@ -110,7 +108,7 @@ async fn main() {
         let dir = args.next().unwrap_or_else(|| "dist".to_string());
         pilcrow_export(&dir).await;
     } else {
-        pilcrow_web::start(pilcrow_router()).await;
+        pilcrow_start().await;
     }
 }
 "#,

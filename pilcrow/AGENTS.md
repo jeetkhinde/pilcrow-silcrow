@@ -69,15 +69,10 @@ Config is in `Pilcrow.toml` (walks up from cwd). Defaults: web on `127.0.0.1:300
 
 | # | Location | Severity | Description |
 |---|----------|----------|-------------|
-| 1 | `routekit/codegen/tests.rs:544,625` | Critical | Test compilation failure — `render_generated_app_module` missing `live_fields_map` and `has_live_fn_map` args |
-| 2 | `macros/handler.rs:89-92` | High | `body_uses_client()` matches ANY `client` identifier (local vars, struct fields), injecting bogus `PilcrowClient` param and shadowing user variables |
-| 3 | `runtime/deferred.rs:174-210` | Critical | Orphaned tokio tasks on client disconnect — memory leak for long-lived streams |
-| 4 | `runtime/island_ssr.rs:183-185` | Critical | Mutex poison on SSR worker panic propagates to all subsequent requests |
-| 5 | `runtime/start.rs:240`, `dev.rs:233`, `sw.rs:158` | High | Unbounded body consumption (`usize::MAX`) — OOM risk on large responses |
-| 6 | `cli/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error |
-| 7 | `cli/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start()` instead of `pilcrow_start()` — skips SSG prerendering |
-| 8 | `routekit/route/parser.rs:246` | Medium | Optional catch-all priority false positive — checks `any(!is_empty)` instead of catch-all membership |
-| 9 | `routekit/lib.rs:136` | Low | `is_loading = filename == "loading"` always false (convention is `_loading`) — dead code |
+| 1 | `macros/handler.rs:98-100` | High | `body_uses_client()` matches ANY `client` identifier (local vars, struct fields), injecting bogus `PilcrowClient` param and shadowing user variables |
+| 2 | `tools/cli/src/scaffold.rs:75-89` | Medium | `--with-auth --with-postgres` emits duplicate `[env.private]` TOML tables — parse error at startup |
+| 3 | `tools/cli/src/scaffold.rs:113` | Medium | Scaffolded `main.rs` calls `pilcrow_web::start(pilcrow_router())` instead of `pilcrow_start()` — skips SSG prerendering |
+| 4 | `crates/routekit/src/routing/route/parser.rs:246` | Medium | Optional catch-all priority false positive — `any(|p| !p.is_empty())` checks non-empty params, not catch-all membership |
 
 ## How the Build Pipeline Works
 
