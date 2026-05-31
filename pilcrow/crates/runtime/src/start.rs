@@ -4,8 +4,8 @@ use std::time::Duration;
 use axum::Router;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use pilcrow_core::{PilcrowConfig, StartupError};
 use pilcrow_core::config::config::CacheProvider;
+use pilcrow_core::{PilcrowConfig, StartupError};
 
 use tower_http::compression::CompressionLayer;
 use tower_http::trace::TraceLayer;
@@ -15,6 +15,7 @@ use crate::assets::assets::{
     react_islands_js_path, serve_react_islands_js, serve_silcrow_js, serve_solid_islands_js,
     silcrow_js_path, solid_islands_js_path,
 };
+use crate::body_limit::content_length_exceeds;
 use crate::dev::{DevState, dev_inject_layer, dev_reload_handler, spawn_css_watcher};
 use crate::i18n::{I18nBundles, locale_middleware_impl};
 use crate::image::handler::{ImageState, image_handler};
@@ -431,6 +432,14 @@ async fn island_ssr_middleware(
         return response;
     }
 
+    if content_length_exceeds(response.headers(), SSR_BODY_LIMIT_BYTES) {
+        tracing::warn!(
+            limit_bytes = SSR_BODY_LIMIT_BYTES,
+            "island_ssr_middleware: response Content-Length exceeds body rewrite limit; SSR skipped"
+        );
+        return response;
+    }
+
     let (parts, body) = response.into_parts();
     let bytes = match axum::body::to_bytes(body, SSR_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
@@ -521,8 +530,7 @@ fn spawn_redis_patch_bridge(
 }
 
 fn load_config() -> Result<PilcrowConfig, StartupError> {
-    PilcrowConfig::load_from_current_dir()
-        .map_err(|e| StartupError::ConfigLoad(e.to_string()))
+    PilcrowConfig::load_from_current_dir().map_err(|e| StartupError::ConfigLoad(e.to_string()))
 }
 
 #[cfg(test)]
@@ -542,6 +550,9 @@ mod tests {
         let e = StartupError::UnsupportedProvider("redis".to_string());
         let msg = e.to_string();
         assert!(msg.contains("redis"), "must name the provider: {msg}");
-        assert!(msg.contains("memory"), "must name a valid alternative: {msg}");
+        assert!(
+            msg.contains("memory"),
+            "must name a valid alternative: {msg}"
+        );
     }
 }
