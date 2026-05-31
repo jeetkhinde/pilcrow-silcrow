@@ -61,9 +61,7 @@ pub async fn favorite(req: Req) -> ActionResult {
     crate::data::set_favorite(&id, favorite)
         .await?
         .ok_or_else(|| AppError::NotFound("contact not found".into()))?;
-    req.fsr.invalidate_route(&format!("/contacts/{id}")).await;
-    req.fsr.invalidate_route(&format!("/contacts/{id}/edit")).await;
-    req.fsr.invalidate_route("/").await;
+    req.fsr.invalidate_dep_key("contacts", &id).await;
     let path = format!("/contacts/{id}");
     redirect(&path).retarget("#detail").push_history(&path)
 }
