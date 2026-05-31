@@ -134,7 +134,6 @@ impl Route {
         let is_layout = filename == "_layout" || filename.starts_with("_layout.");
         let is_error_page = filename == "_error";
         let is_nolayout_marker = filename == "_nolayout";
-        let is_loading = filename == "loading";
         let is_template = filename == "_template";
         let is_not_found = filename == "not-found";
 
@@ -170,7 +169,7 @@ impl Route {
             optional_params,
             is_error_page,
             is_nolayout_marker,
-            is_loading,
+            is_loading: false,
             is_template,
             is_not_found,
             is_parallel_route,
