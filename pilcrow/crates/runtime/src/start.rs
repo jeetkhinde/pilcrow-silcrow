@@ -19,16 +19,17 @@ use crate::body_limit::content_length_exceeds;
 use crate::dev::{DevState, dev_inject_layer, dev_reload_handler, spawn_css_watcher};
 use crate::i18n::{I18nBundles, locale_middleware_impl};
 use crate::image::handler::{ImageState, image_handler};
-use crate::island_ssr::{IslandSsrWorker, replace_ssr_placeholders};
+use crate::island_ssr::{IslandSsrWorkerPool, SSR_RENDER_TIMEOUT, replace_ssr_placeholders};
 use crate::sw::{sw_handler, sw_inject_layer};
 
 const REQUEST_TIMEOUT_SECS: u64 = 30;
 /// Maximum HTML body size buffered for SSR placeholder replacement (10 MiB).
 /// Responses larger than this skip SSR processing rather than risking OOM.
 const SSR_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
-/// Hard cap on Node SSR worker round-trip time. Prevents a hung Node process
-/// from occupying a spawn_blocking thread slot indefinitely.
-const SSR_WORKER_TIMEOUT: Duration = Duration::from_secs(10);
+/// Total timeout for all SSR placeholder replacements in a single response.
+/// Individual renders are bounded by SSR_RENDER_TIMEOUT; this outer cap handles
+/// pages with many islands. Set to 2× the per-render timeout.
+const SSR_TOTAL_TIMEOUT: Duration = Duration::from_secs(SSR_RENDER_TIMEOUT.as_secs() * 2);
 // local utility
 fn web_bind_addr(config: &PilcrowConfig) -> String {
     format!("{}:{}", config.web.host, config.web.port)
@@ -405,19 +406,19 @@ async fn request_timeout_middleware(
 
 /// Replace `__PILCROW_REACT_SSR_{id}__` placeholders in HTML responses.
 /// Reads props from the surrounding `data-prop-*` attributes and sends them to
-/// the persistent Node worker for rendering. No-op when no worker is registered.
+/// a Node worker from the pool for async rendering. No-op when no pool is registered.
 async fn island_ssr_middleware(
     req: axum::http::Request<axum::body::Body>,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
-    let worker = req
+    let pool = req
         .extensions()
-        .get::<Arc<std::sync::Mutex<IslandSsrWorker>>>()
+        .get::<Arc<IslandSsrWorkerPool>>()
         .cloned();
 
     let response = next.run(req).await;
 
-    let Some(worker) = worker else {
+    let Some(pool) = pool else {
         return response;
     };
 
@@ -462,23 +463,14 @@ async fn island_ssr_middleware(
         return axum::response::Response::from_parts(parts, axum::body::Body::from(bytes));
     }
 
-    // `replace_ssr_placeholders` communicates with a Node.js process over
-    // stdin/stdout (blocking I/O). Run it on the blocking thread pool to
-    // avoid stalling Tokio workers and serialising all SSR requests.
-    let html_owned = html.to_owned();
-    let task = tokio::task::spawn_blocking(move || replace_ssr_placeholders(&html_owned, &worker));
-    let replaced = match tokio::time::timeout(SSR_WORKER_TIMEOUT, task).await {
-        Ok(Ok(html)) => html,
-        Ok(Err(panic)) => {
-            tracing::error!("island SSR worker panicked: {:?}", panic);
-            return axum::response::Response::from_parts(parts, axum::body::Body::empty());
-        }
+    let replaced = match tokio::time::timeout(SSR_TOTAL_TIMEOUT, replace_ssr_placeholders(html, &pool)).await {
+        Ok(html) => html,
         Err(_elapsed) => {
-            tracing::error!(
-                "island SSR worker timed out after {}s",
-                SSR_WORKER_TIMEOUT.as_secs()
+            tracing::warn!(
+                "island SSR: total replacement timed out after {}s; returning unreplaced HTML for CSR hydration",
+                SSR_TOTAL_TIMEOUT.as_secs()
             );
-            return axum::response::Response::from_parts(parts, axum::body::Body::empty());
+            html.to_owned()
         }
     };
     axum::response::Response::from_parts(parts, axum::body::Body::from(replaced))

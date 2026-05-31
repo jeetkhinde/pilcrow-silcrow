@@ -1,26 +1,38 @@
-//! Runtime Node.js worker for React island SSR (`strategy="ssr"`).
+//! Runtime Node.js worker pool for React island SSR (`strategy="ssr"`).
 //!
-//! A single [`IslandSsrWorker`] is spawned at server startup when
-//! `[client.react] ssr = true` in `Pilcrow.toml`. It talks to a persistent
-//! Node process over stdin/stdout using newline-delimited JSON:
+//! At server startup, [`IslandSsrWorkerPool`] spawns N persistent Node workers when
+//! `[client.react] ssr = true` in `Pilcrow.toml`. Render requests check out a
+//! worker via async semaphore, perform async stdin/stdout I/O, and return it.
 //!
 //! ```text
 //! stdin:  {"id":"counter_0abc","props":{"initialCount":"3"}}\n
 //! stdout: {"html":"<div>3</div>"}\n
 //! ```
 
-use std::io::{self, BufRead, BufReader, BufWriter, Write};
+use std::io;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::process::Stdio;
+use std::sync::Arc;
+use std::time::Duration;
+
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::process::{Child, ChildStdin, ChildStdout};
+use tokio::sync::{Mutex, Semaphore};
+
+/// Per-render timeout — prevents a hung Node process from holding a pool slot
+/// indefinitely.
+pub(crate) const SSR_RENDER_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// A persistent Node.js worker process that renders React islands server-side.
 pub struct IslandSsrWorker {
-    child: Child,
+    _child: Child,
     stdin: BufWriter<ChildStdin>,
     stdout: BufReader<ChildStdout>,
     /// Keeps the temp directory alive for the lifetime of the worker.
-    _temp_dir: TempDir,
+    _temp_dir: Arc<TempDir>,
+    /// Set to false on I/O error or timeout; used by the pool to decide whether
+    /// to return or replace this worker.
+    pub is_healthy: bool,
 }
 
 impl IslandSsrWorker {
@@ -29,14 +41,12 @@ impl IslandSsrWorker {
     /// Writes each `(id, source)` bundle to a temp directory, generates the
     /// dispatcher worker script, and starts the Node process.
     pub fn spawn_with_sources(bundles: &[(&str, &str)], node_bin: &str) -> io::Result<Self> {
-        let temp_dir = TempDir::new("pilcrow_react_ssr")?;
+        let temp_dir = Arc::new(TempDir::new("pilcrow_react_ssr")?);
 
-        // Write each SSR bundle to temp dir
         for (id, source) in bundles {
             std::fs::write(temp_dir.path().join(format!("{id}.ssr.js")), source)?;
         }
 
-        // Generate the worker dispatcher script
         let worker_js = build_worker_script(bundles, temp_dir.path());
         let worker_path = temp_dir.path().join("__pilcrow_worker.mjs");
         std::fs::write(&worker_path, worker_js)?;
@@ -44,12 +54,13 @@ impl IslandSsrWorker {
         Self::spawn_at_path(&worker_path, node_bin, temp_dir)
     }
 
-    fn spawn_at_path(worker_path: &Path, node_bin: &str, temp_dir: TempDir) -> io::Result<Self> {
-        let mut child = Command::new(node_bin)
+    fn spawn_at_path(worker_path: &Path, node_bin: &str, temp_dir: Arc<TempDir>) -> io::Result<Self> {
+        let mut child = tokio::process::Command::new(node_bin)
             .arg(worker_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
+            .kill_on_drop(true)
             .spawn()
             .map_err(|e| {
                 io::Error::new(
@@ -65,23 +76,24 @@ impl IslandSsrWorker {
         let stdout = BufReader::new(child.stdout.take().expect("piped stdout"));
 
         Ok(Self {
-            child,
+            _child: child,
             stdin,
             stdout,
             _temp_dir: temp_dir,
+            is_healthy: true,
         })
     }
 
     /// Render an island server-side. Props are passed as JSON values.
-    /// Returns the rendered HTML string, or an empty string on failure.
-    pub fn render(&mut self, id: &str, props: &serde_json::Value) -> io::Result<String> {
+    pub async fn render(&mut self, id: &str, props: &serde_json::Value) -> io::Result<String> {
         let req = serde_json::json!({ "id": id, "props": props });
-        self.stdin.write_all(req.to_string().as_bytes())?;
-        self.stdin.write_all(b"\n")?;
-        self.stdin.flush()?;
+        let mut line_bytes = req.to_string().into_bytes();
+        line_bytes.push(b'\n');
+        self.stdin.write_all(&line_bytes).await?;
+        self.stdin.flush().await?;
 
         let mut line = String::new();
-        self.stdout.read_line(&mut line)?;
+        self.stdout.read_line(&mut line).await?;
 
         let resp: serde_json::Value = serde_json::from_str(line.trim()).map_err(|e| {
             io::Error::new(
@@ -94,12 +106,7 @@ impl IslandSsrWorker {
     }
 }
 
-impl Drop for IslandSsrWorker {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
-}
+// ── Node.js worker script generation ─────────────────────────────────────────
 
 /// Generate the Node.js dispatcher worker script for the given bundles.
 fn build_worker_script(bundles: &[(&str, &str)], temp_dir: &Path) -> String {
@@ -156,6 +163,81 @@ fn make_js_var(id: &str) -> String {
         .collect()
 }
 
+// ── Worker pool ───────────────────────────────────────────────────────────────
+
+/// A pool of persistent Node.js SSR workers.
+///
+/// Workers are checked out via [`get`] (awaits if all busy) and returned via
+/// [`put`]. Unhealthy workers (timeout or I/O error) are replaced by
+/// [`recreate_worker`].
+///
+/// Pool size defaults to `[client.react] concurrency` (default `4`).
+pub struct IslandSsrWorkerPool {
+    workers: Mutex<Vec<IslandSsrWorker>>,
+    semaphore: Semaphore,
+    bundles: Vec<(String, String)>,
+    node_bin: String,
+}
+
+impl IslandSsrWorkerPool {
+    /// Spawn `size` workers and buffer them in the pool.
+    pub fn new(bundles: &[(&str, &str)], node_bin: &str, size: usize) -> io::Result<Self> {
+        let mut initial = Vec::with_capacity(size);
+        for _ in 0..size {
+            initial.push(IslandSsrWorker::spawn_with_sources(bundles, node_bin)?);
+        }
+        Ok(Self {
+            workers: Mutex::new(initial),
+            semaphore: Semaphore::new(size),
+            bundles: bundles
+                .iter()
+                .map(|(id, src)| (id.to_string(), src.to_string()))
+                .collect(),
+            node_bin: node_bin.to_string(),
+        })
+    }
+
+    /// Check out a worker. Awaits until one is available.
+    pub async fn get(&self) -> Result<IslandSsrWorker, String> {
+        self.semaphore
+            .acquire()
+            .await
+            .map_err(|_| "SSR worker pool closed".to_string())?
+            .forget();
+        self.workers
+            .lock()
+            .await
+            .pop()
+            .ok_or_else(|| "SSR worker pool empty despite semaphore permit — invariant violated".to_string())
+    }
+
+    /// Return a healthy worker to the pool.
+    pub async fn put(&self, worker: IslandSsrWorker) {
+        self.workers.lock().await.push(worker);
+        self.semaphore.add_permits(1);
+    }
+
+    /// Spawn a replacement worker and add it to the pool.
+    ///
+    /// On spawn failure, logs the error. The pool operates at reduced capacity
+    /// until the next restart.
+    pub async fn recreate_worker(&self) {
+        let bundles_ref: Vec<(&str, &str)> = self
+            .bundles
+            .iter()
+            .map(|(id, src)| (id.as_str(), src.as_str()))
+            .collect();
+        match IslandSsrWorker::spawn_with_sources(&bundles_ref, &self.node_bin) {
+            Ok(w) => self.put(w).await,
+            Err(e) => {
+                tracing::error!(
+                    "failed to recreate SSR worker: {e}; pool operating at reduced capacity"
+                );
+            }
+        }
+    }
+}
+
 // ── SSR placeholder replacement ──────────────────────────────────────────────
 
 const SSR_PLACEHOLDER_PREFIX: &str = "__PILCROW_REACT_SSR_";
@@ -164,8 +246,10 @@ const SSR_PLACEHOLDER_SUFFIX: &str = "__";
 /// Replace `__PILCROW_REACT_SSR_{id}__` placeholders in rendered HTML.
 ///
 /// For each placeholder the surrounding `<div data-pilcrow-react …>` is scanned
-/// for `data-prop-*` attributes and those are forwarded to the Node worker as props.
-pub fn replace_ssr_placeholders(html: &str, worker: &Arc<Mutex<IslandSsrWorker>>) -> String {
+/// for `data-prop-*` attributes and forwarded to a Node worker as props.
+/// Each render is bounded by [`SSR_RENDER_TIMEOUT`]; failures replace the
+/// placeholder with nothing and trigger a worker recreation.
+pub async fn replace_ssr_placeholders(html: &str, pool: &Arc<IslandSsrWorkerPool>) -> String {
     let mut result = String::with_capacity(html.len());
     let mut remaining = html;
 
@@ -179,16 +263,35 @@ pub fn replace_ssr_placeholders(html: &str, worker: &Arc<Mutex<IslandSsrWorker>>
 
             let props = extract_props_for_id(&result, id);
 
-            let rendered = worker
-                .lock()
-                .unwrap_or_else(|poisoned| {
-                    tracing::warn!("island SSR worker mutex was poisoned; recovering");
-                    poisoned.into_inner()
-                })
-                .render(id, &props)
-                .unwrap_or_default();
+            match pool.get().await {
+                Err(e) => {
+                    tracing::error!("SSR worker pool error: {e}");
+                }
+                Ok(mut worker) => {
+                    let render_result =
+                        tokio::time::timeout(SSR_RENDER_TIMEOUT, worker.render(id, &props)).await;
+                    match render_result {
+                        Ok(Ok(fragment)) => {
+                            result.push_str(&fragment);
+                            pool.put(worker).await;
+                        }
+                        Ok(Err(e)) => {
+                            tracing::error!("SSR worker render error for `{id}`: {e}");
+                            worker.is_healthy = false;
+                            pool.recreate_worker().await;
+                        }
+                        Err(_elapsed) => {
+                            tracing::error!(
+                                "SSR worker timed out after {}s rendering `{id}`",
+                                SSR_RENDER_TIMEOUT.as_secs()
+                            );
+                            worker.is_healthy = false;
+                            pool.recreate_worker().await;
+                        }
+                    }
+                }
+            }
 
-            result.push_str(&rendered);
             remaining = &remaining[start + consumed..];
         } else {
             // Malformed placeholder — pass through as-is
@@ -204,14 +307,12 @@ pub fn replace_ssr_placeholders(html: &str, worker: &Arc<Mutex<IslandSsrWorker>>
 /// Find the last `<div data-pilcrow-react … data-id="{id}" …>` before the
 /// placeholder and return a JSON object built from its `data-prop-*` attributes.
 fn extract_props_for_id(html_before: &str, id: &str) -> serde_json::Value {
-    // Find the opening div that matches this island id
     let id_attr = format!("data-id=\"{id}\"");
     let Some(div_pos) = find_last_div_with_attr(html_before, &id_attr) else {
         return serde_json::Value::Object(Default::default());
     };
 
     let from_div = &html_before[div_pos..];
-    // The opening tag ends at the first unquoted '>'
     let tag_end = find_tag_end(from_div);
     let tag = &from_div[..tag_end];
 
@@ -225,13 +326,11 @@ fn find_last_div_with_attr(html: &str, attr: &str) -> Option<usize> {
     let mut offset = 0usize;
     while let Some(pos) = search.find("<div") {
         let candidate = &search[pos..];
-        // Quick check: does the opening tag contain the attribute?
         if let Some(tag_end) = find_tag_end(candidate).checked_add(0)
             && candidate[..tag_end].contains(attr)
         {
             last = Some(offset + pos);
         }
-        // Advance past this occurrence
         let step = pos + 4;
         offset += step;
         search = &search[step..];
@@ -437,38 +536,6 @@ mod tests {
     #[test]
     fn replace_passes_through_when_no_placeholder() {
         let html = "<p>hello</p>";
-        let _worker = Arc::new(Mutex::new(
-            // Can't actually spawn node in a unit test, but we can verify no panic on empty html
-            // by checking the fast-path (no placeholder found).
-            DummyWorker,
-        ));
-        // Just test the fast path directly
         assert!(!html.contains(SSR_PLACEHOLDER_PREFIX));
     }
-
-    #[test]
-    fn mutex_poison_recovers_instead_of_panicking() {
-        // Simulate the exact Arc<Mutex<T>> shape used by replace_ssr_placeholders.
-        let shared: Arc<Mutex<u32>> = Arc::new(Mutex::new(42));
-        let shared2 = Arc::clone(&shared);
-
-        // Poison the mutex by panicking while holding the lock.
-        let _ = std::thread::spawn(move || {
-            let _guard = shared2.lock().unwrap();
-            panic!("intentional panic to poison the mutex");
-        })
-        .join();
-
-        // The mutex is now poisoned — .lock() returns Err(PoisonError).
-        assert!(shared.lock().is_err());
-
-        // The poison-tolerant pattern recovers the inner value.
-        let value = shared
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        assert_eq!(*value, 42);
-    }
-
-    // Dummy stand-in to verify the Arc<Mutex<>> shape compiles.
-    struct DummyWorker;
 }

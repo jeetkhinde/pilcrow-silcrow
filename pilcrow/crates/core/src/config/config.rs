@@ -131,8 +131,9 @@ pub struct ClientRuntimeConfig {
 ///
 /// ```toml
 /// [client.react]
-/// ssr      = true        # allow strategy="ssr" and strategy="shell" at runtime
-/// node_bin = "node"      # path to Node binary if not on PATH
+/// ssr         = true        # allow strategy="ssr" and strategy="shell" at runtime
+/// node_bin    = "node"      # path to Node binary if not on PATH
+/// concurrency = 4           # number of parallel Node SSR workers (default: 4)
 /// ```
 #[derive(Debug, Clone, Deserialize)]
 pub struct ReactRuntimeConfig {
@@ -142,6 +143,11 @@ pub struct ReactRuntimeConfig {
     /// Path to the Node.js binary. Defaults to `"node"`.
     #[serde(default = "default_node_bin")]
     pub node_bin: String,
+    /// Number of concurrent Node SSR worker processes. Each worker handles one
+    /// render at a time; the pool prevents Tokio thread starvation under load.
+    /// Defaults to `4`.
+    #[serde(default = "default_react_concurrency")]
+    pub concurrency: usize,
 }
 
 impl Default for ReactRuntimeConfig {
@@ -149,12 +155,17 @@ impl Default for ReactRuntimeConfig {
         Self {
             ssr: false,
             node_bin: default_node_bin(),
+            concurrency: default_react_concurrency(),
         }
     }
 }
 
 fn default_node_bin() -> String {
     "node".to_string()
+}
+
+fn default_react_concurrency() -> usize {
+    4
 }
 
 /// Image optimisation configuration. Disabled by default (`enabled = false`).
