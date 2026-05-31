@@ -10,6 +10,38 @@
           }
         ]
       }
+    ],
+    "PostCommit": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jagjeet/.local/bin/graphify hook-check"
+          }
+        ]
+      }
+    ],
+    "PreCheckout": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jagjeet/.local/bin/graphify hook-check"
+          }
+        ]
+      }
+    ],
+    "PostCheckout": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jagjeet/.local/bin/graphify hook-check"
+          }
+        ]
+      }
     ]
   }
-}
