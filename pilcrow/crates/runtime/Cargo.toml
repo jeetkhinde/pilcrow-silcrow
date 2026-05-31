@@ -47,7 +47,7 @@ tower-http = { version = "0.6", features = ["trace", "compression-full"] }
 axum-extra = { version = "0.9.6", features = ["cookie", "typed-header"] }
 headers = "0.4"
 bytes = "1"
-tokio = { version = "1", features = ["sync", "rt", "signal", "fs", "net", "time"] }
+tokio = { version = "1", features = ["sync", "rt", "signal", "fs", "net", "time", "process"] }
 tokio-stream = { version = "0.1", features = ["sync"] }
 fluent-bundle = "0.15"
 unic-langid = "0.9"

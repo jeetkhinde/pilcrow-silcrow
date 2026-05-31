@@ -45,7 +45,7 @@ pub use pilcrow_core::{
 
 pub use pilcrow_client::PilcrowClient;
 pub use pilcrow_macros::handler;
-pub use runtime::island_ssr::IslandSsrWorker;
+pub use runtime::island_ssr::{IslandSsrWorker, IslandSsrWorkerPool};
 pub use runtime::{AdapterFuture, PilcrowAdapter, TokioAdapter};
 pub use runtime::{start, start_with_adapter, try_start, try_start_with_adapter};
 
@@ -152,21 +152,22 @@ macro_rules! pilcrow_app {
         /// `pilcrow_web::start(pilcrow_router()).await` when your app has pages with
         /// `pub const PRERENDER: bool = true`.
         async fn pilcrow_start(router: ::pilcrow_web::axum::Router) {
-            // Wire up the React SSR Node worker when [client.react] ssr = true.
+            // Wire up the React SSR worker pool when [client.react] ssr = true.
             let config =
                 ::pilcrow_web::PilcrowConfig::load_from_current_dir().expect("load Pilcrow.toml");
             let router = {
                 let bundles = __pilcrow_app::__pilcrow_ssr_bundles();
                 if config.client.react.ssr && !bundles.is_empty() {
-                    match ::pilcrow_web::IslandSsrWorker::spawn_with_sources(
+                    match ::pilcrow_web::IslandSsrWorkerPool::new(
                         bundles,
                         &config.client.react.node_bin,
+                        config.client.react.concurrency,
                     ) {
-                        Ok(worker) => router.layer(::pilcrow_web::axum::Extension(
-                            ::std::sync::Arc::new(::std::sync::Mutex::new(worker)),
+                        Ok(pool) => router.layer(::pilcrow_web::axum::Extension(
+                            ::std::sync::Arc::new(pool),
                         )),
                         Err(e) => {
-                            eprintln!("[pilcrow] failed to spawn React SSR worker: {e}");
+                            eprintln!("[pilcrow] failed to spawn React SSR worker pool: {e}");
                             router
                         }
                     }

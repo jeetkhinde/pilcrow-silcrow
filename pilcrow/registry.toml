@@ -882,6 +882,8 @@ max_island_kb = 80
 max_page_react_kb = 220
 warn = true
 fail_on_budget = false
+# ssr = true        # enable strategy="ssr" (spawns a Node worker pool)
+# concurrency = 4   # number of concurrent Node SSR workers (default: 4)
 
 <!-- pages/dashboard/index.html -->
 <react src="./react/Counter.jsx" strategy="visible" initial-count="{{ count }}" />
@@ -969,8 +971,8 @@ constraints = [
   "Silcrow.submit from React should target the same Pilcrow named action URLs used by enhanced HTML forms.",
   "<react> tags inside HTML comments are ignored and preserved as comments.",
   "SSR placeholder replacement (strategy=\"ssr\") buffers the entire HTML response in memory. Responses larger than 10 MiB skip SSR processing — the placeholders are left unreplaced and a tracing::warn is emitted.",
-  "The Node.js SSR worker communicates over stdin/stdout on the blocking thread pool (spawn_blocking), so SSR renders do not block Tokio workers.",
-  "The SSR worker mutex uses poison-tolerant locking (unwrap_or_else + into_inner). If the worker panics, subsequent requests recover the mutex and degrade gracefully to empty HTML instead of propagating the panic.",
+  "The Node.js SSR worker pool uses async tokio::process I/O — renders never block Tokio workers. Pool size is set via [client.react] concurrency (default 4). Each worker handles one render at a time; the pool semaphore gates concurrent renders.",
+  "Each island render has a 10-second per-render timeout. A timed-out or erroring worker is replaced; the pool continues at reduced capacity until the next restart if replacement fails. A 20-second total timeout on the middleware passes unreplaced HTML to the client for CSR hydration on expiry.",
 ]
 invalid_examples = [
   "<react src=\"./react/Counter.tsx\" /> — missing strategy",
