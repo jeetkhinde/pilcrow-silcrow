@@ -5,6 +5,9 @@ use axum::response::{IntoResponse, Response};
 use pilcrow_core::config::config::{ServiceWorkerConfig, SwStrategy};
 
 use crate::assets::assets::SILCROW_JS;
+use crate::body_limit::content_length_exceeds;
+
+const SW_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
 
 // Injected before </body> in every text/html response when SW is enabled.
 const SW_REGISTRATION: &str = concat!(
@@ -157,7 +160,14 @@ pub async fn sw_inject_layer(
         return response;
     }
 
-    const SW_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
+    if content_length_exceeds(response.headers(), SW_BODY_LIMIT_BYTES) {
+        tracing::warn!(
+            limit_bytes = SW_BODY_LIMIT_BYTES,
+            "sw_inject_layer: response Content-Length exceeds body rewrite limit; service worker injection skipped"
+        );
+        return response;
+    }
+
     let (mut parts, body) = response.into_parts();
     let bytes = match axum::body::to_bytes(body, SW_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
@@ -178,7 +188,11 @@ pub async fn sw_inject_layer(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
+    use axum::response::IntoResponse;
     use pilcrow_core::config::config::ServiceWorkerConfig;
+    use tower::ServiceExt as _;
 
     #[test]
     fn sw_excludes_pilcrow_prefix_not_silcrow() {
@@ -202,5 +216,36 @@ mod tests {
             source.contains("/__pilcrow/runtime/silcrow."),
             "silcrow.js should be precached at /__pilcrow/runtime/: {source}"
         );
+    }
+
+    #[tokio::test]
+    async fn sw_injection_skips_html_when_content_length_exceeds_limit() {
+        let app = axum::Router::new()
+            .route(
+                "/",
+                axum::routing::get(|| async {
+                    (
+                        [
+                            (header::CONTENT_TYPE, "text/html; charset=utf-8"),
+                            (header::CONTENT_LENGTH, "10485761"),
+                        ],
+                        "<html><body>hello</body></html>",
+                    )
+                        .into_response()
+                }),
+            )
+            .layer(axum::middleware::from_fn(sw_inject_layer));
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
+
+        assert_eq!(body, "<html><body>hello</body></html>");
+        assert!(!body.contains("serviceWorker.register"));
     }
 }

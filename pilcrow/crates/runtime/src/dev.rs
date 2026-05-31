@@ -10,6 +10,10 @@ use futures_core::Stream;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 
+use crate::body_limit::content_length_exceeds;
+
+const DEV_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
+
 // ── Dev events ─────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
@@ -229,7 +233,14 @@ pub async fn dev_inject_layer(
         return response;
     }
 
-    const DEV_BODY_LIMIT_BYTES: usize = 10 * 1024 * 1024;
+    if content_length_exceeds(response.headers(), DEV_BODY_LIMIT_BYTES) {
+        tracing::warn!(
+            limit_bytes = DEV_BODY_LIMIT_BYTES,
+            "dev_inject_layer: response Content-Length exceeds body rewrite limit; dev injection skipped"
+        );
+        return response;
+    }
+
     let (mut parts, body) = response.into_parts();
     let bytes = match axum::body::to_bytes(body, DEV_BODY_LIMIT_BYTES).await {
         Ok(b) => b,
@@ -245,4 +256,44 @@ pub async fn dev_inject_layer(
 
     parts.headers.remove(CONTENT_LENGTH);
     axum::response::Response::from_parts(parts, axum::body::Body::from(html))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, header};
+    use axum::response::IntoResponse;
+    use tower::ServiceExt as _;
+
+    #[tokio::test]
+    async fn dev_injection_skips_html_when_content_length_exceeds_limit() {
+        let app = axum::Router::new()
+            .route(
+                "/",
+                axum::routing::get(|| async {
+                    (
+                        [
+                            (header::CONTENT_TYPE, "text/html; charset=utf-8"),
+                            (header::CONTENT_LENGTH, "10485761"),
+                        ],
+                        "<html><body>hello</body></html>",
+                    )
+                        .into_response()
+                }),
+            )
+            .layer(axum::middleware::from_fn(dev_inject_layer));
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body = String::from_utf8(bytes.to_vec()).unwrap();
+
+        assert_eq!(body, "<html><body>hello</body></html>");
+        assert!(!body.contains("__pilcrow_dev"));
+    }
 }

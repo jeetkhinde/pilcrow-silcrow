@@ -1720,7 +1720,7 @@ from restarts and handled in-process instead.
 
 The runtime detects `PILCROW_DEV=1` at startup and:
   1. Adds `GET /__pilcrow/dev-reload` — SSE endpoint (DevReloadStream + DevState broadcast channel)
-  2. Adds `DevLayer` — Tower middleware that buffers `text/html` responses and injects DEV_INJECTION before `</body>`
+  2. Adds `DevLayer` — Tower middleware that buffers `text/html` responses up to 10 MiB and injects DEV_INJECTION before `</body>`
   3. Spawns a notify file watcher on `src/` for CSS changes
 
 If cargo-watch is not installed, `pilcrow dev` still runs `cargo run` with `PILCROW_DEV=1`
@@ -1735,7 +1735,7 @@ cargo install cargo-watch
 """
 constraints = [
   "PILCROW_DEV=1 must be set — pilcrow dev does this automatically.",
-  "Dev mode buffers all text/html responses to inject the reload script — not suitable for production.",
+  "Dev mode buffers text/html responses up to 10 MiB to inject the reload script; responses with Content-Length above 10 MiB pass through unchanged with a tracing::warn.",
   "The notify CSS watcher watches src/ relative to the current working directory.",
   "PILCROW_DEV is not checked in non-start code paths (export, test) — safe to leave set.",
 ]
@@ -1744,10 +1744,14 @@ invalid_examples = [
 ]
 source_refs = [
   "crates/runtime/src/dev.rs",
+  "crates/runtime/src/body_limit.rs",
   "crates/runtime/src/start.rs — dev_mode detection and wiring",
   "tools/cli/src/dev.rs",
 ]
-test_refs = []
+test_refs = [
+  "crates/runtime/src/dev.rs::tests::dev_injection_skips_html_when_content_length_exceeds_limit",
+  "crates/runtime/src/body_limit.rs::tests::content_length_exceeds_limit_only_for_valid_oversized_values",
+]
 validation_rules = []
 scaffold_templates = []
 
@@ -1868,7 +1872,7 @@ offline_fallback = "/offline" # Optional: served when network fails and no cache
 
 Pilcrow automatically:
 - Serves `GET /sw.js` with `Cache-Control: no-store` (always fresh)
-- Injects `<script>navigator.serviceWorker.register('/sw.js')</script>` before `</body>` in all HTML responses
+- Injects `<script>navigator.serviceWorker.register('/sw.js')</script>` before `</body>` in HTML responses up to 10 MiB
 - Computes a cache version (CRC32 of strategy + precache list + silcrow.js) — busts automatically on any change
 - Skips `/_silcrow/` and `/__pilcrow/` from SW interception
 - Disables SW in dev mode (`PILCROW_DEV=1`) to avoid stale-cache development friction
@@ -1885,6 +1889,7 @@ constraints = [
   "silcrow.js is always added to the precache list (it has a content-hashed URL, safe to cache forever).",
   "The cache name changes automatically when strategy, precache list, or silcrow.js changes.",
   "The offline_fallback URL must be reachable and cacheable for fallback to work.",
+  "HTML responses with Content-Length above 10 MiB skip service-worker registration injection and pass through unchanged with a tracing::warn.",
 ]
 canonical_usage = """
 # Pilcrow.toml
@@ -1896,10 +1901,13 @@ offline_fallback = "/offline"
 """
 source_refs = [
   "crates/core/src/config/config.rs — ServiceWorkerConfig, SwStrategy",
+  "crates/runtime/src/body_limit.rs",
   "crates/runtime/src/sw.rs — generate_sw_source(), sw_handler(), sw_inject_layer(), SW_REGISTRATION",
   "crates/runtime/src/start.rs — /sw.js route + sw_inject_layer wired in start_with_adapter()",
 ]
-test_refs = []
+test_refs = [
+  "crates/runtime/src/sw.rs::tests::sw_injection_skips_html_when_content_length_exceeds_limit",
+]
 validation_rules = [
   "service_worker.strategy must be one of: network-first, cache-first, stale-while-revalidate.",
   "service_worker.enabled = true has no effect in dev mode — SW is always disabled when PILCROW_DEV is set.",
