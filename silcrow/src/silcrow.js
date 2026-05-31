@@ -1296,6 +1296,7 @@ function connectSseHub(hub) {
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
       document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
         const k = n.getAttribute("data-pilcrow-live-field");
+        if (pendingByScope.has(k)) return;
         if (k in data) {
           n.textContent = data[k] == null ? "" : String(data[k]);
         }
@@ -2164,6 +2165,7 @@ async function navigate(url, options = {}) {
     skipHistory = false,
     sourceEl = null,
     targetSelector: explicitTargetSelector = null,
+    mutationId = null,
   } = options;
 
   const fullUrl = new URL(url, location.origin).href;
@@ -2207,6 +2209,7 @@ async function navigate(url, options = {}) {
       contentType = cached.contentType;
     } else {
       const fetchOpts = buildFetchOptions(method, body, wantsHTML, controller.signal);
+      if (mutationId) fetchOpts.headers["silcrow-mutation-id"] = mutationId;
       const response = await fetch(fullUrl, fetchOpts);
 
       if (!response.ok) {
@@ -2336,6 +2339,7 @@ async function navigate(url, options = {}) {
     });
 
   } catch (err) {
+    if (mutationId) revertOptimistic(mutationId);
     if (err.name === "AbortError") {
       if (timedOut) {
         const timeoutErr = new Error(
@@ -2448,12 +2452,24 @@ function onSubmit(e) {
   } else {
     const hasFiles = [...formData.values()].some(v => v instanceof File);
 
+    const optScope = form.getAttribute("s-optimistic");
+    let mutationId = null;
+    if (optScope) {
+      const data = {};
+      for (const [k, v] of formData) {
+        if (!(v instanceof File)) data[k] = v;
+      }
+      mutationId = "m-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      publishOptimistic(optScope, data, mutationId);
+    }
+
     navigate(verb.url, {
       method: verb.method,
       body: hasFiles ? formData : new URLSearchParams(formData),
       target: getTarget(form),
       sourceEl: form,
       trigger: "submit",
+      mutationId,
     });
   }
 }
@@ -2544,12 +2560,20 @@ function publishOptimistic(scope, data, mutationId) {
     return;
   }
   const snapshot = atom.get();
-  pendingMutations.set(mutationId, { scope, snapshot });
   let ids = pendingByScope.get(scope);
   if (!ids) { ids = new Set(); pendingByScope.set(scope, ids); }
   ids.add(mutationId);
 
   atom.patch(data);
+
+  const liveSnapshots = {};
+  for (const [k, v] of Object.entries(data)) {
+    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+      liveSnapshots[k] = n.textContent;
+      n.textContent = v == null ? "" : String(v);
+    });
+  }
+  pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
     new CustomEvent("silcrow:optimistic", {
@@ -2586,6 +2610,12 @@ function revertOptimistic(mutationId) {
 
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
+
+  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
+    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+      n.textContent = old;
+    });
+  }
 
   document.dispatchEvent(
     new CustomEvent("silcrow:revert", {
