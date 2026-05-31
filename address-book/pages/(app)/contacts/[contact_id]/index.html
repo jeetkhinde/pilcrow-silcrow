@@ -9,13 +9,15 @@
   <div class="min-w-0">
     <h1 class="flex flex-wrap items-center gap-3 text-4xl font-bold tracking-tight text-slate-950">
       {% if first.len() > 0 || last.len() > 0 %}{{ first }} {{ last }}{% else %}<i>No Name</i>{% endif %}
-      <form method="post" action="?/favorite" s-post="?/favorite" onsubmit="window.__optimisticStar && window.__optimisticStar(this)">
+      <form method="post" action="?/favorite" s-post="?/favorite" s-optimistic="favorite_mark">
+        <input type="hidden" name="favorite_mark"
+               value="{% if favorite %}☆{% else %}★{% endif %}" />
         <button
           class="rounded-md px-2 text-3xl leading-none text-amber-500 hover:bg-amber-50"
           aria-label="{% if favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
           name="favorite"
           value="{% if favorite %}false{% else %}true{% endif %}"
-          type="submit"><span id="favorite-slot" s-live="favorite_mark">{{ live.favorite_mark.value }}</span></button>
+          type="submit"><span s-live="favorite_mark">{{ live.favorite_mark.value }}</span></button>
       </form>
     </h1>
     {% if twitter.len() > 0 %}
@@ -37,12 +39,3 @@
     </div>
   </div>
 </article>
-<script>
-  window.__optimisticStar = function (form) {
-    var slot = document.getElementById('favorite-slot');
-    var button = form.querySelector('button[name="favorite"]');
-    if (!slot || !button) return true;
-    slot.textContent = button.value === 'true' ? '*' : '☆';
-    return true;
-  };
-</script>
