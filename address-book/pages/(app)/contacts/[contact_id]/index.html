@@ -10,14 +10,24 @@
     <h1 class="flex flex-wrap items-center gap-3 text-4xl font-bold tracking-tight text-slate-950">
       {% if first.len() > 0 || last.len() > 0 %}{{ first }} {{ last }}{% else %}<i>No Name</i>{% endif %}
       <form method="post" action="?/favorite" s-post="?/favorite" s-optimistic="favorite_mark">
-        <input type="hidden" name="favorite_mark"
+        <input type="hidden" name="text"
                value="{% if favorite %}☆{% else %}★{% endif %}" />
+        <input type="hidden" name="class"
+               value="{% if favorite %}text-slate-400{% else %}text-amber-500{% endif %}" />
         <button
-          class="rounded-md px-2 text-3xl leading-none text-amber-500 hover:bg-amber-50"
+          class="rounded-md px-2 text-3xl leading-none hover:bg-amber-50"
           aria-label="{% if favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
           name="favorite"
           value="{% if favorite %}false{% else %}true{% endif %}"
-          type="submit"><span s-live="favorite_mark">{{ live.favorite_mark.value }}</span></button>
+          type="submit">
+          <span
+            data-pilcrow-live-field="favorite_mark"
+            s-live:text="favorite_mark.text"
+            s-live:class="favorite_mark.class"
+            data-s-live-mod
+            class="{{ live.favorite_mark.value.class }}"
+          >{{ live.favorite_mark.value.text }}</span>
+        </button>
       </form>
     </h1>
     {% if twitter.len() > 0 %}

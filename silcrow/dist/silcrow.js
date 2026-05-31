@@ -1301,6 +1301,16 @@ function connectSseHub(hub) {
           n.textContent = data[k] == null ? "" : String(data[k]);
         }
       });
+      document.querySelectorAll("[data-s-live-mod]").forEach(function(n) {
+        if (pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) return;
+        for (var i = 0; i < n.attributes.length; i++) {
+          var attr = n.attributes[i];
+          if (!attr.name.startsWith("s-live:")) continue;
+          var prop = attr.name.slice(7);
+          var val = resolvePath(data, attr.value);
+          if (val !== undefined) setValue(n, prop, val);
+        }
+      });
     } catch (err) {
       warn("Failed to parse SSE live event: " + err.message);
     }
