@@ -129,6 +129,14 @@ function sanitizeTree(root, options = {}) {
   for (const node of root.querySelectorAll("*")) {
     if (node.getRootNode() !== rootNode) continue;
     const tag = node.tagName.toLowerCase();
+
+    // Performance optimization: recursively sanitize template contents
+    // during the primary DOM pass to eliminate a redundant querySelectorAll("template").
+    // Expected impact: Faster tree sanitization by reducing DOM traversal overhead.
+    if (tag === "template") {
+      sanitizeTree(node.content, options);
+    }
+
     if (FORBIDDEN_HTML_TAGS.has(tag) && !(tag === "style" && options.allowStyleTags)) {
       node.remove();
       continue;
@@ -162,10 +170,6 @@ function sanitizeTree(root, options = {}) {
     }
 
     hardenBlankTargets(node);
-  }
-
-  for (const tpl of root.querySelectorAll("template")) {
-    sanitizeTree(tpl.content, options);
   }
 }
 
