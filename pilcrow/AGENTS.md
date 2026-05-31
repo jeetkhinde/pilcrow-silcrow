@@ -209,3 +209,15 @@ Key structs:
 - `make_merged_props_struct` — builds `__MergedProps` when layout has `load()`; detects field name collisions at build time
 
 When editing codegen, always run `cargo test -p pilcrow-routekit`. Note: tests at lines 544 and 625 currently fail to compile (Bug #1).
+
+## Codex-Specific Notes
+
+- **ECC Baseline**: Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository. The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking.
+- **Skills**:
+  - Repo-generated Codex skill: `.agents/skills/Pilcrow/SKILL.md`
+  - Claude-facing companion skill: `.claude/skills/Pilcrow/SKILL.md`
+- **Credentials**: Keep user-specific credentials and private MCPs in `~/.codex/config.toml`, not in this repo.
+- **Multi-Agent Support**:
+  - Explorer: read-only evidence gathering
+  - Reviewer: correctness, security, and regression review
+  - Docs researcher: API and release-note verification
