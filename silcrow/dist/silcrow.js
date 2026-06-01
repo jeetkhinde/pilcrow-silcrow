@@ -1294,21 +1294,23 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
+      // ⚡ Bolt: Consolidate DOM traversal for text fields and modifiers
+      document.querySelectorAll("[data-pilcrow-live-field], [data-s-live-mod]").forEach(function (n) {
         const k = n.getAttribute("data-pilcrow-live-field");
-        if (pendingByScope.has(k)) return;
-        if (k in data) {
+        if (pendingByScope.has(k || "")) return;
+
+        if (k != null && k in data) {
           n.textContent = data[k] == null ? "" : String(data[k]);
         }
-      });
-      document.querySelectorAll("[data-s-live-mod]").forEach(function(n) {
-        if (pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) return;
-        for (var i = 0; i < n.attributes.length; i++) {
-          var attr = n.attributes[i];
-          if (!attr.name.startsWith("s-live:")) continue;
-          var prop = attr.name.slice(7);
-          var val = resolvePath(data, attr.value);
-          if (val !== undefined) setValue(n, prop, val);
+
+        if (n.hasAttribute("data-s-live-mod")) {
+          for (var i = 0; i < n.attributes.length; i++) {
+            var attr = n.attributes[i];
+            if (!attr.name.startsWith("s-live:")) continue;
+            var prop = attr.name.slice(7);
+            var val = resolvePath(data, attr.value);
+            if (val !== undefined) setValue(n, prop, val);
+          }
         }
       });
     } catch (err) {
@@ -1952,14 +1954,20 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
 }
 
 // ── Layout-Aware Navigation Helpers ───────────────────────
+let cachedLayoutPatterns = null;
 function collectLayoutPatterns() {
+  if (cachedLayoutPatterns !== null) return cachedLayoutPatterns;
+
   const els = document.querySelectorAll("[data-ps-layout]");
   const patterns = [];
   els.forEach(function(el) {
     const v = el.getAttribute("data-ps-layout");
     if (v) patterns.push(v);
   });
-  return patterns.length > 0 ? patterns.join(",") : "";
+
+  cachedLayoutPatterns = patterns.length > 0 ? patterns.join(",") : "";
+  queueMicrotask(() => { cachedLayoutPatterns = null; });
+  return cachedLayoutPatterns;
 }
 
 // ── Fetch Request Construction ─────────────────────────────
