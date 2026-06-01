@@ -33,7 +33,9 @@ export declare class FsrStore {
     private db;
     private globalDebounceSecs;
     private redis;
+    private pool;
     constructor(db: NodePgDatabase<any>, globalDebounceSecs?: number, redis?: any);
+    withPool(pool: any): this;
     withGlobalDebounce(secs: number): this;
     withRedis(redis: any): this;
     ensureRouteRow(route: string, promoteAfter?: number): Promise<void>;

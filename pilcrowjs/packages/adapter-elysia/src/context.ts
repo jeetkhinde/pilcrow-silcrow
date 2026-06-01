@@ -22,9 +22,9 @@ export function wrapRequest(ctx: any): PilcrowRequest {
         const fd = new FormData();
         Object.entries(ctx.body).forEach(([k, v]) => {
           if (Array.isArray(v)) {
-            v.forEach((val) => fd.append(k, String(val)));
+            v.forEach((val) => fd.append(k, val instanceof Blob ? val : String(val)));
           } else {
-            fd.append(k, String(v));
+            fd.append(k, v instanceof Blob ? v : String(v));
           }
         });
         return fd;

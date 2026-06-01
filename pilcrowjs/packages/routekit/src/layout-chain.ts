@@ -1,8 +1,8 @@
-import React from 'react';
+import type { ComponentType } from 'react';
 
 export interface LayoutComponentConfig {
   pattern: string;
-  component: React.ComponentType<any>;
+  component: ComponentType<any>;
 }
 
 /**

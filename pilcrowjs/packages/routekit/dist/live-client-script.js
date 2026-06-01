@@ -57,8 +57,8 @@ window.addEventListener('popstate',_subscribe);
 
 var _origPush=history.pushState.bind(history);
 var _origReplace=history.replaceState.bind(history);
-history.pushState=function(){_origPush.apply(history,arguments);_subscribe();};
-history.replaceState=function(){_origReplace.apply(history,arguments);_subscribe();};
+history.pushState=function(){_origPush.apply(history,arguments);queueMicrotask(_subscribe);};
+history.replaceState=function(){_origReplace.apply(history,arguments);queueMicrotask(_subscribe);};
 
 window.__PilcrowFSR={connect:_connect,subscribe:_subscribe,getSlots:_getSlots};
 })();`;

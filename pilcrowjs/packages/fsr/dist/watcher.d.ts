@@ -37,7 +37,6 @@ export declare class FsrWatcher {
     private spawnSupervisedRedisWatcher;
     private watcherTick;
     private watcherTickRedis;
-    private patchHtmlFileBatch;
     private patchHtmlFileBatchReturning;
     private patchJsonFileBatch;
 }

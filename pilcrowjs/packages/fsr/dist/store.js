@@ -3,10 +3,15 @@ export class FsrStore {
     db;
     globalDebounceSecs;
     redis;
+    pool = null;
     constructor(db, globalDebounceSecs = 0, redis = null) {
         this.db = db;
         this.globalDebounceSecs = globalDebounceSecs;
         this.redis = redis;
+    }
+    withPool(pool) {
+        this.pool = pool;
+        return this;
     }
     withGlobalDebounce(secs) {
         this.globalDebounceSecs = secs;
@@ -269,7 +274,9 @@ export class FsrStore {
     async reExecuteQuery(slot) {
         if (!slot.query)
             return null;
-        const client = this.db.session.client;
+        const client = this.pool ?? this.db.$client ?? this.db.session?.client;
+        if (!client)
+            throw new Error('FsrStore: no pg pool — call .withPool(pool) after construction');
         const params = Array.isArray(slot.queryParams) ? slot.queryParams : [];
         const res = await client.query(slot.query, params);
         const row = res.rows[0];

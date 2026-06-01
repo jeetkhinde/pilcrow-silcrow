@@ -197,9 +197,7 @@ export class FsrWatcher {
   }
 
   private async watcherTick(): Promise<void> {
-    console.log('FsrWatcher: running watcherTick...');
     const stale = await this.store.fetchStaleSlots();
-    console.log('FsrWatcher: fetched stale slots count:', stale.length);
     if (stale.length === 0) return;
 
     // Phase 1: run DB queries
@@ -233,7 +231,7 @@ export class FsrWatcher {
 
     // Phase 2b: write to files
     for (const [htmlPath, patches] of htmlPatches.entries()) {
-      await this.patchHtmlFileBatch(htmlPath, patches);
+      await this.patchHtmlFileBatchReturning(htmlPath, patches);
     }
     for (const [jsonPath, patches] of jsonPatches.entries()) {
       await this.patchJsonFileBatch(jsonPath, patches);
@@ -258,9 +256,7 @@ export class FsrWatcher {
   }
 
   private async watcherTickRedis(): Promise<void> {
-    console.log('FsrWatcher: running watcherTickRedis...');
     const stale = await this.store.fetchStaleSlots();
-    console.log('FsrWatcher: fetched stale slots count:', stale.length);
     if (stale.length === 0) return;
 
     // Phase 1: run DB queries
@@ -373,10 +369,6 @@ export class FsrWatcher {
         console.warn(`FSR watcher: failed to mark slot fresh for ${slotRow.route}/${slotRow.slot}:`, e.message);
       }
     }
-  }
-
-  private async patchHtmlFileBatch(htmlPath: string, patches: [string, any][]): Promise<void> {
-    await this.patchHtmlFileBatchReturning(htmlPath, patches);
   }
 
   private async patchHtmlFileBatchReturning(htmlPath: string, patches: [string, any][]): Promise<string | null> {

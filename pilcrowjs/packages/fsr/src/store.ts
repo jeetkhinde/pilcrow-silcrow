@@ -36,11 +36,18 @@ export interface InspectRow {
 }
 
 export class FsrStore {
+  private pool: any = null;
+
   constructor(
     private db: NodePgDatabase<any>,
     private globalDebounceSecs = 0,
     private redis: any = null
   ) {}
+
+  withPool(pool: any): this {
+    this.pool = pool;
+    return this;
+  }
 
   withGlobalDebounce(secs: number): this {
     this.globalDebounceSecs = secs;
@@ -335,7 +342,8 @@ export class FsrStore {
 
   async reExecuteQuery(slot: StaleSlot): Promise<any> {
     if (!slot.query) return null;
-    const client = (this.db as any).session.client;
+    const client = this.pool ?? (this.db as any).$client ?? (this.db as any).session?.client;
+    if (!client) throw new Error('FsrStore: no pg pool — call .withPool(pool) after construction');
     const params = Array.isArray(slot.queryParams) ? slot.queryParams : [];
     const res = await client.query(slot.query, params);
     const row = res.rows[0];

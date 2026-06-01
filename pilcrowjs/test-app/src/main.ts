@@ -14,7 +14,7 @@ async function main() {
   if (dbUrl) {
     const pool = new pg.Pool({ connectionString: dbUrl });
     const db = drizzle(pool);
-    const store = new FsrStore(db);
+    const store = new FsrStore(db).withPool(pool);
     const watcher = new FsrWatcher(store, null, {
       pollIntervalMs: 1000,
       promoteAfterHits: config.fsr?.promoteAfterHits ?? 1,

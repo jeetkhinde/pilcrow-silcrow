@@ -1,7 +1,7 @@
-import React from 'react';
+import type { ComponentType } from 'react';
 export interface LayoutComponentConfig {
     pattern: string;
-    component: React.ComponentType<any>;
+    component: ComponentType<any>;
 }
 /**
  * Composes a page component and its parent layouts into a single React tree.
