@@ -1,0 +1,54 @@
+warning: unused variable: `live_fields`
+   --> /app/pilcrow/crates/routekit/src/templating/codegen/app_module.rs:402:13
+    |
+402 |         let live_fields: &[String] = live_fields_map
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_live_fields`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `route_config_error` is never used
+   --> /app/pilcrow/crates/routekit/src/templating/codegen/app_module.rs:128:4
+    |
+128 | fn route_config_error(
+    |    ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `pilcrow-routekit` (lib) generated 2 warnings (run `cargo fix --lib -p pilcrow-routekit` to apply 1 suggestion)
+warning: unused import: `Ident`
+ --> /app/pilcrow/crates/macros/src/handler.rs:4:18
+  |
+4 | use syn::{FnArg, Ident, ItemFn, Pat, PatType, parse_macro_input, visit::V...
+  |                  ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling pilcrow-runtime v0.1.0 (/app/pilcrow/crates/runtime)
+warning: `pilcrow-macros` (lib) generated 1 warning (run `cargo fix --lib -p pilcrow-macros` to apply 1 suggestion)
+   Compiling pilcrow-address-book v0.1.0 (/app/address-book)
+   Compiling pilcrow-web v0.1.0 (/app/pilcrow/crates/web)
+warning: unused import: `::pilcrow_web::ResponseExt`
+   --> /app/address-book/target/debug/build/pilcrow-address-book-2ac399d907d7c55b/out/generated_app.rs:155:17
+    |
+155 |             use ::pilcrow_web::ResponseExt;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `::pilcrow_web::ResponseExt`
+   --> /app/address-book/target/debug/build/pilcrow-address-book-2ac399d907d7c55b/out/generated_app.rs:419:17
+    |
+419 |             use ::pilcrow_web::ResponseExt;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `::pilcrow_web::ResponseExt`
+   --> /app/address-book/target/debug/build/pilcrow-address-book-2ac399d907d7c55b/out/generated_app.rs:626:17
+    |
+626 |             use ::pilcrow_web::ResponseExt;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `pilcrow-address-book` (bin "pilcrow-address-book") generated 3 warnings (run `cargo fix --bin "pilcrow-address-book" -p pilcrow-address-book` to apply 3 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.72s
+     Running `target/debug/pilcrow-address-book`
+pilcrow: port 3010 in use, using http://127.0.0.1:3012 instead
+pilcrow: listening on http://127.0.0.1:3012
