@@ -11,3 +11,7 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+
+## 2025-10-23 - [Consolidating DOM Scans in High-Frequency Paths]
+**Learning:** During optimistic UI updates and live event patching, the JS runtime was executing repeated `document.querySelectorAll("[data-pilcrow-live-field]")` loops nested within data key iterations, or running sequential `querySelectorAll` scans for overlapping element concerns. This resulted in O(N) full-document scans per event, leading to significant CPU/memory overhead proportional to the payload size.
+**Action:** When updating multiple elements based on state changes or live streams, consolidate `document.querySelectorAll` calls into a single O(1) pass. Fetch all affected elements at once using combined selectors (`[a], [b]`) and handle data logic within the iteration instead of repeating scans for each data key or feature.
