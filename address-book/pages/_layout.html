@@ -14,6 +14,7 @@ pub struct Props {}
 </head>
 
 <body class="min-h-screen bg-slate-100 text-slate-950 antialiased">
+  <a href="#detail" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-blue-700 focus:font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">Skip to main content</a>
   <slot />
   {{ pilcrow_web::assets::assets::script_tag()|safe }}
 </body>
