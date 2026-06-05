@@ -2577,12 +2577,14 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+  // Optimize: single DOM pass for all updated live fields
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (k in data) {
       liveSnapshots[k] = n.textContent;
-      n.textContent = v == null ? "" : String(v);
-    });
-  }
+      n.textContent = data[k] == null ? "" : String(data[k]);
+    }
+  });
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
@@ -2621,11 +2623,14 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
-    });
-  }
+  // Optimize: single DOM pass for all reverted live fields
+  const snapshots = entry.liveSnapshots || {};
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (k in snapshots) {
+      n.textContent = snapshots[k];
+    }
+  });
 
   document.dispatchEvent(
     new CustomEvent("silcrow:revert", {
