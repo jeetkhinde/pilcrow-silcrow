@@ -16,3 +16,7 @@
 ## 2026-05-26 - Accessible Labels for Inline Forms
 **Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
 **Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
+
+## 2026-06-05 - Focus-Visible Normalization for Layout Skip Links
+**Learning:** When adding a 'Skip to main content' link to a global application layout, its target `id` must be present consistently across all page templates rendered within that layout. If individual page templates use different IDs (like `#about` or `#index-page`), the skip link will fail on those specific routes, breaking accessibility.
+**Action:** Always normalize the main content wrapper's `id` (e.g., to `#detail` or `#main-content`) across all route templates when implementing a global layout skip link, ensuring mechanical function everywhere.
