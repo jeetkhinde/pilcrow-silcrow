@@ -11,3 +11,6 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+## 2024-06-07 - Consolidating DOM Queries in Loops
+**Learning:** The Silcrow runtime previously performed N separate tree scans (using `querySelectorAll`) when applying multiple data patches in functions like `publishOptimistic` and `revertOptimistic` (where N is the number of keys being patched). This nested DOM querying is a massive bottleneck.
+**Action:** Always rewrite multi-key patch loops to perform a single document-wide pass (e.g. `querySelectorAll("[data-pilcrow-live-field]")`) and then evaluate if each matched element corresponds to a modified key, reducing scanning complexity from O(N * DOM_size) to O(DOM_size).
