@@ -343,8 +343,8 @@ pub async fn watcher_tick_redis(
 
         // 2. Push patched HTML into Redis (uses the batched result from Phase 2b).
         if slot_row.promoted {
-            if let Some(ref html_path) = slot_row.html_path {
-                if let Some(Some(ref html)) = html_patched.get(html_path) {
+            if let Some(html_path) = &slot_row.html_path {
+                if let Some(Some(html)) = html_patched.get(html_path.as_str()) {
                     if let Err(e) = redis.set_html(&slot_row.route, html).await {
                         tracing::warn!(
                             route = %slot_row.route,
