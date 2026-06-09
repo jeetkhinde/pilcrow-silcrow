@@ -11,3 +11,6 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+## 2026-06-09 - Optimizing DOM reads in JS Runtime loops
+**Learning:** Calling `querySelectorAll` inside an object/key loop causes redundant DOM traversals, multiplying the overhead by the number of keys. Similarly, sequentially calling `querySelectorAll` for different attributes triggers multiple independent full document scans.
+**Action:** When updating multiple dynamic properties, query all potential target elements in a single combined pass (e.g., `querySelectorAll("[attrA], [attrB]")`), then evaluate the attributes and patch the elements within the loop.
