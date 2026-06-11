@@ -11,3 +11,6 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+## 2026-05-01 - Consolidate repeated DOM queries in JS runtime
+**Learning:** In the client-side Silcrow runtime, operations like `publishOptimistic`, `revertOptimistic`, and `live` event handlers performed multiple passes of `document.querySelectorAll` (sometimes inside loops). Because synchronous DOM traversal is expensive, it can block the main thread and impact frontend performance.
+**Action:** Always consolidate related DOM node searches (using combined query selectors or a single pass over matching elements) to reduce layout thrashing and overhead when evaluating or patching the DOM.
