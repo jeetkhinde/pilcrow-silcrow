@@ -11,3 +11,7 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+
+## 2024-06-14 - Redundant DOM Traversals in Optimistic Update Cycle
+**Learning:** Silcrow's live DOM update loop and optimistic updates heavily rely on `document.querySelectorAll("[data-pilcrow-live-field]")`. Previously, for multiple data fields updated simultaneously (like when applying or reverting optimistic snapshots), the JS runtime was executing a completely new document-wide query traversal for *each field key*, turning an O(1) DOM pass into an O(N) bottleneck as data payload size increased.
+**Action:** When updating multiple DOM nodes in response to a data patch, prioritize a single full-document `querySelectorAll` pass, then iterate over the nodes and look up their keys in the data payload, rather than looping over data keys to execute repeated queries.
