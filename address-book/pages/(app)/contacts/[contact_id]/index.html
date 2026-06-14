@@ -15,7 +15,7 @@
         <input type="hidden" name="class"
                value="{% if favorite %}text-slate-400{% else %}text-amber-500{% endif %}" />
         <button
-          class="rounded-md px-2 text-3xl leading-none hover:bg-amber-50"
+          class="rounded-md px-2 text-3xl leading-none hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           aria-label="{% if favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
           name="favorite"
           value="{% if favorite %}false{% else %}true{% endif %}"
@@ -41,10 +41,10 @@
     <p class="mt-4 text-sm text-slate-500"><span s-live="updated_label">{{ live.updated_label.value }}</span></p>
     <div class="mt-8 flex flex-wrap gap-3">
       <form method="get" action="/contacts/{{ id }}/edit">
-        <button class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50" type="submit">Edit</button>
+        <button class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" type="submit">Edit</button>
       </form>
       <form method="post" action="?/destroy" s-post="?/destroy" onsubmit="return confirm('Please confirm you want to delete this record.')">
-        <button class="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50" type="submit">Delete</button>
+        <button class="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2" type="submit">Delete</button>
       </form>
     </div>
   </div>
