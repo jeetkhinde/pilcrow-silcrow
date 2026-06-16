@@ -1952,14 +1952,20 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
 }
 
 // ── Layout-Aware Navigation Helpers ───────────────────────
+let cachedLayoutPatterns = null;
+
 function collectLayoutPatterns() {
+  if (cachedLayoutPatterns !== null) return cachedLayoutPatterns;
+  queueMicrotask(() => { cachedLayoutPatterns = null; });
+
   const els = document.querySelectorAll("[data-ps-layout]");
   const patterns = [];
   els.forEach(function(el) {
     const v = el.getAttribute("data-ps-layout");
     if (v) patterns.push(v);
   });
-  return patterns.length > 0 ? patterns.join(",") : "";
+  cachedLayoutPatterns = patterns.length > 0 ? patterns.join(",") : "";
+  return cachedLayoutPatterns;
 }
 
 // ── Fetch Request Construction ─────────────────────────────
@@ -2577,10 +2583,15 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      liveSnapshots[k] = n.textContent;
-      n.textContent = v == null ? "" : String(v);
+  const keys = Object.keys(data);
+  if (keys.length > 0) {
+    const selector = keys.map(k => `[data-pilcrow-live-field="${CSS.escape(k)}"]`).join(", ");
+    document.querySelectorAll(selector).forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (!(k in liveSnapshots)) {
+        liveSnapshots[k] = n.textContent;
+      }
+      n.textContent = data[k] == null ? "" : String(data[k]);
     });
   }
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
@@ -2621,9 +2632,14 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  const keys = Object.keys(entry.liveSnapshots || {});
+  if (keys.length > 0) {
+    const selector = keys.map(k => `[data-pilcrow-live-field="${CSS.escape(k)}"]`).join(", ");
+    document.querySelectorAll(selector).forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (k in entry.liveSnapshots) {
+        n.textContent = entry.liveSnapshots[k];
+      }
     });
   }
 
