@@ -16,3 +16,7 @@
 ## 2026-05-26 - Accessible Labels for Inline Forms
 **Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
 **Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
+
+## 2024-06-18 - Missing Focus Styles After Tailwind Reset
+**Learning:** Tailwind CSS's Preflight reset systematically strips default browser focus outlines (`outline: none`) from interactive elements. In this app's components, this caused a widespread accessibility issue where keyboard users couldn't see which element had focus (e.g., buttons, links, icon-buttons).
+**Action:** Always explicitly add visual focus indicator classes like `outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2` (matching the ring color to context, e.g., `amber-500` for favorites, `red-500` for destructive actions) to all interactive elements to ensure proper keyboard accessibility without relying on defaults.
