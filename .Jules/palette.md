@@ -16,3 +16,7 @@
 ## 2026-05-26 - Accessible Labels for Inline Forms
 **Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
 **Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
+
+## 2024-06-19 - Global Layout Accessibility (Skip Links & Focus States)
+**Learning:** Found that the global layout missed a "Skip to main content" link and lacked proper visual focus indicators on sidebar interactive elements (due to Tailwind's preflight resetting outlines), hampering keyboard navigation.
+**Action:** Always include a visually hidden "Skip to main content" link targeting the primary content area, and explicitly apply `:focus-visible` styles (`focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`) to all interactive elements like links and buttons when using Tailwind CSS.
