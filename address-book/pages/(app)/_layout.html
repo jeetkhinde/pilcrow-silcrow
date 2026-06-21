@@ -46,7 +46,7 @@
     </nav>
   </aside>
 
-  <main id="detail" class="min-w-0 p-5 transition-opacity duration-150 sm:p-8 lg:p-12">
+  <main id="main-content" class="min-w-0 p-5 transition-opacity duration-150 sm:p-8 lg:p-12">
     <slot />
   </main>
 </div>
@@ -65,10 +65,10 @@
     };
   })();
   document.addEventListener('silcrow:navigate', function () {
-    var detail = document.getElementById('detail');
+    var detail = document.getElementById('main-content');
     if (detail) detail.classList.add('opacity-50');
     setTimeout(function () {
-      var next = document.getElementById('detail');
+      var next = document.getElementById('main-content');
       if (next) next.classList.remove('opacity-50');
     }, 220);
   });
