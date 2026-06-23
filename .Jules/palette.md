@@ -16,3 +16,7 @@
 ## 2026-05-26 - Accessible Labels for Inline Forms
 **Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
 **Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
+
+## 2026-05-27 - Keyboard Focus Visibility and Skip Links in Single Page Apps
+**Learning:** Found that Tailwind's preflight resets outline styles (`outline: none`), which removes the default browser focus ring from interactive elements like links and buttons. This creates a severe accessibility issue for keyboard users who cannot see where their focus is. Additionally, ensuring a consistent `id` on the primary content container (like `#detail`) across all pages is crucial for "Skip to main content" links to work reliably.
+**Action:** Always explicitly add visual focus indicators (e.g., `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`) to all interactive elements such as buttons and links. Furthermore, when adding a skip link, ensure the target `id` is present on the primary content wrapper (e.g., `<main id="detail">`) on *every* page in the application.
