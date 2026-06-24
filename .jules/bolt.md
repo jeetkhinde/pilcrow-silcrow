@@ -11,3 +11,7 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+
+## 2025-02-18 - [Silcrow JS DOM Query Optimization in Live/Optimistic Events]
+**Learning:** In the `silcrow` client-side runtime, functions like `publishOptimistic`, `revertOptimistic`, and `live` SSE event handlers were unnecessarily performing `document.querySelectorAll` queries *inside* property iteration loops, resulting in O(N) DOM scans per field update.
+**Action:** When performing bulk DOM updates based on an object or map, query the document once to get all relevant nodes and then iterate over the nodes (or filter them) to perform updates, avoiding O(N) sequential document scans and achieving O(1) traversal time.
