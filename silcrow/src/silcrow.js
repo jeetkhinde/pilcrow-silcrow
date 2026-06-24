@@ -1952,14 +1952,26 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
 }
 
 // ── Layout-Aware Navigation Helpers ───────────────────────
+let _layoutPatternsCache = undefined;
+
 function collectLayoutPatterns() {
+  // Microtask caching: Avoid redundant DOM scans during high-frequency sequential events
+  // (e.g. repeated mouseenter firing startPreload) by caching the query result synchronously
+  // and invalidating it at the end of the microtask queue.
+  if (_layoutPatternsCache !== undefined) {
+    return _layoutPatternsCache;
+  }
   const els = document.querySelectorAll("[data-ps-layout]");
   const patterns = [];
   els.forEach(function(el) {
     const v = el.getAttribute("data-ps-layout");
     if (v) patterns.push(v);
   });
-  return patterns.length > 0 ? patterns.join(",") : "";
+  _layoutPatternsCache = patterns.length ? patterns.join(",") : null;
+  queueMicrotask(() => {
+    _layoutPatternsCache = undefined;
+  });
+  return _layoutPatternsCache;
 }
 
 // ── Fetch Request Construction ─────────────────────────────
