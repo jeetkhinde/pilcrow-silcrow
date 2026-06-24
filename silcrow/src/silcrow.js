@@ -1294,21 +1294,26 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
-        const k = n.getAttribute("data-pilcrow-live-field");
-        if (pendingByScope.has(k)) return;
-        if (k in data) {
-          n.textContent = data[k] == null ? "" : String(data[k]);
+      // OPTIMIZATION: Consolidate multiple sequential DOM queries into a single pass
+      document.querySelectorAll("[data-pilcrow-live-field], [data-s-live-mod]").forEach(function (n) {
+        const fieldKey = n.getAttribute("data-pilcrow-live-field");
+
+        if (n.hasAttribute("data-pilcrow-live-field")) {
+          if (pendingByScope.has(fieldKey)) return;
+          if (fieldKey in data) {
+            n.textContent = data[fieldKey] == null ? "" : String(data[fieldKey]);
+          }
         }
-      });
-      document.querySelectorAll("[data-s-live-mod]").forEach(function(n) {
-        if (pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) return;
-        for (var i = 0; i < n.attributes.length; i++) {
-          var attr = n.attributes[i];
-          if (!attr.name.startsWith("s-live:")) continue;
-          var prop = attr.name.slice(7);
-          var val = resolvePath(data, attr.value);
-          if (val !== undefined) setValue(n, prop, val);
+
+        if (n.hasAttribute("data-s-live-mod")) {
+          if (pendingByScope.has(fieldKey || "")) return;
+          for (var i = 0; i < n.attributes.length; i++) {
+            var attr = n.attributes[i];
+            if (!attr.name.startsWith("s-live:")) continue;
+            var prop = attr.name.slice(7);
+            var val = resolvePath(data, attr.value);
+            if (val !== undefined) setValue(n, prop, val);
+          }
         }
       });
     } catch (err) {
@@ -2577,12 +2582,14 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+  // OPTIMIZATION: Consolidate O(N) DOM queries into a single pass to avoid repeated document scans
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (k in data) {
       liveSnapshots[k] = n.textContent;
-      n.textContent = v == null ? "" : String(v);
-    });
-  }
+      n.textContent = data[k] == null ? "" : String(data[k]);
+    }
+  });
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
@@ -2621,9 +2628,14 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  const snaps = entry.liveSnapshots || {};
+  // OPTIMIZATION: Consolidate O(N) DOM queries into a single pass to avoid repeated document scans
+  if (Object.keys(snaps).length > 0) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (k in snaps) {
+        n.textContent = snaps[k];
+      }
     });
   }
 
@@ -2673,6 +2685,7 @@ function init() {
     if (typeof window.__pilcrow_live_patch === "function") {
       window.__pilcrow_live_patch(data);
     } else {
+      // OPTIMIZATION: Consolidate O(N) DOM queries into a single pass to avoid repeated document scans
       document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
         const k = n.getAttribute("data-pilcrow-live-field");
         if (k in data) {
