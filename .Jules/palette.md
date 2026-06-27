@@ -16,3 +16,6 @@
 ## 2026-05-26 - Accessible Labels for Inline Forms
 **Learning:** Found that inline forms (like newsletter signups) often omit explicit labels in favor of placeholders, creating an accessibility barrier for screen readers. Placeholders alone are insufficient for identifying the input's purpose to assistive technologies.
 **Action:** When working on inline forms, always provide an accessible label by adding an `aria-label` attribute or a visually-hidden `<label>` element to ensure full accessibility while preserving the design layout.
+## 2024-06-27 - Consistent Main Content IDs for Accessibility and Routing
+**Learning:** In applications using Silcrow client-side routing, the primary content container often has a hardcoded ID (like `detail`) to act as the target for routing updates. When implementing a global 'Skip to main content' link, it's critical to ensure this ID is used consistently across *all* pages (including static or error pages that might not naturally use the routing layout) so the skip link doesn't break.
+**Action:** When adding global accessibility features like skip links, verify the target element's ID is standardized across all page templates. If some pages use different semantic IDs (like `about`), refactor them to use the primary content ID expected by the framework to maintain functionality.
