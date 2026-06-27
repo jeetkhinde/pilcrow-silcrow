@@ -1294,21 +1294,26 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
-        const k = n.getAttribute("data-pilcrow-live-field");
-        if (pendingByScope.has(k)) return;
-        if (k in data) {
-          n.textContent = data[k] == null ? "" : String(data[k]);
+      // ⚡ Bolt Optimization: Consolidate multiple DOM scans into a single traversal
+      // This prevents redundant scanning of the entire tree during live SSE updates.
+      document.querySelectorAll("[data-pilcrow-live-field], [data-s-live-mod]").forEach(function (n) {
+        if (n.hasAttribute("data-pilcrow-live-field")) {
+          const k = n.getAttribute("data-pilcrow-live-field");
+          if (!pendingByScope.has(k) && k in data) {
+            n.textContent = data[k] == null ? "" : String(data[k]);
+          }
         }
-      });
-      document.querySelectorAll("[data-s-live-mod]").forEach(function(n) {
-        if (pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) return;
-        for (var i = 0; i < n.attributes.length; i++) {
-          var attr = n.attributes[i];
-          if (!attr.name.startsWith("s-live:")) continue;
-          var prop = attr.name.slice(7);
-          var val = resolvePath(data, attr.value);
-          if (val !== undefined) setValue(n, prop, val);
+
+        if (n.hasAttribute("data-s-live-mod")) {
+          if (!pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) {
+            for (var i = 0; i < n.attributes.length; i++) {
+              var attr = n.attributes[i];
+              if (!attr.name.startsWith("s-live:")) continue;
+              var prop = attr.name.slice(7);
+              var val = resolvePath(data, attr.value);
+              if (val !== undefined) setValue(n, prop, val);
+            }
+          }
         }
       });
     } catch (err) {
@@ -1952,14 +1957,27 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
 }
 
 // ── Layout-Aware Navigation Helpers ───────────────────────
+// ⚡ Bolt Optimization: Cache DOM reads during a single event loop tick
+// This prevents multiple redundant `querySelectorAll("[data-ps-layout]")`
+// scans during high-frequency events (like mouseenter for preloading).
+let cachedLayoutPatterns = null;
+function invalidateLayoutPatternsCache() {
+  cachedLayoutPatterns = null;
+}
+
 function collectLayoutPatterns() {
+  if (cachedLayoutPatterns !== null) {
+    return cachedLayoutPatterns;
+  }
   const els = document.querySelectorAll("[data-ps-layout]");
   const patterns = [];
   els.forEach(function(el) {
     const v = el.getAttribute("data-ps-layout");
     if (v) patterns.push(v);
   });
-  return patterns.length > 0 ? patterns.join(",") : "";
+  cachedLayoutPatterns = patterns.length > 0 ? patterns.join(",") : "";
+  queueMicrotask(invalidateLayoutPatternsCache);
+  return cachedLayoutPatterns;
 }
 
 // ── Fetch Request Construction ─────────────────────────────
@@ -2577,12 +2595,16 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+  // ⚡ Bolt Optimization: Replace looped DOM queries with a single query
+  // Prevents full tree scans for every key in the optimistic update data.
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (k in data) {
       liveSnapshots[k] = n.textContent;
+      const v = data[k];
       n.textContent = v == null ? "" : String(v);
-    });
-  }
+    }
+  });
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
@@ -2621,9 +2643,14 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  // ⚡ Bolt Optimization: Replace looped DOM queries with a single query
+  // Prevents full tree scans for every key in the live snapshots object when reverting.
+  if (entry.liveSnapshots) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (k in entry.liveSnapshots) {
+        n.textContent = entry.liveSnapshots[k];
+      }
     });
   }
 
