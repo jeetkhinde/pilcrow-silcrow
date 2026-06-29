@@ -1952,14 +1952,26 @@ function processSideEffectHeaders(sideEffects, primaryTarget) {
 }
 
 // ── Layout-Aware Navigation Helpers ───────────────────────
+let cachedLayoutPatterns = null;
+
 function collectLayoutPatterns() {
+  if (cachedLayoutPatterns !== null) return cachedLayoutPatterns;
+
   const els = document.querySelectorAll("[data-ps-layout]");
   const patterns = [];
   els.forEach(function(el) {
     const v = el.getAttribute("data-ps-layout");
     if (v) patterns.push(v);
   });
-  return patterns.length > 0 ? patterns.join(",") : "";
+
+  cachedLayoutPatterns = patterns.length > 0 ? patterns.join(",") : "";
+
+  // Invalidate cache at the end of the microtask queue (current event loop tick)
+  queueMicrotask(() => {
+    cachedLayoutPatterns = null;
+  });
+
+  return cachedLayoutPatterns;
 }
 
 // ── Fetch Request Construction ─────────────────────────────
