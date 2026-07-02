@@ -1294,21 +1294,28 @@ function connectSseHub(hub) {
     try {
       const data = JSON.parse(e.data);
       if (!data || typeof data !== "object" || Array.isArray(data)) return;
-      document.querySelectorAll("[data-pilcrow-live-field]").forEach(function (n) {
-        const k = n.getAttribute("data-pilcrow-live-field");
-        if (pendingByScope.has(k)) return;
-        if (k in data) {
-          n.textContent = data[k] == null ? "" : String(data[k]);
+      document.querySelectorAll("[data-pilcrow-live-field], [data-s-live-mod]").forEach(function (n) {
+        const hasLiveField = n.hasAttribute("data-pilcrow-live-field");
+        const hasLiveMod = n.hasAttribute("data-s-live-mod");
+
+        if (hasLiveField) {
+          const k = n.getAttribute("data-pilcrow-live-field");
+          if (!pendingByScope.has(k) && k in data) {
+            n.textContent = data[k] == null ? "" : String(data[k]);
+          }
         }
-      });
-      document.querySelectorAll("[data-s-live-mod]").forEach(function(n) {
-        if (pendingByScope.has(n.getAttribute("data-pilcrow-live-field") || "")) return;
-        for (var i = 0; i < n.attributes.length; i++) {
-          var attr = n.attributes[i];
-          if (!attr.name.startsWith("s-live:")) continue;
-          var prop = attr.name.slice(7);
-          var val = resolvePath(data, attr.value);
-          if (val !== undefined) setValue(n, prop, val);
+
+        if (hasLiveMod) {
+          const k = n.getAttribute("data-pilcrow-live-field") || "";
+          if (!pendingByScope.has(k)) {
+            for (var i = 0; i < n.attributes.length; i++) {
+              var attr = n.attributes[i];
+              if (!attr.name.startsWith("s-live:")) continue;
+              var prop = attr.name.slice(7);
+              var val = resolvePath(data, attr.value);
+              if (val !== undefined) setValue(n, prop, val);
+            }
+          }
         }
       });
     } catch (err) {
@@ -2577,10 +2584,13 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      liveSnapshots[k] = n.textContent;
-      n.textContent = v == null ? "" : String(v);
+  if (Object.keys(data).length > 0) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (k in data) {
+        liveSnapshots[k] = n.textContent;
+        n.textContent = data[k] == null ? "" : String(data[k]);
+      }
     });
   }
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
@@ -2621,9 +2631,13 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  const liveSnapshots = entry.liveSnapshots || {};
+  if (Object.keys(liveSnapshots).length > 0) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (k in liveSnapshots) {
+        n.textContent = liveSnapshots[k];
+      }
     });
   }
 
