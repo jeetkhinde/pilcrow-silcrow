@@ -2576,13 +2576,20 @@ function publishOptimistic(scope, data, mutationId) {
 
   atom.patch(data);
 
+  // ⚡ Optimization: Perform a single pass over all live fields rather than querying per key.
+  // This avoids O(N) redundant DOM scans when updating multiple keys.
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      liveSnapshots[k] = n.textContent;
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (Object.prototype.hasOwnProperty.call(data, k)) {
+      if (!Object.prototype.hasOwnProperty.call(liveSnapshots, k)) {
+        liveSnapshots[k] = n.textContent;
+      }
+      const v = data[k];
       n.textContent = v == null ? "" : String(v);
-    });
-  }
+    }
+  });
+
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
@@ -2621,9 +2628,13 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  // ⚡ Optimization: Perform a single pass over all live fields to revert.
+  if (entry.liveSnapshots) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (Object.prototype.hasOwnProperty.call(entry.liveSnapshots, k)) {
+        n.textContent = entry.liveSnapshots[k];
+      }
     });
   }
 
