@@ -2577,12 +2577,14 @@ function publishOptimistic(scope, data, mutationId) {
   atom.patch(data);
 
   const liveSnapshots = {};
-  for (const [k, v] of Object.entries(data)) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
+  // ⚡ Bolt Optimization: Single DOM pass for live fields to avoid repeated traversals
+  document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+    const k = n.getAttribute("data-pilcrow-live-field");
+    if (Object.prototype.hasOwnProperty.call(data, k)) {
       liveSnapshots[k] = n.textContent;
-      n.textContent = v == null ? "" : String(v);
-    });
-  }
+      n.textContent = data[k] == null ? "" : String(data[k]);
+    }
+  });
   pendingMutations.set(mutationId, { scope, snapshot, liveSnapshots });
 
   document.dispatchEvent(
@@ -2621,9 +2623,13 @@ function revertOptimistic(mutationId) {
   const atom = resolveAtomByScope(entry.scope, false);
   if (atom) atom.set(entry.snapshot);
 
-  for (const [k, old] of Object.entries(entry.liveSnapshots || {})) {
-    document.querySelectorAll(`[data-pilcrow-live-field="${CSS.escape(k)}"]`).forEach(function(n) {
-      n.textContent = old;
+  // ⚡ Bolt Optimization: Single DOM pass for live fields to avoid repeated traversals
+  if (entry.liveSnapshots) {
+    document.querySelectorAll("[data-pilcrow-live-field]").forEach(function(n) {
+      const k = n.getAttribute("data-pilcrow-live-field");
+      if (Object.prototype.hasOwnProperty.call(entry.liveSnapshots, k)) {
+        n.textContent = entry.liveSnapshots[k];
+      }
     });
   }
 
