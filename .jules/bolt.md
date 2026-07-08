@@ -11,3 +11,7 @@
 **Learning:** During framework initialization (`initLiveElements`) and high-frequency events (`mouseenter` for `startPreload`), multiple sequential `document.querySelectorAll()` calls or function invocations that trigger DOM scans create unnecessary performance overhead proportional to the DOM size.
 
 **Action:** Consolidate multiple sequential `document.querySelectorAll` calls targeting the same subtree into a single comma-separated selector query. For high-frequency events, ensure functions returning DOM queries (`collectLayoutPatterns`) are cached in a local variable instead of being re-invoked within the same execution context.
+
+## 2025-05-24 - [Silcrow JS Optimistic DOM Updates]
+**Learning:** In the Silcrow client-side runtime, optimistic mutation handlers (`publishOptimistic` and `revertOptimistic`) were performing `querySelectorAll` passes for each individual key in the updated payload object. This caused unnecessary DOM scanning overhead scaling O(N) with the payload size.
+**Action:** When updating elements based on a dictionary/object, always perform a single `querySelectorAll` pass over all target elements and match their attributes against the data keys, rather than executing queries per key inside a loop.
